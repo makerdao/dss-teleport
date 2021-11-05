@@ -22,7 +22,7 @@ struct WormholeGUID {
     bytes32 targetDomain;
     address receiver;
     address operator;
-    uint256 amount;
-    uint128 nonce;
-    uint128 timestamp;
+    uint128 amount;
+    uint64 nonce;
+    uint64 timestamp;
 }
