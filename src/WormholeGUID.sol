@@ -18,4 +18,11 @@ pragma solidity 0.6.12;
 
 // Standard Maker Wormhole GUID
 struct WormholeGUID {
+    bytes32 sourceDomain;
+    bytes32 targetDomain;
+    address receiver;
+    address operator;
+    uint256 amount;
+    uint128 nonce;
+    uint128 timestamp;
 }
