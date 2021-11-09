@@ -16,7 +16,33 @@
 
 pragma solidity 0.8.9;
 
+import "./WormholeGUID.sol";
+
+interface WormholeJoinLike {
+    function mint(WormholeGUID calldata guid, address sender, uint256 maxFee) external;
+}
+
+interface OptimismStorageLike {
+    function validate(bytes calldata merkleProof) external view returns (bytes memory);
+}
+
 // Authenticate against Optimism Storage Merkle Root
 // Only works after the fraud proof delay
 contract WormholeOptimismStorageAuth {
+
+    WormholeJoinLike public immutable join;
+    OptimismStorageLike public immutable store;
+
+    constructor(address _join, address _store) {
+        join = WormholeJoinLike(_join);
+        store = OptimismStorageLike(_store);
+    }
+
+    function attest(WormholeGUID calldata guid, uint256 maxFee, bytes calldata merkleProof) external {
+        // TODO firm up this interface
+        store.validate(attestations);
+
+        join.mint(guid, msg.sender, maxFee);
+    }
+
 }
