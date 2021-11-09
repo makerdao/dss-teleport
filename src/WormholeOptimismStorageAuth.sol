@@ -16,11 +16,7 @@
 
 pragma solidity 0.8.9;
 
-// Provide user authentication for Maker Wormhole
-// Supported methods:
-// 
-// * Maker Oracle Attestations (Fast)
-// * On-Chain Merkle Proof Checkpointing (Slow)
-// 
-contract WormholeAuth {
+// Authenticate against Optimism Storage Merkle Root
+// Only works after the fraud proof delay
+contract WormholeOptimismStorageAuth {
 }
