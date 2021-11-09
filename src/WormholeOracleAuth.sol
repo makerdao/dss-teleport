@@ -16,6 +16,32 @@
 
 pragma solidity 0.8.9;
 
+import "./WormholeGUID.sol";
+
+interface WormholeJoinLike {
+    function mint(WormholeGUID calldata guid, address sender, uint256 maxFee) external;
+}
+
+interface OracleLike {
+    function validate(bytes calldata attestations) external view returns (bytes memory);
+}
+
 // Authenticate with Maker Oracles
 contract WormholeOracleAuth {
+
+    WormholeJoinLike public immutable join;
+    OracleLike public immutable oracle;
+
+    constructor(address _join, address _oracle) {
+        join = WormholeJoinLike(_join);
+        oracle = OracleLike(_oracle);
+    }
+
+    function attest(WormholeGUID calldata guid, uint256 maxFee, bytes calldata attestations) external {
+        // TODO firm up this interface
+        oracle.validate(attestations);
+
+        join.mint(guid, msg.sender, maxFee);
+    }
+
 }
