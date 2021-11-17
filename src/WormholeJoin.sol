@@ -140,17 +140,18 @@ contract WormholeJoin {
         );
     }
 
-    function registerWormhole(WormholeGUID calldata wormholeGUID) external auth {
+    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
         require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+        withdrawPending(wormholeGUID, maxFee);
     }
 
-    function mint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) public {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
-        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        require(wormholeGUID.operator == msg.sender || wards[msg.sender] == 1, "WormholeJoin/sender-not-operator-nor-authed");
         bool vatLive = vat.live() == 1;
         uint256 fee = vatLive ? wormholeFees.getFees(wormholeGUID) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
