@@ -45,10 +45,10 @@ interface WormholeFeesLike {
 
 // Primary control for extending Wormhole credit
 contract WormholeJoin {
-    mapping (address => uint256) public wards;  // Auth
-    mapping (bytes32 => uint256) public line;   // Debt ceiling per source domain
-    mapping (bytes32 =>  int256) public debt;   // Outstanding debt per source domain (can be negative if there is a lot of unclaimed amounts for a long time)
-    mapping (bytes32 => uint256) public claim;  // Claimed debt per GUID
+    mapping (address =>  uint256) public wards;     // Auth
+    mapping (bytes32 =>  uint256) public line;      // Debt ceiling per source domain
+    mapping (bytes32 =>   int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
+    mapping (bytes32 => Wormhole) public wormholes; // Approved wormholes and pending unpaid
 
     address          public vow;
     DaiJoinLike      public daiJoin;
@@ -64,8 +64,13 @@ contract WormholeJoin {
     event Deny(address indexed usr);
     event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
-    event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, address originalSender, uint256 maxFee);
+    event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 maxFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
+
+    struct Wormhole {
+        bool    blessed;
+        uint248 pending;
+    }
 
     constructor(address vat_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
@@ -121,9 +126,31 @@ contract WormholeJoin {
         emit File(what, domain_, data);
     }
 
-    function mint(WormholeGUID calldata wormholeGUID, address originalSender, uint256 maxFee) external auth {
+    function getGUIDHash(WormholeGUID calldata wormholeGUID) public pure returns (bytes32 hashGUID) {
+        hashGUID = keccak256(
+            abi.encodePacked(
+                wormholeGUID.sourceDomain,
+                wormholeGUID.targetDomain,
+                wormholeGUID.receiver,
+                wormholeGUID.operator,
+                wormholeGUID.amount,
+                wormholeGUID.nonce,
+                wormholeGUID.timestamp
+            )
+        );
+    }
+
+    function registerWormhole(WormholeGUID calldata wormholeGUID) external auth {
+        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
+        wormholes[hashGUID].blessed = true;
+        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+    }
+
+    function mint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
-        require(wormholeGUID.operator == originalSender, "WormholeJoin/incorrect-operator");
+        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
         bool vatLive = vat.live() == 1;
         uint256 fee = vatLive ? wormholeFees.getFees(wormholeGUID) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
@@ -137,25 +164,16 @@ contract WormholeJoin {
         require(int256(line_) > debt_, "WormholeJoin/non-available");
         uint256 available = uint256(int256(line_) - debt_);
 
-        bytes32 hashGUID = keccak256(
-            abi.encodePacked(
-                wormholeGUID.sourceDomain,
-                wormholeGUID.targetDomain,
-                wormholeGUID.receiver,
-                wormholeGUID.operator,
-                wormholeGUID.amount,
-                wormholeGUID.nonce,
-                wormholeGUID.timestamp
-            )
-        );
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
         uint256 amtToTake = min(
-                                wormholeGUID.amount - claim[hashGUID],
+                                wormholes[hashGUID].pending,
                                 available
                             );
+        require(amtToTake > 0, "WormholeJoin/zero-amount");
         require(amtToTake <= 2 ** 255 - 1, "WormholeJoin/overflow");
 
         debt[wormholeGUID.sourceDomain] += int256(amtToTake);
-        claim[hashGUID] += amtToTake;
+        wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
             uint256 amtToGenerate = debt_ < 0 ? amtToTake - uint256(-debt_) : amtToTake;
@@ -168,7 +186,7 @@ contract WormholeJoin {
             vat.move(address(this), vow, fee * RAY);
         }
 
-        emit Mint(hashGUID, wormholeGUID, originalSender, maxFee);
+        emit Mint(hashGUID, wormholeGUID, maxFee);
     }
 
     // TODO: define if we want to change to pull model instead of push
