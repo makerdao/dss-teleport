@@ -39,20 +39,20 @@ interface TokenLike {
     function approve(address, uint256) external;
 }
 
-interface WormholeFeesLike {
+interface FeesLike {
     function getFees(WormholeGUID calldata) external view returns (uint256);
 }
 
 // Primary control for extending Wormhole credit
 contract WormholeJoin {
     mapping (address =>  uint256) public wards;     // Auth
+    mapping (bytes32 => FeesLike) public fees;      // Fees contract per source domain
     mapping (bytes32 =>  uint256) public line;      // Debt ceiling per source domain
     mapping (bytes32 =>   int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
     mapping (bytes32 => Wormhole) public wormholes; // Approved wormholes and pending unpaid
 
-    address          public vow;
-    DaiJoinLike      public daiJoin;
-    WormholeFeesLike public wormholeFees;
+    address     public vow;
+    DaiJoinLike public daiJoin;
 
     VatLike immutable public vat;
     bytes32 immutable public ilk;
@@ -63,6 +63,7 @@ contract WormholeJoin {
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, address data);
+    event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 maxFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
@@ -102,19 +103,24 @@ contract WormholeJoin {
     function file(bytes32 what, address data) external auth {
         if (what == "vow") {
             vow = data;
-        }
-        else if (what == "daiJoin") {
+        } else if (what == "daiJoin") {
             vat.nope(address(daiJoin));
             daiJoin = DaiJoinLike(data);
             vat.hope(data);
             daiJoin.dai().approve(data, type(uint256).max);
-        }
-        else if (what == "wormholeFees") {
-            wormholeFees = WormholeFeesLike(data);
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
         emit File(what, data);
+    }
+
+    function file(bytes32 what, bytes32 domain_, address data) external auth {
+        if (what == "fees") {
+            fees[domain_] = FeesLike(data);
+        } else {
+            revert("WormholeJoin/file-unrecognized-param");
+        }
+        emit File(what, domain_, data);
     }
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
@@ -153,7 +159,7 @@ contract WormholeJoin {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
         require(wormholeGUID.operator == msg.sender || wards[msg.sender] == 1, "WormholeJoin/sender-not-operator-nor-authed");
         bool vatLive = vat.live() == 1;
-        uint256 fee = vatLive ? wormholeFees.getFees(wormholeGUID) : 0;
+        uint256 fee = vatLive ? fees[wormholeGUID.sourceDomain].getFees(wormholeGUID) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
 
         // TODO: Review if we want to also compare to the ilk line
