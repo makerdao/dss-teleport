@@ -18,7 +18,7 @@ pragma solidity 0.8.9;
 
 import "ds-test/test.sol";
 
-import "src/WormholeAuth.sol";
+import "src/WormholeOracleAuth.sol";
 import "src/WormholeFees.sol";
 import "src/WormholeGUID.sol";
 import "src/WormholeJoin.sol";

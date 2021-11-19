@@ -16,6 +16,9 @@
 
 pragma solidity 0.8.9;
 
+import "./WormholeGUID.sol";
+
 // Calculate fees for a given Wormhole GUID
 contract WormholeFees {
+    function getFees(WormholeGUID calldata wormholeGUID) external view returns (uint256 fees) {}
 }
