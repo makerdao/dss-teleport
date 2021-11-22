@@ -35,6 +35,8 @@ contract WormholeOracleAuth {
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, bytes32 data);
+    event SignersAdded(address[] signers);
+    event SignersRemoved(address[] signers);
 
     modifier auth {
         require(wards[msg.sender] == 1, "WormholeOracleAuth/non-authed");
@@ -60,13 +62,24 @@ contract WormholeOracleAuth {
     function file(bytes32 what, bytes32 data) external auth {
         if (what == "threshold") {
             threshold = uint256(data);
-        } else if (what == "signer") {
-            address oracle = address(uint160(uint256(data)));
-            signers[oracle] = !signers[oracle];
         } else {
             revert("WormholeOracleAuth/file-unrecognized-param");
         }
         emit File(what, data);
+    }
+
+    function addSigners(address[] calldata signers_) external auth {
+        for(uint i; i < signers_.length; i++) {
+            signers[signers_[i]] = true;
+        }
+        emit SignersAdded(signers_);
+    }
+
+    function removeSigners(address[] calldata signers_) external auth {
+        for(uint i; i < signers_.length; i++) {
+            signers[signers_[i]] = false;
+        }
+        emit SignersRemoved(signers_);
     }
 
     function attest(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {

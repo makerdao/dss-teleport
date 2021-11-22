@@ -49,11 +49,12 @@ contract WormholeRouter {
         _;
     }
 
-    constructor(address dai_, address wormholeJoin_) {
-        dai = dai_;
+    constructor(address dai_, address escrow_, address wormholeJoin_) {
+        dai = TokenLike(dai_);
+        escrow = escrow_;
+        wormholeJoin = WormholdJoinLike(wormholeJoin_);
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
-        wormholeJoin = WormholdJoinLike(wormholeJoin_);
     }
 
     function file(bytes32 what, bytes32 domain, address data) external auth {
