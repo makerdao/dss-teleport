@@ -25,12 +25,12 @@ interface WormholdJoinLike {
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
 contract WormholeOracleAuth {
 
+    mapping (address => uint256) public wards;   // Auth
+    mapping (address => bool)    public signers; // Oracle feeds
+
     WormholdJoinLike immutable public wormholeJoin;
 
     uint256 public threshold;
-
-    mapping (address => uint256) public wards;   // Auth
-    mapping (address => bool)    public signers; // Oracle feeds
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
@@ -83,7 +83,7 @@ contract WormholeOracleAuth {
     }
 
     function attest(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
-        require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
+        require(isValid(getGUIDHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
 
@@ -96,7 +96,7 @@ contract WormholeOracleAuth {
         bytes32 s;
         uint256 numValid;
         address lastSigner;
-        for (uint256 i = 0; i < count; i++) {
+        for (uint256 i; i < count; i++) {
             (v,r,s) = splitSignature(signatures, i);
             address recovered = ecrecover(signHash, v, r, s);
             require(recovered > lastSigner, "WormholeOracleAuth/bad-sig-order"); // make sure signers are different
@@ -108,23 +108,6 @@ contract WormholeOracleAuth {
                 }
             }
         }
-    }
-
-    // TODO: this is not following format proposed in https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
-    // Need to confirm with Oracle CU that below format is acceptabke
-    function getSignHash(WormholeGUID memory wormholeGUID) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(
-                    wormholeGUID.sourceDomain,
-                    wormholeGUID.targetDomain,
-                    wormholeGUID.receiver,
-                    wormholeGUID.operator,
-                    wormholeGUID.amount,
-                    wormholeGUID.nonce,
-                    wormholeGUID.timestamp
-                ))
-        ));
     }
 
     /**
