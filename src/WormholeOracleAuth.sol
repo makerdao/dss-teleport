@@ -87,6 +87,12 @@ contract WormholeOracleAuth {
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
 
+    /**
+     * @notice Returns true if `signatures` contains at least `threshold_` valid signatures of a given `signHash`
+     * @param signHash The signed message hash
+     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
+     * @param threshold_ The minimum number of valid signatures required for the method to return true
+     */
     function isValid(bytes32 signHash, bytes memory signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
         require(count >= threshold_, "WormholeOracleAuth/not-enough-sig");
@@ -121,18 +127,18 @@ contract WormholeOracleAuth {
 
     /**
      * @notice Parses the signatures and extract (r, s, v) for a signature at a given index.
-     * @param _signatures concatenated signatures. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
-     * @param _index which signature to read (0, 1, 2, ...)
+     * @param signatures concatenated signatures. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
+     * @param index which signature to read (0, 1, 2, ...)
      */
-    function splitSignature(bytes memory _signatures, uint256 _index) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+    function splitSignature(bytes memory signatures, uint256 index) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         // we jump 32 (0x20) as the first slot of bytes contains the length
         // we jump 65 (0x41) per signature
         // for v we load 32 bytes ending with v (the first 31 come from s) then apply a mask
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            r := mload(add(_signatures, add(0x20, mul(0x41, _index))))
-            s := mload(add(_signatures, add(0x40, mul(0x41, _index))))
-            v := and(mload(add(_signatures, add(0x41, mul(0x41, _index)))), 0xff)
+            r := mload(add(signatures, add(0x20, mul(0x41, index))))
+            s := mload(add(signatures, add(0x40, mul(0x41, index))))
+            v := and(mload(add(signatures, add(0x41, mul(0x41, index)))), 0xff)
         }
         require(v == 27 || v == 28, "WormholeOracleAuth/bad-v");
     }
