@@ -71,13 +71,23 @@ contract WormholeRouter {
         emit File(what, domain, data);
     }
 
-    function registerWormhole(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+    /**
+     * @notice Call WormholeJoin to mint DAI. The sender must be a supported bridge
+     * @param wormholeGUID The wormhole GUID to register
+     * @param maxFee The maximum amount of fees to pay for the minting of DAI
+     */
+    function mint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(msg.sender == bridges[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-bridge");
         // We only support L1 as target for now
         require(wormholeGUID.targetDomain == MAINNET_DOMAIN, "WormholeRouter/unsupported-target-domain");
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
 
+    /**
+     * @notice Call WormholeJoin to settle a batch of L2 -> L1 DAI withdrawals. The sender must be a supported bridge
+     * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
+     * @param batchedDaiToFlush The amount of DAI in the batch 
+     */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
         require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-bridge");
