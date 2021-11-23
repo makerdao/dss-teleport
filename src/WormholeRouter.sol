@@ -29,16 +29,16 @@ interface TokenLike {
 
 contract WormholeRouter {
 
-    bytes32 constant public MAINNET_DOMAIN = bytes32("mainnet");
-
-    TokenLike immutable public dai; // L1 DAI ERC20 token
-    address immutable public escrow; // L1 DAI Escrow
-    WormholdJoinLike immutable public wormholeJoin;
-
+    mapping (address => uint256) public wards;   // Auth
     mapping (bytes32 => address) public bridges; // L1 bridges for each domain
     // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
     mapping (address => bytes32) public domains; // domains for each bridge
-    mapping (address => uint256) public wards;   // Auth
+    
+    bytes32 constant public MAINNET_DOMAIN = bytes32("mainnet");
+    
+    TokenLike immutable public dai; // L1 DAI ERC20 token
+    address immutable public escrow; // L1 DAI Escrow
+    WormholdJoinLike immutable public wormholeJoin;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
