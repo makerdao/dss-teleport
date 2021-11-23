@@ -83,7 +83,7 @@ contract WormholeOracleAuth {
     }
 
     function attest(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
-        require(isValid(getGUIDHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
+        require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
 
@@ -108,6 +108,15 @@ contract WormholeOracleAuth {
                 }
             }
         }
+    }
+
+    // TODO: this is not following the format proposed in https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
+    // Need to confirm with the Oracle CU that below format is acceptable
+    function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
+        signHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            getGUIDHash(wormholeGUID)
+        ));
     }
 
     /**

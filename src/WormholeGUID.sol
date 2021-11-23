@@ -27,19 +27,14 @@ struct WormholeGUID {
     uint64 timestamp;
 }
 
-// TODO: this is not following format proposed in https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
-// Need to confirm with Oracle CU that below format is acceptabke
 function getGUIDHash(WormholeGUID memory wormholeGUID) pure returns (bytes32 guidHash) {
     guidHash = keccak256(abi.encodePacked(
-        "\x19Ethereum Signed Message:\n32",
-        keccak256(abi.encodePacked(
-            wormholeGUID.sourceDomain,
-            wormholeGUID.targetDomain,
-            wormholeGUID.receiver,
-            wormholeGUID.operator,
-            wormholeGUID.amount,
-            wormholeGUID.nonce,
-            wormholeGUID.timestamp
-        ))
+        wormholeGUID.sourceDomain,
+        wormholeGUID.targetDomain,
+        wormholeGUID.receiver,
+        wormholeGUID.operator,
+        wormholeGUID.amount,
+        wormholeGUID.nonce,
+        wormholeGUID.timestamp
     ));
 }
