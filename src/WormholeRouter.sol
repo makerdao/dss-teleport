@@ -34,8 +34,8 @@ contract WormholeRouter {
     // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
     mapping (address => bytes32) public domains; // domains for each bridge
     
-    bytes32 constant public MAINNET_DOMAIN = bytes32("mainnet");
-    
+    bytes32 constant public MAINNET_DOMAIN = bytes32("ethereum");
+
     TokenLike immutable public dai; // L1 DAI ERC20 token
     address immutable public escrow; // L1 DAI Escrow
     WormholdJoinLike immutable public wormholeJoin;
