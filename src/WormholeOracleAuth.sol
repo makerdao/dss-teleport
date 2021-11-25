@@ -18,7 +18,7 @@ pragma solidity 0.8.9;
 
 import "./WormholeGUID.sol";
 
-interface WormholdJoinLike {
+interface WormholeJoinLike {
     function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
 }
 
@@ -28,7 +28,7 @@ contract WormholeOracleAuth {
     mapping (address => uint256) public wards;   // Auth
     mapping (address => bool)    public signers; // Oracle feeds
 
-    WormholdJoinLike immutable public wormholeJoin;
+    WormholeJoinLike immutable public wormholeJoin;
 
     uint256 public threshold;
 
@@ -46,7 +46,7 @@ contract WormholeOracleAuth {
     constructor(address wormholeJoin_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
-        wormholeJoin = WormholdJoinLike(wormholeJoin_);
+        wormholeJoin = WormholeJoinLike(wormholeJoin_);
     }
 
     function rely(address usr) external auth {
