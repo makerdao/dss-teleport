@@ -59,6 +59,21 @@ contract WormholeOracleAuthTest is DSTest {
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
+    function testFail_isValid_notEnoughSig() public {
+        bytes32 signHash = keccak256('msg');
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+        assertTrue(auth.isValid(signHash, signatures, signers.length + 1));
+    }
+
+    function testFail_isValid_badSig() public {
+        bytes32 signHash = keccak256('msg');
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+        signatures[0] = bytes1(uint8((uint256(uint8(signatures[0])) + 1) % 256));
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
+    }
+
     function test_mint() public {
         WormholeGUID memory guid;
         guid.operator = address(auth);
