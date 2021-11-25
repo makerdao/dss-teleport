@@ -32,10 +32,10 @@ contract WormholeRouter {
     mapping (address => uint256) public wards;   // Auth
     mapping (bytes32 => address) public bridges; // L1 bridges for each domain
     // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
-    mapping (address => bytes32) public domains; // domains for each bridge
+    mapping (address => bytes32) public domains; // Domains for each bridge
     
-    bytes32 constant public L1_DOMAIN = bytes32("ethereum");
 
+    bytes32 immutable public l1Domain; // The id of the L1 domain, e.g. bytes32("ethereum") or bytes32("goerli")
     TokenLike immutable public dai; // L1 DAI ERC20 token
     address immutable public escrow; // L1 DAI Escrow
     WormholdJoinLike immutable public wormholeJoin;
@@ -49,7 +49,8 @@ contract WormholeRouter {
         _;
     }
 
-    constructor(address dai_, address escrow_, address wormholeJoin_) {
+    constructor(bytes32 l1Domain_, address dai_, address escrow_, address wormholeJoin_) {
+        l1Domain = l1Domain_;
         dai = TokenLike(dai_);
         escrow = escrow_;
         wormholeJoin = WormholdJoinLike(wormholeJoin_);
@@ -79,7 +80,7 @@ contract WormholeRouter {
     function mint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(msg.sender == bridges[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-bridge");
         // We only support L1 as target for now
-        require(wormholeGUID.targetDomain == L1_DOMAIN, "WormholeRouter/unsupported-target-domain");
+        require(wormholeGUID.targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
 
@@ -92,7 +93,7 @@ contract WormholeRouter {
         bytes32 sourceDomain = domains[msg.sender];
         require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-bridge");
         // We only support L1 as target for now
-        require(targetDomain == L1_DOMAIN, "WormholeRouter/unsupported-target-domain");
+        require(targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
         // Push the DAI to settle to wormholeJoin (TODO: to be changed if wormholeJoin pulls DAI directly from the escrow)
         dai.transferFrom(escrow, address(wormholeJoin), batchedDaiToFlush);
         wormholeJoin.settle(sourceDomain, batchedDaiToFlush);
