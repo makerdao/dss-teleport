@@ -132,20 +132,6 @@ contract WormholeJoin {
         emit File(what, domain_, data);
     }
 
-    function getGUIDHash(WormholeGUID calldata wormholeGUID) public pure returns (bytes32 hashGUID) {
-        hashGUID = keccak256(
-            abi.encodePacked(
-                wormholeGUID.sourceDomain,
-                wormholeGUID.targetDomain,
-                wormholeGUID.receiver,
-                wormholeGUID.operator,
-                wormholeGUID.amount,
-                wormholeGUID.nonce,
-                wormholeGUID.timestamp
-            )
-        );
-    }
-
     function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
         require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
