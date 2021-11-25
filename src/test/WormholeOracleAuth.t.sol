@@ -38,13 +38,11 @@ contract WormholeOracleAuthTest is DSTest {
         auth = new WormholeOracleAuth(address(new WormholeJoinMock()));
     }
 
-    function test_isValid() public {
+    function getSignatures(bytes32 signHash) internal returns (bytes memory signatures, address[] memory signers) {
         // seeds chosen s.t. corresponding addresses are in ascending order
         uint8[30] memory seeds = [8,10,6,2,9,15,14,20,7,29,24,13,12,25,16,26,21,22,0,18,17,27,3,28,23,19,4,5,1,11];
         uint numSigners = seeds.length;
-        bytes32 signHash = keccak256('msg');
-        address[] memory signers = new address[](numSigners);
-        bytes memory signatures;
+        signers = new address[](numSigners);
         for(uint i; i < numSigners; i++) {
             uint sk = uint(keccak256(abi.encode(seeds[i])));
             signers[i] = hevm.addr(sk);
@@ -52,8 +50,30 @@ contract WormholeOracleAuthTest is DSTest {
             signatures = abi.encodePacked(signatures, r, s, v);
         }
         assertEq(signatures.length, numSigners * 65);
+    }
+
+    function test_isValid() public {
+        bytes32 signHash = keccak256('msg');
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
-        assertTrue(auth.isValid(signHash, signatures, numSigners));
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
+    }
+
+    function test_mint() public {
+        WormholeGUID memory guid;
+        guid.operator = address(auth);
+        guid.sourceDomain = bytes32("arbitrum");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = address(this);
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.mint(guid, signatures, maxFee);
     }
 
 }
