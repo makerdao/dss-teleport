@@ -26,3 +26,15 @@ struct WormholeGUID {
     uint64 nonce;
     uint64 timestamp;
 }
+
+function getGUIDHash(WormholeGUID memory wormholeGUID) pure returns (bytes32 guidHash) {
+    guidHash = keccak256(abi.encodePacked(
+        wormholeGUID.sourceDomain,
+        wormholeGUID.targetDomain,
+        wormholeGUID.receiver,
+        wormholeGUID.operator,
+        wormholeGUID.amount,
+        wormholeGUID.nonce,
+        wormholeGUID.timestamp
+    ));
+}
