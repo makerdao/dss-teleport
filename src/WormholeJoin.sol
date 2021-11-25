@@ -51,12 +51,12 @@ contract WormholeJoin {
     mapping (bytes32 =>   int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
     mapping (bytes32 => Wormhole) public wormholes; // Approved wormholes and pending unpaid
 
-    address     public vow;
-    DaiJoinLike public daiJoin;
+    address public vow;
 
-    VatLike immutable public vat;
-    bytes32 immutable public ilk;
-    bytes32 immutable public domain;
+    VatLike     immutable public vat;
+    DaiJoinLike immutable public daiJoin;
+    bytes32     immutable public ilk;
+    bytes32     immutable public domain;
 
     uint256 constant public RAY = 10 ** 27;
 
@@ -73,10 +73,13 @@ contract WormholeJoin {
         uint248 pending;
     }
 
-    constructor(address vat_, bytes32 ilk_, bytes32 domain_) {
+    constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
         vat = VatLike(vat_);
+        daiJoin = DaiJoinLike(daiJoin_);
+        vat.hope(daiJoin_);
+        daiJoin.dai().approve(daiJoin_, type(uint256).max);
         ilk = ilk_;
         domain = domain_;
     }
@@ -103,11 +106,6 @@ contract WormholeJoin {
     function file(bytes32 what, address data) external auth {
         if (what == "vow") {
             vow = data;
-        } else if (what == "daiJoin") {
-            vat.nope(address(daiJoin));
-            daiJoin = DaiJoinLike(data);
-            vat.hope(data);
-            daiJoin.dai().approve(data, type(uint256).max);
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
