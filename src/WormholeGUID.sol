@@ -27,6 +27,7 @@ struct WormholeGUID {
     uint64 timestamp;
 }
 
+// solhint-disable-next-line func-visibility
 function getGUIDHash(WormholeGUID memory wormholeGUID) pure returns (bytes32 guidHash) {
     guidHash = keccak256(abi.encode(
         wormholeGUID.sourceDomain,
