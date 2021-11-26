@@ -16,9 +16,17 @@
 
 pragma solidity 0.8.9;
 
-import "./WormholeGUID.sol";
+import {WormholeFees} from "./WormholeFees.sol";
+import {WormholeGUID} from "./WormholeGUID.sol";
 
-// Calculate fees for a given Wormhole GUID
-interface WormholeFees {
-    function getFees(WormholeGUID calldata wormholeGUID) external view returns (uint256 fees);
+contract WormholeConstantFee is WormholeFees {
+  uint256 immutable public fee;
+
+  constructor(uint256 _fee) {
+    fee = _fee;
+  }
+
+  function getFees(WormholeGUID calldata) override external view returns (uint256) {
+    return fee;
+  }
 }
