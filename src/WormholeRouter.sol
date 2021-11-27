@@ -27,6 +27,10 @@ interface TokenLike {
   function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
 }
 
+interface L1BridgeLike {
+    function escrow() external returns (address);
+}
+
 contract WormholeRouter {
 
     mapping (address => uint256) public wards;   // Auth
@@ -37,7 +41,6 @@ contract WormholeRouter {
 
     bytes32 immutable public l1Domain; // The id of the L1 domain, e.g. bytes32("ethereum") or bytes32("goerli")
     TokenLike immutable public dai; // L1 DAI ERC20 token
-    address immutable public escrow; // L1 DAI Escrow
     WormholdJoinLike immutable public wormholeJoin;
 
     event Rely(address indexed usr);
@@ -49,10 +52,9 @@ contract WormholeRouter {
         _;
     }
 
-    constructor(bytes32 l1Domain_, address dai_, address escrow_, address wormholeJoin_) {
+    constructor(bytes32 l1Domain_, address dai_, address wormholeJoin_) {
         l1Domain = l1Domain_;
         dai = TokenLike(dai_);
-        escrow = escrow_;
         wormholeJoin = WormholdJoinLike(wormholeJoin_);
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
@@ -95,7 +97,7 @@ contract WormholeRouter {
         // We only support L1 as target for now
         require(targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
         // Push the DAI to settle to wormholeJoin (TODO: to be changed if wormholeJoin pulls DAI directly from the escrow)
-        dai.transferFrom(escrow, address(wormholeJoin), batchedDaiToFlush);
+        dai.transferFrom(L1BridgeLike(msg.sender).escrow(), address(wormholeJoin), batchedDaiToFlush);
         wormholeJoin.settle(sourceDomain, batchedDaiToFlush);
     }
 }
