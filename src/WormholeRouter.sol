@@ -79,7 +79,7 @@ contract WormholeRouter {
      * @param wormholeGUID The wormhole GUID to register
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
-    function mint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(msg.sender == bridges[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-bridge");
         // We only support L1 as target for now
         require(wormholeGUID.targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
