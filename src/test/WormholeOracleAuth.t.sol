@@ -76,7 +76,7 @@ contract WormholeOracleAuthTest is DSTest {
 
     function test_mint() public {
         WormholeGUID memory guid;
-        guid.operator = address(auth);
+        guid.operator = address(this);
         guid.sourceDomain = bytes32("arbitrum");
         guid.targetDomain = bytes32("ethereum");
         guid.receiver = address(this);
