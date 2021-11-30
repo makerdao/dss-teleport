@@ -88,7 +88,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.mint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee);
     }
 
 }
