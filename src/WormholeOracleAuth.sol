@@ -89,6 +89,7 @@ contract WormholeOracleAuth {
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
+        require(wormholeGUID.operator == msg.sender, "WormholeOracleAuth/not-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
         wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
     }
