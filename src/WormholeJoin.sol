@@ -40,13 +40,13 @@ interface TokenLike {
 }
 
 interface FeesLike {
-    function getFees(WormholeGUID calldata) external view returns (uint256);
+    function getFees(WormholeGUID calldata, uint256, int256) external view returns (uint256);
 }
 
 // Primary control for extending Wormhole credit
 contract WormholeJoin {
     mapping (address =>        uint256) public wards;     // Auth
-    mapping (bytes32 =>       FeesLike) public fees;      // Fees contract per source domain
+    mapping (bytes32 =>        address) public fees;      // Fees contract per source domain
     mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
     mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
     mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
@@ -114,7 +114,7 @@ contract WormholeJoin {
 
     function file(bytes32 what, bytes32 domain_, address data) external auth {
         if (what == "fees") {
-            fees[domain_] = FeesLike(data);
+            fees[domain_] = data;
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
@@ -143,8 +143,6 @@ contract WormholeJoin {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
         require(wormholeGUID.operator == msg.sender || wards[msg.sender] == 1, "WormholeJoin/sender-not-operator-nor-authed");
         bool vatLive = vat.live() == 1;
-        uint256 fee = vatLive ? fees[wormholeGUID.sourceDomain].getFees(wormholeGUID) : 0;
-        require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
 
         // TODO: Review if we want to also compare to the ilk line
         // This will only be necessary if the sum of all the sourceDomain ceilings is greater than the ilk line
@@ -153,6 +151,9 @@ contract WormholeJoin {
         int256  debt_ = debt[wormholeGUID.sourceDomain];
         require(line_ <= 2 ** 255, "WormholeJoin/overflow");
         require(int256(line_) > debt_, "WormholeJoin/non-available");
+        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_) : 0;
+        require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
+
         uint256 available = uint256(int256(line_) - debt_);
 
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
