@@ -149,7 +149,7 @@ contract WormholeJoin {
         // We might also want to potentially check the global Line.
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
         int256  debt_ = debt[wormholeGUID.sourceDomain];
-        require(line_ <= 2 ** 255, "WormholeJoin/overflow");
+        require(line_ <= 2 ** 255 - 1, "WormholeJoin/overflow");
         require(int256(line_) > debt_, "WormholeJoin/non-available");
         uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
