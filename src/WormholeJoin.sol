@@ -84,7 +84,7 @@ contract WormholeJoin {
         domain = domain_;
     }
 
-    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    function _min(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x <= y ? x : y;
     }
 
@@ -156,19 +156,20 @@ contract WormholeJoin {
         uint256 available = uint256(int256(line_) - debt_);
 
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        uint256 amtToTake = min(
+        uint256 amtToTake = _min(
                                 wormholes[hashGUID].pending,
                                 available
                             );
         require(amtToTake > 0, "WormholeJoin/zero-amount");
-        require(amtToTake <= 2 ** 255 - 1, "WormholeJoin/overflow");
+        require(amtToTake <= 2 ** 248 - 1, "WormholeJoin/overflow");
 
-        debt[wormholeGUID.sourceDomain] += int256(amtToTake);
+        debt[wormholeGUID.sourceDomain] +=  int256(amtToTake);
         wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
             uint256 amtToGenerate = debt_ < 0 ? amtToTake - uint256(-debt_) : amtToTake;
             vat.slip(ilk, address(this), int256(amtToGenerate));
+            // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
         daiJoin.exit(wormholeGUID.receiver, amtToTake - fee);
@@ -187,7 +188,7 @@ contract WormholeJoin {
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = min(batchedDaiToFlush, art);
+            uint256 amtToPayBack = _min(batchedDaiToFlush, art);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
         }
