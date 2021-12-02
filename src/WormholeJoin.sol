@@ -45,11 +45,11 @@ interface FeesLike {
 
 // Primary control for extending Wormhole credit
 contract WormholeJoin {
-    mapping (address =>  uint256) public wards;     // Auth
-    mapping (bytes32 => FeesLike) public fees;      // Fees contract per source domain
-    mapping (bytes32 =>  uint256) public line;      // Debt ceiling per source domain
-    mapping (bytes32 =>   int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
-    mapping (bytes32 => Wormhole) public wormholes; // Approved wormholes and pending unpaid
+    mapping (address =>        uint256) public wards;     // Auth
+    mapping (bytes32 =>       FeesLike) public fees;      // Fees contract per source domain
+    mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
+    mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
+    mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
 
     address public vow;
 
@@ -68,7 +68,7 @@ contract WormholeJoin {
     event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 maxFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
-    struct Wormhole {
+    struct WormholeStatus {
         bool    blessed;
         uint248 pending;
     }
