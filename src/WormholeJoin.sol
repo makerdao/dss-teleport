@@ -131,6 +131,11 @@ contract WormholeJoin {
         emit File(what, domain_, data);
     }
 
+    /**
+    * @dev Internal function that executes the withdrawl after a wormhole is registered
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
     function _withdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
         bool vatLive = vat.live() == 1;
@@ -178,6 +183,11 @@ contract WormholeJoin {
         emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFee);
     }
 
+    /**
+    * @dev External authed function that registers the wormwhole and executes the withdrawl after
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
     function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
         require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
@@ -188,14 +198,24 @@ contract WormholeJoin {
         _withdraw(wormholeGUID, maxFee);
     }
 
+    /**
+    * @dev External function that executes the withdrawl of any pending and available amount (only callable by operator)
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
     function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
         _withdraw(wormholeGUID, maxFee);
     }
 
-    // TODO: define if we want to change to pull model instead of push
-    // (this function expects to have received batchedDaiToFlush erc20 DAI before settle being called)
+    /**
+    * @dev External authed function that repays debt with DAI coming from the bridges
+    * @param sourceDomain domain where the DAI is coming from
+    * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
+    **/
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external auth {
+        // TODO: define if we want to change to pull model instead of push
+        // (this function expects to have received batchedDaiToFlush erc20 DAI before settle being called)
         require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
