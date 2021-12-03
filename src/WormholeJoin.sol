@@ -130,18 +130,8 @@ contract WormholeJoin {
         emit File(what, domain_, data);
     }
 
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
-        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
-        wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
-        withdrawPending(wormholeGUID, maxFee);
-    }
-
-    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) public {
+    function _withdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
-        require(wormholeGUID.operator == msg.sender || wards[msg.sender] == 1, "WormholeJoin/sender-not-operator-nor-authed");
         bool vatLive = vat.live() == 1;
 
         // TODO: Review if we want to also compare to the ilk line
@@ -180,6 +170,20 @@ contract WormholeJoin {
         }
 
         emit Mint(hashGUID, wormholeGUID, maxFee);
+    }
+
+    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
+        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
+        wormholes[hashGUID].blessed = true;
+        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+        _withdraw(wormholeGUID, maxFee);
+    }
+
+    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        _withdraw(wormholeGUID, maxFee);
     }
 
     // TODO: define if we want to change to pull model instead of push
