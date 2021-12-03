@@ -152,8 +152,9 @@ contract WormholeJoin {
                                 available
                             );
         require(amtToTake > 0, "WormholeJoin/zero-amount");
-        require(amtToTake <= 2 ** 248 - 1, "WormholeJoin/overflow");
 
+        // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
+        // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
         debt[wormholeGUID.sourceDomain] +=  int256(amtToTake);
         wormholes[hashGUID].pending     -= uint248(amtToTake);
 
