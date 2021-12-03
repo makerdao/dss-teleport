@@ -65,7 +65,8 @@ contract WormholeJoin {
     event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
-    event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 maxFee);
+    event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
+    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
@@ -151,7 +152,11 @@ contract WormholeJoin {
                                 wormholes[hashGUID].pending,
                                 available
                             );
-        require(amtToTake > 0, "WormholeJoin/zero-amount");
+
+        // Stop execution if there isn't anything available to withdraw
+        if (amtToTake == 0) {
+            return;
+        }
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
@@ -170,7 +175,7 @@ contract WormholeJoin {
             vat.move(address(this), vow, fee * RAY);
         }
 
-        emit Mint(hashGUID, wormholeGUID, maxFee);
+        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFee);
     }
 
     function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
@@ -179,6 +184,7 @@ contract WormholeJoin {
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+        emit Register(getGUIDHash(wormholeGUID), wormholeGUID);
         _withdraw(wormholeGUID, maxFee);
     }
 
