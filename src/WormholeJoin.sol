@@ -140,9 +140,7 @@ contract WormholeJoin {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
-        // TODO: Review if we want to also compare to the ilk line
-        // This will only be necessary if the sum of all the sourceDomain ceilings is greater than the ilk line
-        // We might also want to potentially check the global Line.
+
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
         require(line_ <= 2 ** 255 - 1, "WormholeJoin/overflow");
 
