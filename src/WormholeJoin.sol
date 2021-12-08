@@ -138,30 +138,31 @@ contract WormholeJoin {
     **/
     function _withdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
-        bool vatLive = vat.live() == 1;
 
+        bool vatLive = vat.live() == 1;
         // TODO: Review if we want to also compare to the ilk line
         // This will only be necessary if the sum of all the sourceDomain ceilings is greater than the ilk line
         // We might also want to potentially check the global Line.
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
-        int256  debt_ = debt[wormholeGUID.sourceDomain];
         require(line_ <= 2 ** 255 - 1, "WormholeJoin/overflow");
-        require(int256(line_) > debt_, "WormholeJoin/non-available");
+
+        int256 debt_ = debt[wormholeGUID.sourceDomain];
+
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+
+        // Stop execution if there isn't anything available to withdraw
+        if (int256(line_) <= debt_ || wormholes[hashGUID].pending == 0) {
+            emit Withdraw(hashGUID, wormholeGUID, 0, maxFee);
+            return;
+        }
+
         uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
 
-        uint256 available = uint256(int256(line_) - debt_);
-
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
         uint256 amtToTake = _min(
                                 wormholes[hashGUID].pending,
-                                available
+                                uint256(int256(line_) - debt_)
                             );
-
-        // Stop execution if there isn't anything available to withdraw
-        if (amtToTake == 0) {
-            return;
-        }
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
