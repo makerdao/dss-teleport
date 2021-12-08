@@ -40,16 +40,16 @@ interface TokenLike {
 }
 
 interface FeesLike {
-    function getFees(WormholeGUID calldata) external view returns (uint256);
+    function getFees(WormholeGUID calldata, uint256, int256) external view returns (uint256);
 }
 
 // Primary control for extending Wormhole credit
 contract WormholeJoin {
-    mapping (address =>  uint256) public wards;     // Auth
-    mapping (bytes32 => FeesLike) public fees;      // Fees contract per source domain
-    mapping (bytes32 =>  uint256) public line;      // Debt ceiling per source domain
-    mapping (bytes32 =>   int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
-    mapping (bytes32 => Wormhole) public wormholes; // Approved wormholes and pending unpaid
+    mapping (address =>        uint256) public wards;     // Auth
+    mapping (bytes32 =>        address) public fees;      // Fees contract per source domain
+    mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
+    mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
+    mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
 
     address public vow;
 
@@ -65,10 +65,11 @@ contract WormholeJoin {
     event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
-    event Mint(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 maxFee);
+    event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
+    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
-    struct Wormhole {
+    struct WormholeStatus {
         bool    blessed;
         uint248 pending;
     }
@@ -84,7 +85,7 @@ contract WormholeJoin {
         domain = domain_;
     }
 
-    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    function _min(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = x <= y ? x : y;
     }
 
@@ -114,7 +115,7 @@ contract WormholeJoin {
 
     function file(bytes32 what, bytes32 domain_, address data) external auth {
         if (what == "fees") {
-            fees[domain_] = FeesLike(data);
+            fees[domain_] = data;
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
@@ -130,45 +131,46 @@ contract WormholeJoin {
         emit File(what, domain_, data);
     }
 
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
-        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
-        wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
-        withdrawPending(wormholeGUID, maxFee);
-    }
-
-    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) public {
+    /**
+    * @dev Internal function that executes the withdrawl after a wormhole is registered
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
+    function _withdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
-        require(wormholeGUID.operator == msg.sender || wards[msg.sender] == 1, "WormholeJoin/sender-not-operator-nor-authed");
+
         bool vatLive = vat.live() == 1;
-        uint256 fee = vatLive ? fees[wormholeGUID.sourceDomain].getFees(wormholeGUID) : 0;
+
+        uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
+        require(line_ <= 2 ** 255 - 1, "WormholeJoin/overflow");
+
+        int256 debt_ = debt[wormholeGUID.sourceDomain];
+
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+
+        // Stop execution if there isn't anything available to withdraw
+        if (int256(line_) <= debt_ || wormholes[hashGUID].pending == 0) {
+            emit Withdraw(hashGUID, wormholeGUID, 0, maxFee);
+            return;
+        }
+
+        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_) : 0;
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
 
-        // TODO: Review if we want to also compare to the ilk line
-        // This will only be necessary if the sum of all the sourceDomain ceilings is greater than the ilk line
-        // We might also want to potentially check the global Line.
-        uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
-        int256  debt_ = debt[wormholeGUID.sourceDomain];
-        require(line_ <= 2 ** 255, "WormholeJoin/overflow");
-        require(int256(line_) > debt_, "WormholeJoin/non-available");
-        uint256 available = uint256(int256(line_) - debt_);
-
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        uint256 amtToTake = min(
+        uint256 amtToTake = _min(
                                 wormholes[hashGUID].pending,
-                                available
+                                uint256(int256(line_) - debt_)
                             );
-        require(amtToTake > 0, "WormholeJoin/zero-amount");
-        require(amtToTake <= 2 ** 255 - 1, "WormholeJoin/overflow");
 
-        debt[wormholeGUID.sourceDomain] += int256(amtToTake);
+        // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
+        // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
+        debt[wormholeGUID.sourceDomain] +=  int256(amtToTake);
         wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
             uint256 amtToGenerate = debt_ < 0 ? amtToTake - uint256(-debt_) : amtToTake;
             vat.slip(ilk, address(this), int256(amtToGenerate));
+            // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
         daiJoin.exit(wormholeGUID.receiver, amtToTake - fee);
@@ -177,17 +179,47 @@ contract WormholeJoin {
             vat.move(address(this), vow, fee * RAY);
         }
 
-        emit Mint(hashGUID, wormholeGUID, maxFee);
+        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFee);
     }
 
-    // TODO: define if we want to change to pull model instead of push
-    // (this function expects to have received batchedDaiToFlush erc20 DAI before settle being called)
+    /**
+    * @dev External authed function that registers the wormwhole and executes the withdrawl after
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
+    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
+        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
+        wormholes[hashGUID].blessed = true;
+        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+        emit Register(hashGUID, wormholeGUID);
+        _withdraw(wormholeGUID, maxFee);
+    }
+
+    /**
+    * @dev External function that executes the withdrawl of any pending and available amount (only callable by operator)
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    **/
+    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        _withdraw(wormholeGUID, maxFee);
+    }
+
+    /**
+    * @dev External authed function that repays debt with DAI coming from the bridges
+    * @param sourceDomain domain where the DAI is coming from
+    * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
+    **/
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external auth {
+        // TODO: define if we want to change to pull model instead of push
+        // (this function expects to have received batchedDaiToFlush erc20 DAI before settle being called)
         require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = min(batchedDaiToFlush, art);
+            uint256 amtToPayBack = _min(batchedDaiToFlush, art);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
         }
