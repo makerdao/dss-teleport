@@ -194,7 +194,7 @@ contract WormholeJoin {
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
-        emit Register(getGUIDHash(wormholeGUID), wormholeGUID);
+        emit Register(hashGUID, wormholeGUID);
         _withdraw(wormholeGUID, maxFee);
     }
 
