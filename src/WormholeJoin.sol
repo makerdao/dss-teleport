@@ -212,9 +212,7 @@ contract WormholeJoin {
     * @param sourceDomain domain where the DAI is coming from
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external auth {
-        // TODO: define if we want to change to pull model instead of push
-        // (this function expects to have received batchedDaiToFlush erc20 DAI before settle being called)
+    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
         require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
