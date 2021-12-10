@@ -28,7 +28,6 @@ interface TokenLike {
 }
 
 interface L1BridgeLike {
-    function escrow() external returns (address);
     function initiateRequestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
     function initiateSettle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
@@ -115,14 +114,14 @@ contract WormholeRouter {
         require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-bridge");
 
         if(targetDomain == l1Domain) {
-            // Push the DAI to settle to wormholeJoin (TODO: to be changed if wormholeJoin pulls DAI directly from the escrow)
-            dai.transferFrom(L1BridgeLike(msg.sender).escrow(), address(wormholeJoin), batchedDaiToFlush);
+            // Forward the DAI to settle to wormholeJoin
+            dai.transferFrom(msg.sender, address(wormholeJoin), batchedDaiToFlush);
             wormholeJoin.settle(sourceDomain, batchedDaiToFlush);
         } else {
             address targetBridge = bridges[targetDomain];
             require(targetBridge != address(0), "WormholeRouter/unsupported-target-domain");
-            // Push the DAI to settle to the escrow of the target bridge
-            dai.transferFrom(L1BridgeLike(msg.sender).escrow(), L1BridgeLike(targetBridge).escrow(), batchedDaiToFlush);
+            // Forward the DAI to settle to the target bridge
+            dai.transferFrom(msg.sender, targetBridge, batchedDaiToFlush);
             L1BridgeLike(targetBridge).initiateSettle(sourceDomain, batchedDaiToFlush);
         }
     }
