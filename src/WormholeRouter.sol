@@ -105,7 +105,8 @@ contract WormholeRouter {
     }
 
     /**
-     * @notice Call WormholeJoin (or a domain's L1 bridge) to settle a batch of sourceDomain -> targetDomain DAI transfer. The sender must be a supported bridge
+     * @notice Call WormholeJoin (or a domain's L1 bridge) to settle a batch of sourceDomain -> targetDomain DAI transfer. 
+     * The sender must be a supported bridge
      * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
      * @param batchedDaiToFlush The amount of DAI in the batch 
      */
