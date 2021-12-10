@@ -85,7 +85,8 @@ contract WormholeOracleAuth {
     /**
      * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid
      * @param wormholeGUID The wormhole GUID to register
-     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
+     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
+     * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
@@ -97,7 +98,8 @@ contract WormholeOracleAuth {
     /**
      * @notice Returns true if `signatures` contains at least `threshold_` valid signatures of a given `signHash`
      * @param signHash The signed message hash
-     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
+     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
+     * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param threshold_ The minimum number of valid signatures required for the method to return true
      */
     function isValid(bytes32 signHash, bytes memory signatures, uint threshold_) public view returns (bool valid) {
@@ -123,7 +125,8 @@ contract WormholeOracleAuth {
         }
     }
 
-    // TODO: this is NOT following the format proposed in https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
+    // TODO: this is NOT following the format proposed in 
+    // https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
     // Need to confirm with the Oracle CU that the below format is acceptable
     function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
         signHash = keccak256(abi.encodePacked(
