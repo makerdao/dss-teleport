@@ -23,8 +23,8 @@ struct WormholeGUID {
     address receiver;
     address operator;
     uint128 amount;
-    uint64 nonce;
-    uint64 timestamp;
+    uint80 nonce;
+    uint48 timestamp;
 }
 
 // solhint-disable-next-line func-visibility
