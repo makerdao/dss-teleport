@@ -134,6 +134,7 @@ contract WormholeJoin {
     /**
     * @dev Internal function that executes the withdrawl after a wormhole is registered
     * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param hashGUID Hash of the prev struct
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
     function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee) internal {
