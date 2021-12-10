@@ -35,9 +35,10 @@ contract VatMock {
         uint256 art;   // Normalised Debt    [wad]
     }
 
-    mapping (bytes32 => mapping (address => Urn )) public urns;
-    mapping (bytes32 => mapping (address => uint)) public gem;  // [wad]
-    mapping (address => uint256)                   public dai;  // [rad]
+    mapping (address => mapping (address => uint256)) public can;
+    mapping (bytes32 => mapping (address => Urn ))    public urns;
+    mapping (bytes32 => mapping (address => uint256)) public gem;
+    mapping (address => uint256)                      public dai;
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x + y) >= x);
@@ -61,7 +62,17 @@ contract VatMock {
         require(y == 0 || z / y == int256(x));
     }
 
-    function hope(address) external {}
+    function either(bool x, bool y) internal pure returns (bool z) {
+        assembly{ z := or(x, y)}
+    }
+
+    function wish(address bit, address usr) internal view returns (bool) {
+        return either(bit == usr, can[bit][usr] == 1);
+    }
+
+    function hope(address usr) external {
+        can[msg.sender][usr] = 1;
+    }
 
     function cage() external {
         live = 0;
@@ -82,12 +93,17 @@ contract VatMock {
     }
 
     function move(address src, address dst, uint256 rad) external {
+        require(wish(src, msg.sender), "Vat/not-allowed");
         dai[src] = sub(dai[src], rad);
         dai[dst] = add(dai[dst], rad);
     }
 
     function slip(bytes32 ilk, address usr, int256 wad) external {
         gem[ilk][usr] = add(gem[ilk][usr], wad);
+    }
+
+    function suck(address, address v, uint rad) external {
+        dai[v] = add(dai[v], rad);
     }
 }
 
@@ -168,6 +184,8 @@ contract WormholeJoinTest is DSTest {
     DaiJoinMock daiJoin;
     address vow = address(111);
 
+    uint256 constant RAD = 10**45;
+
     function setUp() public {
         vat = new VatMock();
         dai = new DaiMock();
@@ -176,6 +194,76 @@ contract WormholeJoinTest is DSTest {
         join.file("line", "L2", 1_000_000 ether);
         join.file("vow", vow);
         join.file("fees", "L2", address(new WormholeConstantFee(0)));
+        vat.hope(address(daiJoin));
+    }
+
+    function _ink() internal view returns (uint256 ink_) {
+        (ink_,) = vat.urns(join.ilk(), address(join));
+    }
+
+    function _art() internal view returns (uint256 art_) {
+        (, art_) = vat.urns(join.ilk(), address(join));
+    }
+
+    function _blessed(WormholeGUID memory guid) internal view returns (bool blessed_) {
+        (blessed_, ) = join.wormholes(getGUIDHash(guid));
+    }
+
+    function _pending(WormholeGUID memory guid) internal view returns (uint248 pending_) {
+        (, pending_) = join.wormholes(getGUIDHash(guid));
+    }
+
+    function _tryRely(address usr) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature("rely(address)", usr));
+    }
+
+    function _tryDeny(address usr) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature("deny(address)", usr));
+    }
+
+    function _tryFile(bytes32 what, address data) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,address)", what, data));
+    }
+
+    function _tryFile(bytes32 what, bytes32 domain_, address data) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, domain_, data));
+    }
+
+    function _tryFile(bytes32 what, bytes32 domain_, uint256 data) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,bytes32,uint256)", what, domain_, data));
+    }
+
+    function testRelyDeny() public {
+        assertEq(join.wards(address(456)), 0);
+        assertTrue(_tryRely(address(456)));
+        assertEq(join.wards(address(456)), 1);
+        assertTrue(_tryDeny(address(456)));
+        assertEq(join.wards(address(456)), 0);
+
+        join.deny(address(this));
+
+        assertTrue(!_tryRely(address(456)));
+        assertTrue(!_tryDeny(address(456)));
+    }
+
+    function testFile() public {
+        assertEq(join.vow(), vow);
+        assertTrue(_tryFile("vow", address(888)));
+        assertEq(join.vow(), address(888));
+
+        assertEq(join.fees("aaa"), address(0));
+        assertTrue(_tryFile("fees", "aaa", address(888)));
+        assertEq(join.fees("aaa"), address(888));
+
+        assertEq(join.line("aaa"), 0);
+        assertTrue(_tryFile("line", "aaa", 10));
+        assertEq(join.line("aaa"), 10);
+
+        join.deny(address(this));
+
+        assertTrue(!_tryFile("vow", address(888)));
+        assertTrue(!_tryFile("fees", "aaa", address(888)));
+        assertTrue(!_tryFile("line", "aaa", 10));
     }
 
     function testRegisterAndWithdrawAll() public {
@@ -183,24 +271,25 @@ contract WormholeJoinTest is DSTest {
             sourceDomain: "L2",
             targetDomain: bytes32("ETHEREUM"),
             receiver: address(123),
-            operator: address(123),
+            operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint64(block.timestamp)
         });
 
         assertEq(dai.balanceOf(address(123)), 0);
-        bytes32 hashGUID = getGUIDHash(guid);
-        (bool blessed, uint248 pending) = join.wormholes(hashGUID);
-        assertTrue(!blessed);
-        assertEq(pending, 0);
+        assertTrue(!_blessed(guid));
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 0);
+        assertEq(_art(), 0);
 
         join.registerWormholeAndWithdraw(guid, 0);
 
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
-        (blessed, pending) = join.wormholes(hashGUID);
-        assertTrue(blessed);
-        assertEq(pending, 0);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
     }
 
     function testRegisterAndWithdrawPartial() public {
@@ -208,21 +297,20 @@ contract WormholeJoinTest is DSTest {
             sourceDomain: "L2",
             targetDomain: bytes32("ETHEREUM"),
             receiver: address(123),
-            operator: address(123),
+            operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint64(block.timestamp)
         });
 
-        bytes32 hashGUID = getGUIDHash(guid);
-
         join.file("line", "L2", 200_000 ether);
         join.registerWormholeAndWithdraw(guid, 0);
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
-        (bool blessed, uint248 pending) = join.wormholes(hashGUID);
-        assertTrue(blessed);
-        assertEq(pending, 50_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+        assertEq(_ink(), 200_000 ether);
+        assertEq(_art(), 200_000 ether);
     }
 
     function testRegisterAndWithdrawNothing() public {
@@ -230,20 +318,252 @@ contract WormholeJoinTest is DSTest {
             sourceDomain: "L2",
             targetDomain: bytes32("ETHEREUM"),
             receiver: address(123),
-            operator: address(123),
+            operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint64(block.timestamp)
         });
 
-        bytes32 hashGUID = getGUIDHash(guid);
-
         join.file("line", "L2", 0);
         join.registerWormholeAndWithdraw(guid, 0);
 
-        assertEq(dai.balanceOf(address(123)), 0 ether);
-        (bool blessed, uint248 pending) = join.wormholes(hashGUID);
-        assertTrue(blessed);
-        assertEq(pending, 250_000 ether);
+        assertEq(dai.balanceOf(address(123)), 0);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 250_000 ether);
+        assertEq(_ink(), 0);
+        assertEq(_art(), 0);
+    }
+
+    function testRegisterAndWithdrawPayingFee() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        assertEq(vat.dai(vow), 0);
+
+        join.file("fees", "L2", address(new WormholeConstantFee(100 ether)));
+        join.registerWormholeAndWithdraw(guid, 101 ether);
+
+        assertEq(vat.dai(vow), 100 * RAD);
+        assertEq(dai.balanceOf(address(123)), 249_900 ether);
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+    }
+
+    function testFailRegisterAlreadyRegistered() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+        join.registerWormholeAndWithdraw(guid, 0);
+        join.registerWormholeAndWithdraw(guid, 0);
+    }
+
+    function testFailRegisterWrongDomain() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHERIUM"),
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+        join.registerWormholeAndWithdraw(guid, 0);
+    }
+
+    function testFailRegisterAndWithdrawInsufficientFee() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        assertEq(vat.dai(vow), 0);
+
+        join.file("fees", "L2", address(new WormholeConstantFee(100 ether)));
+        join.registerWormholeAndWithdraw(guid, 99 ether);
+    }
+
+    function testWithdrawPending() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        join.file("line", "L2", 200_000 ether);
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        assertEq(dai.balanceOf(address(123)), 200_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+
+        join.file("line", "L2", 225_000 ether);
+        join.withdrawPending(guid, 0);
+
+        assertEq(dai.balanceOf(address(123)), 225_000 ether);
+        assertEq(_pending(guid), 25_000 ether);
+    }
+
+    function testFailWithdrawPendingWrongOperator() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(654),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        join.file("line", "L2", 200_000 ether);
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        join.file("line", "L2", 225_000 ether);
+        join.withdrawPending(guid, 0);
+    }
+
+    function testSettle() public {
+        assertEq(join.debt("L2"), -0);
+
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+
+        join.settle("L2", 100_000 ether);
+
+        assertEq(join.debt("L2"), -100_000 ether);
+    }
+
+    function testWithdrawNegativeDebt() public {
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+
+        join.settle("L2", 100_000 ether);
+
+        assertEq(join.debt("L2"), -100_000 ether);
+
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(654),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        assertEq(dai.balanceOf(address(123)), 250_000 ether);
+        assertEq(_ink(), 150_000 ether);
+        assertEq(_art(), 150_000 ether);
+    }
+
+    function testWithdrawPartialNegativeDebt() public {
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+
+        join.settle("L2", 100_000 ether);
+
+        assertEq(join.debt("L2"), -100_000 ether);
+
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(654),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        join.file("line", "L2", 100_000 ether);
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        assertEq(dai.balanceOf(address(123)), 200_000 ether);
+        assertEq(_pending(guid), 50_000 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+    }
+
+    function testWithdrawVatCaged() public {
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+
+        join.settle("L2", 100_000 ether);
+
+        assertEq(join.debt("L2"), -100_000 ether);
+
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(654),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        vat.cage();
+        assertEq(vat.live(), 0);
+
+        join.file("fees", "L2", address(new WormholeConstantFee(100 ether)));
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        assertEq(dai.balanceOf(address(123)), 100_000 ether); // Can't pay more than DAI is already in the join
+        assertEq(_pending(guid), 150_000 ether);
+        assertEq(_ink(), 0);
+        assertEq(_art(), 0);
+        assertEq(vat.dai(vow), 0); // No fees regardless the contract set
+    }
+
+    function testSettleVatCaged() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "L2",
+            targetDomain: bytes32("ETHEREUM"),
+            receiver: address(123),
+            operator: address(654),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint64(block.timestamp)
+        });
+
+        join.registerWormholeAndWithdraw(guid, 0);
+
+        assertEq(join.debt("L2"), 250_000 ether);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+
+        vat.cage();
+
+        vat.suck(address(0), address(this), 250_000 * RAD);
+        daiJoin.exit(address(join), 250_000 ether);
+
+        join.settle("L2", 250_000 ether);
+
+        assertEq(join.debt("L2"), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
     }
 }
