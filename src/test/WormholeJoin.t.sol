@@ -27,7 +27,7 @@ interface Hevm {
 }
 
 contract VatMock {
-    uint256 constant RAY = 10 ** 27;
+    uint256 internal constant RAY = 10 ** 27;
     uint256 public live = 1;
 
     struct Urn {
@@ -161,7 +161,7 @@ contract DaiJoinMock {
         vat = VatMock(vat_);
         dai = DaiMock(dai_);
     }
-    uint256 constant RAY = 10 ** 27;
+    uint256 internal constant RAY = 10 ** 27;
     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require(y == 0 || (z = x * y) / y == x);
     }
@@ -177,14 +177,14 @@ contract DaiJoinMock {
 
 contract WormholeJoinTest is DSTest {
 
-    Hevm hevm = Hevm(HEVM_ADDRESS);
-    WormholeJoin join;
-    VatMock vat;
-    DaiMock dai;
-    DaiJoinMock daiJoin;
-    address vow = address(111);
+    Hevm internal hevm = Hevm(HEVM_ADDRESS);
+    WormholeJoin internal join;
+    VatMock internal vat;
+    DaiMock internal dai;
+    DaiJoinMock internal daiJoin;
+    address internal vow = address(111);
 
-    uint256 constant RAD = 10**45;
+    uint256 internal constant RAD = 10**45;
 
     function setUp() public {
         vat = new VatMock();
