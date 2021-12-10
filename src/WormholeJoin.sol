@@ -48,7 +48,7 @@ contract WormholeJoin {
     mapping (address =>        uint256) public wards;     // Auth
     mapping (bytes32 =>        address) public fees;      // Fees contract per source domain
     mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
-    mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be negative if unclaimed amounts get accumulated for some time)
+    mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
     mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
 
     address public vow;

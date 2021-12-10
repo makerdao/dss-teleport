@@ -29,6 +29,8 @@ interface TokenLike {
 
 interface L1BridgeLike {
     function escrow() external returns (address);
+    function initiateRequestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
+    function initiateSettle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
 contract WormholeRouter {
@@ -60,6 +62,16 @@ contract WormholeRouter {
         emit Rely(msg.sender);
     }
 
+    function rely(address usr) external auth {
+        wards[usr] = 1;
+        emit Rely(usr);
+    }
+
+    function deny(address usr) external auth {
+        wards[usr] = 0;
+        emit Deny(usr);
+    }
+
     function file(bytes32 what, bytes32 domain, address data) external auth {
         if (what == "bridge") {
             address prevBridge = bridges[domain];
@@ -67,7 +79,9 @@ contract WormholeRouter {
                 domains[prevBridge] = bytes32(0);
             }
             bridges[domain] = data;
-            domains[data] = domain;
+            if(data != address(0)) {
+                domains[data] = domain;
+            }
         } else {
             revert("WormholeRouter/file-unrecognized-param");
         }
@@ -75,29 +89,41 @@ contract WormholeRouter {
     }
 
     /**
-     * @notice Call WormholeJoin to mint DAI. The sender must be a supported bridge
+     * @notice Call WormholeJoin (or a domain's L1 bridge) to request the minting of DAI. The sender must be a supported bridge
      * @param wormholeGUID The wormhole GUID to register
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(msg.sender == bridges[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-bridge");
-        // We only support L1 as target for now
-        require(wormholeGUID.targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
-        wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
+        if(wormholeGUID.targetDomain == l1Domain) {
+            wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
+        } else {
+            address targetBridge = bridges[wormholeGUID.targetDomain];
+            require(targetBridge != address(0), "WormholeRouter/unsupported-target-domain");
+            L1BridgeLike(targetBridge).initiateRequestMint(wormholeGUID, maxFee);
+        }
     }
 
     /**
-     * @notice Call WormholeJoin to settle a batch of L2 -> L1 DAI withdrawals. The sender must be a supported bridge
+     * @notice Call WormholeJoin (or a domain's L1 bridge) to settle a batch of sourceDomain -> targetDomain DAI transfer. 
+     * The sender must be a supported bridge
      * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
      * @param batchedDaiToFlush The amount of DAI in the batch 
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
         require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-bridge");
-        // We only support L1 as target for now
-        require(targetDomain == l1Domain, "WormholeRouter/unsupported-target-domain");
-        // Push the DAI to settle to wormholeJoin (TODO: to be changed if wormholeJoin pulls DAI directly from the escrow)
-        dai.transferFrom(L1BridgeLike(msg.sender).escrow(), address(wormholeJoin), batchedDaiToFlush);
-        wormholeJoin.settle(sourceDomain, batchedDaiToFlush);
+
+        if(targetDomain == l1Domain) {
+            // Push the DAI to settle to wormholeJoin (TODO: to be changed if wormholeJoin pulls DAI directly from the escrow)
+            dai.transferFrom(L1BridgeLike(msg.sender).escrow(), address(wormholeJoin), batchedDaiToFlush);
+            wormholeJoin.settle(sourceDomain, batchedDaiToFlush);
+        } else {
+            address targetBridge = bridges[targetDomain];
+            require(targetBridge != address(0), "WormholeRouter/unsupported-target-domain");
+            // Push the DAI to settle to the escrow of the target bridge
+            dai.transferFrom(L1BridgeLike(msg.sender).escrow(), L1BridgeLike(targetBridge).escrow(), batchedDaiToFlush);
+            L1BridgeLike(targetBridge).initiateSettle(sourceDomain, batchedDaiToFlush);
+        }
     }
 }
