@@ -51,10 +51,10 @@ contract WormholeJoin {
     mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
     mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
 
-    address public vow;
 
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
+    address     immutable public vow;
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
 
@@ -62,7 +62,6 @@ contract WormholeJoin {
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
@@ -74,11 +73,12 @@ contract WormholeJoin {
         uint248 pending;
     }
 
-    constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
+    constructor(address vat_, address daiJoin_, address vow_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
         vat = VatLike(vat_);
         daiJoin = DaiJoinLike(daiJoin_);
+        vow = vow_;
         vat.hope(daiJoin_);
         daiJoin.dai().approve(daiJoin_, type(uint256).max);
         ilk = ilk_;
@@ -102,15 +102,6 @@ contract WormholeJoin {
     function deny(address usr) external auth {
         wards[usr] = 0;
         emit Deny(usr);
-    }
-
-    function file(bytes32 what, address data) external auth {
-        if (what == "vow") {
-            vow = data;
-        } else {
-            revert("WormholeJoin/file-unrecognized-param");
-        }
-        emit File(what, data);
     }
 
     function file(bytes32 what, bytes32 domain_, address data) external auth {
