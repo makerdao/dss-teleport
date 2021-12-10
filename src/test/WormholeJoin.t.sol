@@ -274,7 +274,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         assertEq(dai.balanceOf(address(123)), 0);
@@ -300,7 +300,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.file("line", "L2", 200_000 ether);
@@ -321,7 +321,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.file("line", "L2", 0);
@@ -342,7 +342,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         assertEq(vat.dai(vow), 0);
@@ -365,7 +365,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
         join.registerWormholeAndWithdraw(guid, 0);
         join.registerWormholeAndWithdraw(guid, 0);
@@ -379,7 +379,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
         join.registerWormholeAndWithdraw(guid, 0);
     }
@@ -392,7 +392,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         assertEq(vat.dai(vow), 0);
@@ -409,7 +409,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(this),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.file("line", "L2", 200_000 ether);
@@ -434,7 +434,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(654),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.file("line", "L2", 200_000 ether);
@@ -470,7 +470,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(654),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.registerWormholeAndWithdraw(guid, 0);
@@ -495,7 +495,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(654),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.file("line", "L2", 100_000 ether);
@@ -522,7 +522,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(654),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         vat.cage();
@@ -546,7 +546,7 @@ contract WormholeJoinTest is DSTest {
             operator: address(654),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint64(block.timestamp)
+            timestamp: uint48(block.timestamp)
         });
 
         join.registerWormholeAndWithdraw(guid, 0);
