@@ -207,7 +207,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External authed function that repays debt with DAI coming from the bridges
+    * @dev External function that repays debt with DAI previously pushed to this contract (in general coming from the bridges)
     * @param sourceDomain domain where the DAI is coming from
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
