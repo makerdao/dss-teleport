@@ -177,8 +177,8 @@ contract WormholeJoin {
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
-        debt[wormholeGUID.sourceDomain]     +=  int256(amtToTake);
-        wormholes[hashGUID].pending         -= uint248(amtToTake);
+        debt[wormholeGUID.sourceDomain] +=  int256(amtToTake);
+        wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         // Update debt running totals
         uint256 newDebt = Debt[wormholeGUID.sourceDomain] + amtToTake;
