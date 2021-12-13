@@ -53,21 +53,21 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function test_isValid() public {
-        bytes32 signHash = keccak256('msg');
+        bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
     function testFail_isValid_notEnoughSig() public {
-        bytes32 signHash = keccak256('msg');
+        bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
         assertTrue(auth.isValid(signHash, signatures, signers.length + 1));
     }
 
     function testFail_isValid_badSig() public {
-        bytes32 signHash = keccak256('msg');
+        bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
         signatures[0] = bytes1(uint8((uint256(uint8(signatures[0])) + 1) % 256));
@@ -77,7 +77,7 @@ contract WormholeOracleAuthTest is DSTest {
     function test_mint() public {
         WormholeGUID memory guid;
         guid.operator = address(this);
-        guid.sourceDomain = bytes32("arbitrum");
+        guid.sourceDomain = bytes32("l2network");
         guid.targetDomain = bytes32("ethereum");
         guid.receiver = address(this);
         guid.amount = 100;
