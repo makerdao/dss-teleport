@@ -53,13 +53,13 @@ contract WormholeJoin {
     mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
 
     // Bad debt tracking
-    mapping (bytes32 => mapping(uint256 => uint256)) public debtQueue; // Bucketed debt queue by era
-    mapping (bytes32 =>                     uint256) public ttl;       // Time before considering unpaid debt as bad debt
-    mapping (bytes32 =>                     uint256) public Debt;      // Running total of the debt
-    mapping (bytes32 =>                     uint256) public Paid;      // Running total of the settlements
+    mapping (bytes32 => mapping(uint256 => uint256)) public eras;   // Bucketed debt queue per era per source domain
+    mapping (bytes32 =>                     uint256) public ttl;    // Time before considering unpaid debt as bad debt per source domain
+    mapping (bytes32 =>                     uint256) public bucket; // Bucket granularity [sec] per source domain
+    mapping (bytes32 =>                     uint256) public takes;  // Running total of the debt per source domain
+    mapping (bytes32 =>                     uint256) public rakes;  // Running total of the settlements per source domain
 
     address public vow;
-    uint256 public bucket;    // Bucket granularity [sec]
 
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
@@ -71,7 +71,6 @@ contract WormholeJoin {
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, address data);
-    event File(bytes32 indexed what, uint256 data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
@@ -84,7 +83,7 @@ contract WormholeJoin {
         uint248 pending;
     }
 
-    constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_, uint256 bucket_) {
+    constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
         vat = VatLike(vat_);
@@ -93,7 +92,6 @@ contract WormholeJoin {
         daiJoin.dai().approve(daiJoin_, type(uint256).max);
         ilk = ilk_;
         domain = domain_;
-        bucket = bucket_;
     }
 
     function _min(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -138,6 +136,10 @@ contract WormholeJoin {
             line[domain_] = data;
         } else if (what == "ttl") {
             ttl[domain_] = data;
+        } else if (what == "bucket") {
+            require(bucket[domain_] == 0, "WormholeJoin/bucket-already-set");
+
+            bucket[domain_] = data;
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
@@ -181,9 +183,9 @@ contract WormholeJoin {
         wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         // Update debt running totals
-        uint256 newDebt = Debt[wormholeGUID.sourceDomain] + amtToTake;
-        Debt[wormholeGUID.sourceDomain] = newDebt;
-        debtQueue[wormholeGUID.sourceDomain][block.timestamp / bucket] = newDebt;
+        uint256 newDebt = takes[wormholeGUID.sourceDomain] + amtToTake;
+        takes[wormholeGUID.sourceDomain] = newDebt;
+        eras[wormholeGUID.sourceDomain][block.timestamp / bucket[wormholeGUID.sourceDomain]] = newDebt;
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
             uint256 amtToGenerate = debt_ < 0 ? amtToTake - uint256(-debt_) : amtToTake;
@@ -242,7 +244,7 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), -int256(amtToPayBack));
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
-        Paid[sourceDomain] += batchedDaiToFlush;
+        rakes[sourceDomain] += batchedDaiToFlush;
         emit Settle(sourceDomain, batchedDaiToFlush);
     }
 
@@ -252,15 +254,16 @@ contract WormholeJoin {
     * @param era the era in which the bad debt occurred.
     **/
     function rectify(bytes32 sourceDomain, uint256 era) external {
-        require(era * bucket + ttl[sourceDomain] <= block.timestamp, "WormholeJoin/ttl-not-expired");
+        require(vat.live() == 1, "WormholeJoin/vat-not-live");
+        require(era * bucket[sourceDomain] + ttl[sourceDomain] <= block.timestamp, "WormholeJoin/ttl-not-expired");
 
-        uint256 _debt = debtQueue[sourceDomain][era];
-        uint256 paid = Paid[sourceDomain];
-        require(paid < _debt, "WormholeJoin/debt-repaid");
+        uint256 eraDebt = eras[sourceDomain][era];
+        uint256 daiSettled = rakes[sourceDomain];
+        require(daiSettled < eraDebt, "WormholeJoin/debt-repaid");
 
-        uint256 badDebt = _debt - paid;
+        uint256 badDebt = eraDebt - daiSettled;
         require(badDebt <= 2 ** 255, "WormholeJoin/overflow");
-        Paid[sourceDomain] = paid + badDebt;
+        rakes[sourceDomain] = daiSettled + badDebt;
         vat.suck(vow, address(this), badDebt * RAY);
 
         if (vat.live() == 1) {
