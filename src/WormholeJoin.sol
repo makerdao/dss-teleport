@@ -266,12 +266,10 @@ contract WormholeJoin {
         rakes[sourceDomain] = daiSettled + badDebt;
         vat.suck(vow, address(this), badDebt * RAY);
 
-        if (vat.live() == 1) {
-            (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(badDebt, art);
-            vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
-            vat.slip(ilk, address(this), -int256(amtToPayBack));
-        }
+        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+        uint256 amtToPayBack = _min(badDebt, art);
+        vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
+        vat.slip(ilk, address(this), -int256(amtToPayBack));
         debt[sourceDomain] -= int256(badDebt);  // Cast checked above
         emit Rectify(sourceDomain, era, badDebt);
     }
