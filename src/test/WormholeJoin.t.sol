@@ -445,7 +445,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testSettle() public {
-        assertEq(join.debt("l2network"), -0);
+        assertEq(join.debt("l2network"), 0);
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(join), 100_000 ether);
