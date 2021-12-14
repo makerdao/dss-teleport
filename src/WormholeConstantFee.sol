@@ -20,13 +20,13 @@ import {WormholeFees} from "./WormholeFees.sol";
 import {WormholeGUID} from "./WormholeGUID.sol";
 
 contract WormholeConstantFee is WormholeFees {
-  uint256 immutable public fee;
+    uint256 immutable public fee;
 
-  constructor(uint256 _fee) {
-    fee = _fee;
-  }
+    constructor(uint256 _fee) {
+        fee = _fee;
+    }
 
-  function getFees(WormholeGUID calldata) override external view returns (uint256) {
-    return fee;
-  }
+    function getFees(WormholeGUID calldata, uint256, int256) override external view returns (uint256) {
+        return fee;
+    }
 }
