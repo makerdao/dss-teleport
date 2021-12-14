@@ -34,11 +34,13 @@ interface L1BridgeLike {
 
 contract WormholeRouter {
 
-    mapping (address => uint256) public wards;   // Auth
-    mapping (bytes32 => address) public bridges; // L1 bridges for each domain
+    mapping (address => uint256) public wards;          // Auth
+    mapping (bytes32 => address) public bridges;        // L1 bridges for each domain
     // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
-    mapping (address => bytes32) public domains; // Domains for each bridge
-    
+    mapping (address => bytes32) public domains;        // Domains for each bridge
+    mapping (bytes32 => uint256) public activePosition; // The domain's position in the active array
+
+    bytes32[] public active;  // Array of active domains
 
     bytes32 immutable public l1Domain; // The id of the L1 domain, e.g. bytes32("ethereum") or bytes32("goerli")
     TokenLike immutable public dai; // L1 DAI ERC20 token
@@ -76,15 +78,32 @@ contract WormholeRouter {
             address prevBridge = bridges[domain];
             if(prevBridge != address(0)) {
                 domains[prevBridge] = bytes32(0);
+
+                // Keep active array and indicies up-to-date
+                uint256 pos = activePosition[domain];
+                uint256 lastIndex = active.count - 1;
+                if (pos != lastIndex) {
+                    bytes32 lastItem = active[lastIndex];
+                    active[pos] = lastItem;
+                    activePosition[lastItem] = pos;
+                }
+                active.pop();
+                delete activePosition[domain];
             }
             bridges[domain] = data;
             if(data != address(0)) {
                 domains[data] = domain;
+                activePosition[domain] = active.count;
+                active.push(domain);
             }
         } else {
             revert("WormholeRouter/file-unrecognized-param");
         }
         emit File(what, domain, data);
+    }
+
+    function numActiveDomains() external view returns (uint256) {
+        return active.length;
     }
 
     /**
