@@ -148,7 +148,8 @@ contract WormholeJoin {
         int256 debt_ = debt[wormholeGUID.sourceDomain];
 
         // Stop execution if there isn't anything available to withdraw
-        if (int256(line_) <= debt_ || wormholes[hashGUID].pending == 0) {
+        uint248 pending = wormholes[hashGUID].pending;
+        if (int256(line_) <= debt_ || pending == 0) {
             emit Withdraw(hashGUID, wormholeGUID, 0, maxFee);
             return;
         }
@@ -157,7 +158,7 @@ contract WormholeJoin {
         require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
 
         uint256 amtToTake = _min(
-                                wormholes[hashGUID].pending,
+                                pending,
                                 uint256(int256(line_) - debt_)
                             );
 
