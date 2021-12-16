@@ -78,8 +78,10 @@ contract WormholeRouter {
             address prevBridge = bridges[domain];
             if(prevBridge == address(0)) { 
                 // new domain => add it to allDomains
-                domainIndices[domain] = allDomains.count;
-                allDomains.push(domain);
+                if(bridge != address(0)) {
+                    domainIndices[domain] = allDomains.count;
+                    allDomains.push(domain);
+                }
             } else { 
                 // existing domain 
                 domains[prevBridge] = bytes32(0);
