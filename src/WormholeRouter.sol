@@ -79,7 +79,7 @@ contract WormholeRouter {
             if(prevBridge == address(0)) { 
                 // new domain => add it to allDomains
                 if(bridge != address(0)) {
-                    domainIndices[domain] = allDomains.count;
+                    domainIndices[domain] = allDomains.length;
                     allDomains.push(domain);
                 }
             } else { 
@@ -88,7 +88,7 @@ contract WormholeRouter {
                 if(bridge == address(0)) {
                     // => remove domain from allDomains
                     uint256 pos = domainIndices[domain];
-                    uint256 lastIndex = allDomains.count - 1;
+                    uint256 lastIndex = allDomains.length - 1;
                     if (pos != lastIndex) {
                         bytes32 lastDomain = allDomains[lastIndex];
                         allDomains[pos] = lastDomain;
