@@ -38,9 +38,9 @@ contract WormholeRouter {
     mapping (bytes32 => address) public bridges;        // L1 bridges for each domain
     // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
     mapping (address => bytes32) public domains;        // Domains for each bridge
-    mapping (bytes32 => uint256) public activePosition; // The domain's position in the active array
+    mapping (bytes32 => uint256) public domainIndices; // The domain's position in the active domain array
 
-    bytes32[] public active;  // Array of active domains
+    bytes32[] public allDomains;  // Array of active domains
 
     bytes32 immutable public l1Domain; // The id of the L1 domain, e.g. bytes32("ethereum") or bytes32("goerli")
     TokenLike immutable public dai; // L1 DAI ERC20 token
@@ -73,37 +73,43 @@ contract WormholeRouter {
         emit Deny(usr);
     }
 
-    function file(bytes32 what, bytes32 domain, address data) external auth {
+    function file(bytes32 what, bytes32 domain, address bridge) external auth {
         if (what == "bridge") {
             address prevBridge = bridges[domain];
-            if(prevBridge != address(0)) {
-                domains[prevBridge] = bytes32(0);
-
-                // Keep active array and indicies up-to-date
-                uint256 pos = activePosition[domain];
-                uint256 lastIndex = active.count - 1;
-                if (pos != lastIndex) {
-                    bytes32 lastItem = active[lastIndex];
-                    active[pos] = lastItem;
-                    activePosition[lastItem] = pos;
+            if(prevBridge == address(0)) { 
+                // new domain => add it to allDomains
+                if(bridge != address(0)) {
+                    domainIndices[domain] = allDomains.length;
+                    allDomains.push(domain);
                 }
-                active.pop();
-                delete activePosition[domain];
+            } else { 
+                // existing domain 
+                domains[prevBridge] = bytes32(0);
+                if(bridge == address(0)) {
+                    // => remove domain from allDomains
+                    uint256 pos = domainIndices[domain];
+                    uint256 lastIndex = allDomains.length - 1;
+                    if (pos != lastIndex) {
+                        bytes32 lastDomain = allDomains[lastIndex];
+                        allDomains[pos] = lastDomain;
+                        domainIndices[lastDomain] = pos;
+                    }
+                    allDomains.pop();
+                    delete domainIndices[domain];
+                }
             }
-            bridges[domain] = data;
-            if(data != address(0)) {
-                domains[data] = domain;
-                activePosition[domain] = active.count;
-                active.push(domain);
+
+            if(bridge != address(0)) {
+                domains[bridge] = domain;
             }
         } else {
             revert("WormholeRouter/file-unrecognized-param");
         }
-        emit File(what, domain, data);
+        emit File(what, domain, bridge);
     }
 
     function numActiveDomains() external view returns (uint256) {
-        return active.length;
+        return allDomains.length;
     }
 
     /**
