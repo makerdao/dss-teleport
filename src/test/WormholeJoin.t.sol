@@ -384,7 +384,7 @@ contract WormholeJoinTest is DSTest {
         join.requestMint(guid, 0);
     }
 
-    function testFailRegisterAndWithdrawInsufficientFee() public {
+    function testFailRequestMintInsufficientFee() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
