@@ -26,13 +26,19 @@ contract WormholeJoinMock {
 }
 
 contract DaiMock {
+    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {}
+}
+
+contract L1BridgeMock {
+    function initiateRequestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function initiateSettle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
 contract WormholeRouterTest is DSTest {
     WormholeRouter internal router;
 
     function setUp() public {
-        router = new WormholeRouter("mainnet", address(new DaiMock()), address(new WormholeJoinMock()));
+        router = new WormholeRouter("ethereum", address(new DaiMock()), address(new WormholeJoinMock()));
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -183,5 +189,91 @@ contract WormholeRouterTest is DSTest {
 
     function testFailFileInvalidWhat() public {
         router.file("meh", "aaa", address(888));
+    }
+
+    function testFailRequestMintFromNotBridge() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: address(123),
+            operator: address(234),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        router.file("bridge", "l2network", address(555));
+
+        router.requestMint(guid, 100 ether);
+    }
+
+    function testRequestMintTargetingL1() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: address(123),
+            operator: address(234),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        router.file("bridge", "l2network", address(this));
+
+        router.requestMint(guid, 100 ether);
+    }
+
+    function testRequestMintTargetingL2() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "another-l2network",
+            receiver: address(123),
+            operator: address(234),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        router.file("bridge", "l2network", address(this));
+        router.file("bridge", "another-l2network", address(new L1BridgeMock()));
+
+        router.requestMint(guid, 100 ether);
+    }
+
+    function testFailRequestMintTargetingInvalidDomain() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "invalid-network",
+            receiver: address(123),
+            operator: address(234),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        router.file("bridge", "l2network", address(this));
+
+        router.requestMint(guid, 100 ether);
+    }
+
+    function testFailSettleFromNotBridge() public {
+        router.file("bridge", "l2network", address(555));
+
+        router.settle("ethereum", 100 ether);
+    }
+
+    function testSettleTargetingL1() public {
+        router.file("bridge", "l2network", address(this));
+
+        router.settle("ethereum", 100 ether);
+    }
+
+    function testSettleTargetingL2() public {
+        router.file("bridge", "l2network", address(this));
+        router.file("bridge", "another-l2network", address(new L1BridgeMock()));
+
+        router.settle("another-l2network", 100 ether);
+    }
+
+    function testFailSettleTargetingInvalidDomain() public {
+        router.file("bridge", "l2network", address(this));
+
+        router.settle("invalid-network", 100 ether);
     }
 }
