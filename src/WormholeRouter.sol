@@ -75,6 +75,7 @@ contract WormholeRouter {
 
     function file(bytes32 what, bytes32 domain, address bridge) external auth {
         if (what == "bridge") {
+            require(domain != l1Domain, "WormholeRouter/invalid-domain");
             address prevBridge = bridges[domain];
             if(prevBridge == address(0)) { 
                 // new domain => add it to allDomains
