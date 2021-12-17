@@ -31,7 +31,6 @@ contract WormholeRouter {
 
     mapping (address => uint256) public wards;          // Auth
     mapping (bytes32 => address) public targets;        // L1 bridges for each L2 domain (or the WormholeJoin for the L1 domain)
-    // TODO: the reverse mapping is not needed if the L1 bridge can pass its own domain id to router.settle()
     mapping (address => bytes32) public domains;        // Domains for each target
     mapping (bytes32 => uint256) public domainIndices; // The domain's position in the active domain array
 
