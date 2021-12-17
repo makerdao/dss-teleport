@@ -31,9 +31,14 @@ contract DaiMock {
 
 contract WormholeRouterTest is DSTest {
     WormholeRouter internal router;
+    address internal dai;
+    address internal wormholeJoin;
+    bytes32 constant internal l1Domain = "ethereum";
 
     function setUp() public {
-        router = new WormholeRouter("ethereum", address(new DaiMock()), address(new TargetMock()));
+        dai = address(new DaiMock());
+        wormholeJoin = address(new TargetMock());
+        router = new WormholeRouter(l1Domain, dai, wormholeJoin);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -46,6 +51,13 @@ contract WormholeRouterTest is DSTest {
 
     function _tryFile(bytes32 what, bytes32 domain, address data) internal returns (bool ok) {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, domain, data));
+    }
+
+    function testConstructor() public {
+        assertEq(router.l1Domain(), l1Domain);
+        assertEq(address(router.dai()), dai);
+        assertEq(router.targets(l1Domain), wormholeJoin);
+        assertEq(router.wards(address(this)), 1);
     }
 
     function testRelyDeny() public {
@@ -189,7 +201,7 @@ contract WormholeRouterTest is DSTest {
     function testFailRequestMintFromNotBridge() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
-            targetDomain: "ethereum",
+            targetDomain: l1Domain,
             receiver: address(123),
             operator: address(234),
             amount: 250_000 ether,
@@ -204,7 +216,7 @@ contract WormholeRouterTest is DSTest {
     function testRequestMintTargetingL1() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
-            targetDomain: "ethereum",
+            targetDomain: l1Domain,
             receiver: address(123),
             operator: address(234),
             amount: 250_000 ether,
@@ -250,13 +262,13 @@ contract WormholeRouterTest is DSTest {
     function testFailSettleFromNotBridge() public {
         router.file("bridge", "l2network", address(555));
 
-        router.settle("ethereum", 100 ether);
+        router.settle(l1Domain, 100 ether);
     }
 
     function testSettleTargetingL1() public {
         router.file("bridge", "l2network", address(this));
 
-        router.settle("ethereum", 100 ether);
+        router.settle(l1Domain, 100 ether);
     }
 
     function testSettleTargetingL2() public {
