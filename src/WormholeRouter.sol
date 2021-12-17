@@ -22,7 +22,7 @@ interface TokenLike {
   function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
 }
 
-interface TargetLike {
+interface GatewayLike {
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
@@ -30,28 +30,25 @@ interface TargetLike {
 contract WormholeRouter {
 
     mapping (address => uint256) public wards;          // Auth
-    mapping (bytes32 => address) public targets;        // L1 bridges for each L2 domain (or the WormholeJoin for the L1 domain)
-    mapping (address => bytes32) public domains;        // Domains for each target
-    mapping (bytes32 => uint256) public domainIndices; // The domain's position in the active domain array
+    mapping (bytes32 => address) public gateways;       // GatewayLike contracts called by the router for each domain
+    mapping (address => bytes32) public domains;        // Domains for each gateway
+    mapping (bytes32 => uint256) public domainIndices;  // The domain's position in the active domain array
 
     bytes32[] public allDomains;  // Array of active domains
 
-    bytes32 immutable public l1Domain; // The id of the L1 domain, e.g. bytes32("ethereum") or bytes32("goerli")
     TokenLike immutable public dai; // L1 DAI ERC20 token
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, bytes32 domain, address data);
+    event File(bytes32 indexed what, bytes32 domain, address gateway);
 
     modifier auth {
         require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
         _;
     }
 
-    constructor(bytes32 l1Domain_, address dai_, address wormholeJoin_) {
-        l1Domain = l1Domain_;
+    constructor(address dai_) {
         dai = TokenLike(dai_);
-        targets[l1Domain_] = wormholeJoin_;
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -66,20 +63,19 @@ contract WormholeRouter {
         emit Deny(usr);
     }
 
-    function file(bytes32 what, bytes32 domain, address bridge) external auth {
-        if (what == "bridge") {
-            require(domain != l1Domain, "WormholeRouter/invalid-domain");
-            address prevBridge = targets[domain];
-            if(prevBridge == address(0)) { 
+    function file(bytes32 what, bytes32 domain, address gateway) external auth {
+        if (what == "gateway") {
+            address prevGateway = gateways[domain];
+            if(prevGateway == address(0)) { 
                 // new domain => add it to allDomains
-                if(bridge != address(0)) {
+                if(gateway != address(0)) {
                     domainIndices[domain] = allDomains.length;
                     allDomains.push(domain);
                 }
             } else { 
                 // existing domain 
-                domains[prevBridge] = bytes32(0);
-                if(bridge == address(0)) {
+                domains[prevGateway] = bytes32(0);
+                if(gateway == address(0)) {
                     // => remove domain from allDomains
                     uint256 pos = domainIndices[domain];
                     uint256 lastIndex = allDomains.length - 1;
@@ -93,14 +89,14 @@ contract WormholeRouter {
                 }
             }
 
-            targets[domain] = bridge;
-            if(bridge != address(0)) {
-                domains[bridge] = domain;
+            gateways[domain] = gateway;
+            if(gateway != address(0)) {
+                domains[gateway] = domain;
             }
         } else {
             revert("WormholeRouter/file-unrecognized-param");
         }
-        emit File(what, domain, bridge);
+        emit File(what, domain, gateway);
     }
 
     function numActiveDomains() external view returns (uint256) {
@@ -108,30 +104,30 @@ contract WormholeRouter {
     }
 
     /**
-     * @notice Call WormholeJoin (or a domain's L1 bridge) to request the minting of DAI. The sender must be a supported bridge
+     * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
      * @param wormholeGUID The wormhole GUID to register
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
-        require(msg.sender == targets[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-bridge");
-        address target = targets[wormholeGUID.targetDomain];
-        require(target != address(0), "WormholeRouter/unsupported-target-domain");
-        TargetLike(target).requestMint(wormholeGUID, maxFee);
+        require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
+        address gateway = gateways[wormholeGUID.targetDomain];
+        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
+        GatewayLike(gateway).requestMint(wormholeGUID, maxFee);
     }
 
     /**
-     * @notice Call WormholeJoin (or a domain's L1 bridge) to settle a batch of sourceDomain -> targetDomain DAI transfer. 
-     * The sender must be a supported bridge
+     * @notice Call a GatewayLike contract to settle a batch of sourceDomain -> targetDomain DAI transfer. 
+     * The sender must be a supported gateway
      * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
      * @param batchedDaiToFlush The amount of DAI in the batch 
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
-        require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-bridge");
-        address target = targets[targetDomain];
-        require(target != address(0), "WormholeRouter/unsupported-target-domain");
-         // Forward the DAI to settle to the target bridge (or to wormholeJoin if the targetDomain is L1)
-        dai.transferFrom(msg.sender, target, batchedDaiToFlush);
-        TargetLike(target).settle(sourceDomain, batchedDaiToFlush);
+        require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-gateway");
+        address gateway = gateways[targetDomain];
+        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
+         // Forward the DAI to settle to the gateway contract
+        dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
+        GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
     }
 }
