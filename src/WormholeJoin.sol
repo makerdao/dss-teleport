@@ -187,7 +187,7 @@ contract WormholeJoin {
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
         require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
