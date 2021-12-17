@@ -100,6 +100,7 @@ contract WormholeRouter {
                 }
             }
 
+            bridges[domain] = bridge;
             if(bridge != address(0)) {
                 domains[bridge] = domain;
             }
