@@ -19,7 +19,7 @@ pragma solidity 0.8.9;
 import "./WormholeGUID.sol";
 
 interface WormholeJoinLike {
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
 }
 
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
@@ -92,7 +92,7 @@ contract WormholeOracleAuth {
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
         require(wormholeGUID.operator == msg.sender, "WormholeOracleAuth/not-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        wormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxFee);
+        wormholeJoin.requestMint(wormholeGUID, maxFee);
     }
 
     /**
