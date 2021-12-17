@@ -26,7 +26,7 @@ interface Hevm {
 }
 
 contract WormholeJoinMock {
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
 }
 
 contract WormholeOracleAuthTest is DSTest {

@@ -20,8 +20,8 @@ import "ds-test/test.sol";
 
 import "src/WormholeRouter.sol";
 
-contract WormholeJoinMock {
-    function registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+contract TargetMock {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
@@ -29,16 +29,16 @@ contract DaiMock {
     function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {}
 }
 
-contract L1BridgeMock {
-    function initiateRequestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
-    function initiateSettle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
-}
-
 contract WormholeRouterTest is DSTest {
     WormholeRouter internal router;
+    address internal dai;
+    address internal wormholeJoin;
+    bytes32 constant internal l1Domain = "ethereum";
 
     function setUp() public {
-        router = new WormholeRouter("ethereum", address(new DaiMock()), address(new WormholeJoinMock()));
+        dai = address(new DaiMock());
+        wormholeJoin = address(new TargetMock());
+        router = new WormholeRouter(dai);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -51,6 +51,11 @@ contract WormholeRouterTest is DSTest {
 
     function _tryFile(bytes32 what, bytes32 domain, address data) internal returns (bool ok) {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, domain, data));
+    }
+
+    function testConstructor() public {
+        assertEq(address(router.dai()), dai);
+        assertEq(router.wards(address(this)), 1);
     }
 
     function testRelyDeny() public {
@@ -67,35 +72,35 @@ contract WormholeRouterTest is DSTest {
     }
 
     function testFileFailsWhenNotAuthed() public {
-        assertTrue(_tryFile("bridge", "dom", address(888)));
+        assertTrue(_tryFile("gateway", "dom", address(888)));
         router.deny(address(this));
-        assertTrue(!_tryFile("bridge", "dom", address(888)));
+        assertTrue(!_tryFile("gateway", "dom", address(888)));
     }
 
     function testFileNewDomains() public {
         bytes32 domain1 = "newdom1";
-        address bridge1 = address(111);
-        assertEq(router.bridges(domain1), address(0));
-        assertEq(router.domains(bridge1), bytes32(0));
+        address gateway1 = address(111);
+        assertEq(router.gateways(domain1), address(0));
+        assertEq(router.domains(gateway1), bytes32(0));
         assertEq(router.numActiveDomains(), 0);
 
-        assertTrue(_tryFile("bridge", domain1, bridge1));
+        assertTrue(_tryFile("gateway", domain1, gateway1));
 
-        assertEq(router.bridges(domain1), bridge1);
-        assertEq(router.domains(bridge1), domain1);
+        assertEq(router.gateways(domain1), gateway1);
+        assertEq(router.domains(gateway1), domain1);
         assertEq(router.numActiveDomains(), 1);
         assertEq(router.allDomains(0), domain1);
         assertEq(router.domainIndices(domain1), 0);
 
         bytes32 domain2 = "newdom2";
-        address bridge2 = address(222);
-        assertEq(router.bridges(domain2), address(0));
-        assertEq(router.domains(bridge2), bytes32(0));
+        address gateway2 = address(222);
+        assertEq(router.gateways(domain2), address(0));
+        assertEq(router.domains(gateway2), bytes32(0));
 
-        assertTrue(_tryFile("bridge", domain2, bridge2));
+        assertTrue(_tryFile("gateway", domain2, gateway2));
 
-        assertEq(router.bridges(domain2), bridge2);
-        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.gateways(domain2), gateway2);
+        assertEq(router.domains(gateway2), domain2);
         assertEq(router.numActiveDomains(), 2);
         assertEq(router.allDomains(0), domain1);
         assertEq(router.allDomains(1), domain2);
@@ -103,22 +108,22 @@ contract WormholeRouterTest is DSTest {
         assertEq(router.domainIndices(domain2), 1);
     }
 
-    function testFileNewBridgeForExistingDomain() public {
+    function testFileNewGatewayForExistingDomain() public {
         bytes32 domain = "dom";
-        address bridge1 = address(111);
-        assertTrue(_tryFile("bridge", domain, bridge1));
-        assertEq(router.bridges(domain), bridge1);
-        assertEq(router.domains(bridge1), domain);
+        address gateway1 = address(111);
+        assertTrue(_tryFile("gateway", domain, gateway1));
+        assertEq(router.gateways(domain), gateway1);
+        assertEq(router.domains(gateway1), domain);
         assertEq(router.numActiveDomains(), 1);
         assertEq(router.allDomains(0), domain);
         assertEq(router.domainIndices(domain), 0);
-        address bridge2 = address(222);
+        address gateway2 = address(222);
         
-        assertTrue(_tryFile("bridge", domain, bridge2));
+        assertTrue(_tryFile("gateway", domain, gateway2));
 
-        assertEq(router.bridges(domain), bridge2);
-        assertEq(router.domains(bridge1), bytes32(0));
-        assertEq(router.domains(bridge2), domain);
+        assertEq(router.gateways(domain), gateway2);
+        assertEq(router.domains(gateway1), bytes32(0));
+        assertEq(router.domains(gateway2), domain);
         assertEq(router.numActiveDomains(), 1);
         assertEq(router.allDomains(0), domain);
         assertEq(router.domainIndices(domain), 0);
@@ -126,19 +131,19 @@ contract WormholeRouterTest is DSTest {
 
     function testFileRemoveLastDomain() public {
         bytes32 domain = "dom";
-        address bridge = address(111);
-        assertTrue(_tryFile("bridge", domain, bridge));
-        assertEq(router.bridges(domain), bridge);
-        assertEq(router.domains(bridge), domain);
+        address gateway = address(111);
+        assertTrue(_tryFile("gateway", domain, gateway));
+        assertEq(router.gateways(domain), gateway);
+        assertEq(router.domains(gateway), domain);
         assertEq(router.numActiveDomains(), 1);
         assertEq(router.allDomains(0), domain);
         assertEq(router.domainIndices(domain), 0);
 
         // Remove last domain
-        assertTrue(_tryFile("bridge", domain, address(0)));
+        assertTrue(_tryFile("gateway", domain, address(0)));
 
-        assertEq(router.bridges(domain), address(0));
-        assertEq(router.domains(bridge), bytes32(0));
+        assertEq(router.gateways(domain), address(0));
+        assertEq(router.domains(gateway), bytes32(0));
         assertEq(router.numActiveDomains(), 0);
         assertEq(router.domainIndices(domain), 0);
     }
@@ -147,14 +152,14 @@ contract WormholeRouterTest is DSTest {
     function testFileRemoveNotLastDomain() public {
         bytes32 domain1 = "dom1";
         bytes32 domain2 = "dom2";
-        address bridge1 = address(111);
-        address bridge2 = address(222);
-        assertTrue(_tryFile("bridge", domain1, bridge1));
-        assertTrue(_tryFile("bridge", domain2, bridge2));
-        assertEq(router.bridges(domain1), bridge1);
-        assertEq(router.bridges(domain2), bridge2);
-        assertEq(router.domains(bridge1), domain1);
-        assertEq(router.domains(bridge2), domain2);
+        address gateway1 = address(111);
+        address gateway2 = address(222);
+        assertTrue(_tryFile("gateway", domain1, gateway1));
+        assertTrue(_tryFile("gateway", domain2, gateway2));
+        assertEq(router.gateways(domain1), gateway1);
+        assertEq(router.gateways(domain2), gateway2);
+        assertEq(router.domains(gateway1), domain1);
+        assertEq(router.domains(gateway2), domain2);
         assertEq(router.numActiveDomains(), 2);
         assertEq(router.allDomains(0), domain1);
         assertEq(router.allDomains(1), domain2);
@@ -162,24 +167,24 @@ contract WormholeRouterTest is DSTest {
         assertEq(router.domainIndices(domain2), 1);
         
         // Remove first domain
-        assertTrue(_tryFile("bridge", domain1, address(0)));
+        assertTrue(_tryFile("gateway", domain1, address(0)));
 
-        assertEq(router.bridges(domain1), address(0));
-        assertEq(router.bridges(domain2), bridge2);
-        assertEq(router.domains(bridge1), bytes32(0));
-        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.gateways(domain1), address(0));
+        assertEq(router.gateways(domain2), gateway2);
+        assertEq(router.domains(gateway1), bytes32(0));
+        assertEq(router.domains(gateway2), domain2);
         assertEq(router.numActiveDomains(), 1);
         assertEq(router.allDomains(0), domain2);
         assertEq(router.domainIndices(domain1), 0);
         assertEq(router.domainIndices(domain2), 0);
 
         // Re-add removed domain
-        assertTrue(_tryFile("bridge", domain1, bridge1));
+        assertTrue(_tryFile("gateway", domain1, gateway1));
 
-        assertEq(router.bridges(domain1), bridge1);
-        assertEq(router.bridges(domain2), bridge2);
-        assertEq(router.domains(bridge1), domain1);
-        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.gateways(domain1), gateway1);
+        assertEq(router.gateways(domain2), gateway2);
+        assertEq(router.domains(gateway1), domain1);
+        assertEq(router.domains(gateway2), domain2);
         assertEq(router.numActiveDomains(), 2);
         assertEq(router.allDomains(0), domain2); // domains have been swapped compared to initial state
         assertEq(router.allDomains(1), domain1);
@@ -191,17 +196,17 @@ contract WormholeRouterTest is DSTest {
         router.file("meh", "aaa", address(888));
     }
 
-    function testFailRequestMintFromNotBridge() public {
+    function testFailRequestMintFromNotGateway() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
-            targetDomain: "ethereum",
+            targetDomain: l1Domain,
             receiver: address(123),
             operator: address(234),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("bridge", "l2network", address(555));
+        router.file("gateway", "l2network", address(555));
 
         router.requestMint(guid, 100 ether);
     }
@@ -209,14 +214,15 @@ contract WormholeRouterTest is DSTest {
     function testRequestMintTargetingL1() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
-            targetDomain: "ethereum",
+            targetDomain: l1Domain,
             receiver: address(123),
             operator: address(234),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("bridge", "l2network", address(this));
+        router.file("gateway", "l2network", address(this));
+        router.file("gateway", l1Domain, wormholeJoin);
 
         router.requestMint(guid, 100 ether);
     }
@@ -231,8 +237,8 @@ contract WormholeRouterTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("bridge", "l2network", address(this));
-        router.file("bridge", "another-l2network", address(new L1BridgeMock()));
+        router.file("gateway", "l2network", address(this));
+        router.file("gateway", "another-l2network", address(new TargetMock()));
 
         router.requestMint(guid, 100 ether);
     }
@@ -247,32 +253,33 @@ contract WormholeRouterTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("bridge", "l2network", address(this));
+        router.file("gateway", "l2network", address(this));
 
         router.requestMint(guid, 100 ether);
     }
 
-    function testFailSettleFromNotBridge() public {
-        router.file("bridge", "l2network", address(555));
+    function testFailSettleFromNotGateway() public {
+        router.file("gateway", "l2network", address(555));
 
-        router.settle("ethereum", 100 ether);
+        router.settle(l1Domain, 100 ether);
     }
 
     function testSettleTargetingL1() public {
-        router.file("bridge", "l2network", address(this));
+        router.file("gateway", "l2network", address(this));
+        router.file("gateway", l1Domain, wormholeJoin);
 
-        router.settle("ethereum", 100 ether);
+        router.settle(l1Domain, 100 ether);
     }
 
     function testSettleTargetingL2() public {
-        router.file("bridge", "l2network", address(this));
-        router.file("bridge", "another-l2network", address(new L1BridgeMock()));
+        router.file("gateway", "l2network", address(this));
+        router.file("gateway", "another-l2network", address(new TargetMock()));
 
         router.settle("another-l2network", 100 ether);
     }
 
     function testFailSettleTargetingInvalidDomain() public {
-        router.file("bridge", "l2network", address(this));
+        router.file("gateway", "l2network", address(this));
 
         router.settle("invalid-network", 100 ether);
     }
