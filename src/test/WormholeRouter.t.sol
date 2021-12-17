@@ -60,14 +60,128 @@ contract WormholeRouterTest is DSTest {
         assertTrue(!_tryDeny(address(456)));
     }
 
-    function testFile() public {
-        bytes32 domain = "aaa";
-        assertEq(router.bridges(domain), address(0));
-        assertTrue(_tryFile("bridge", domain, address(888)));
-        assertEq(router.bridges(domain), address(888));
-
+    function testFileFailsWhenNotAuthed() public {
+        assertTrue(_tryFile("bridge", "dom", address(888)));
         router.deny(address(this));
+        assertTrue(!_tryFile("bridge", "dom", address(888)));
+    }
 
-        assertTrue(!_tryFile("bridge", domain, address(888)));
+    function testFileNewDomains() public {
+        bytes32 domain1 = "newdom1";
+        address bridge1 = address(111);
+        assertEq(router.bridges(domain1), address(0));
+        assertEq(router.domains(bridge1), bytes32(0));
+        assertEq(router.numActiveDomains(), 0);
+
+        assertTrue(_tryFile("bridge", domain1, bridge1));
+
+        assertEq(router.bridges(domain1), bridge1);
+        assertEq(router.domains(bridge1), domain1);
+        assertEq(router.numActiveDomains(), 1);
+        assertEq(router.allDomains(0), domain1);
+        assertEq(router.domainIndices(domain1), 0);
+
+        bytes32 domain2 = "newdom2";
+        address bridge2 = address(222);
+        assertEq(router.bridges(domain2), address(0));
+        assertEq(router.domains(bridge2), bytes32(0));
+
+        assertTrue(_tryFile("bridge", domain2, bridge2));
+
+        assertEq(router.bridges(domain2), bridge2);
+        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.numActiveDomains(), 2);
+        assertEq(router.allDomains(0), domain1);
+        assertEq(router.allDomains(1), domain2);
+        assertEq(router.domainIndices(domain1), 0);
+        assertEq(router.domainIndices(domain2), 1);
+    }
+
+    function testFileNewBridgeForExistingDomain() public {
+        bytes32 domain = "dom";
+        address bridge1 = address(111);
+        assertTrue(_tryFile("bridge", domain, bridge1));
+        assertEq(router.bridges(domain), bridge1);
+        assertEq(router.domains(bridge1), domain);
+        assertEq(router.numActiveDomains(), 1);
+        assertEq(router.allDomains(0), domain);
+        assertEq(router.domainIndices(domain), 0);
+        address bridge2 = address(222);
+        
+        assertTrue(_tryFile("bridge", domain, bridge2));
+
+        assertEq(router.bridges(domain), bridge2);
+        assertEq(router.domains(bridge1), bytes32(0));
+        assertEq(router.domains(bridge2), domain);
+        assertEq(router.numActiveDomains(), 1);
+        assertEq(router.allDomains(0), domain);
+        assertEq(router.domainIndices(domain), 0);
+    }
+
+    function testFileRemoveLastDomain() public {
+        bytes32 domain = "dom";
+        address bridge = address(111);
+        assertTrue(_tryFile("bridge", domain, bridge));
+        assertEq(router.bridges(domain), bridge);
+        assertEq(router.domains(bridge), domain);
+        assertEq(router.numActiveDomains(), 1);
+        assertEq(router.allDomains(0), domain);
+        assertEq(router.domainIndices(domain), 0);
+
+        // Remove last domain
+        assertTrue(_tryFile("bridge", domain, address(0)));
+
+        assertEq(router.bridges(domain), address(0));
+        assertEq(router.domains(bridge), bytes32(0));
+        assertEq(router.numActiveDomains(), 0);
+        assertEq(router.domainIndices(domain), 0);
+    }
+
+
+    function testFileRemoveNotLastDomain() public {
+        bytes32 domain1 = "dom1";
+        bytes32 domain2 = "dom2";
+        address bridge1 = address(111);
+        address bridge2 = address(222);
+        assertTrue(_tryFile("bridge", domain1, bridge1));
+        assertTrue(_tryFile("bridge", domain2, bridge2));
+        assertEq(router.bridges(domain1), bridge1);
+        assertEq(router.bridges(domain2), bridge2);
+        assertEq(router.domains(bridge1), domain1);
+        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.numActiveDomains(), 2);
+        assertEq(router.allDomains(0), domain1);
+        assertEq(router.allDomains(1), domain2);
+        assertEq(router.domainIndices(domain1), 0);
+        assertEq(router.domainIndices(domain2), 1);
+        
+        // Remove first domain
+        assertTrue(_tryFile("bridge", domain1, address(0)));
+
+        assertEq(router.bridges(domain1), address(0));
+        assertEq(router.bridges(domain2), bridge2);
+        assertEq(router.domains(bridge1), bytes32(0));
+        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.numActiveDomains(), 1);
+        assertEq(router.allDomains(0), domain2);
+        assertEq(router.domainIndices(domain1), 0);
+        assertEq(router.domainIndices(domain2), 0);
+
+        // Re-add removed domain
+        assertTrue(_tryFile("bridge", domain1, bridge1));
+
+        assertEq(router.bridges(domain1), bridge1);
+        assertEq(router.bridges(domain2), bridge2);
+        assertEq(router.domains(bridge1), domain1);
+        assertEq(router.domains(bridge2), domain2);
+        assertEq(router.numActiveDomains(), 2);
+        assertEq(router.allDomains(0), domain2); // domains have been swapped compared to initial state
+        assertEq(router.allDomains(1), domain1);
+        assertEq(router.domainIndices(domain1), 1); // indices have been swapped compared to initial state
+        assertEq(router.domainIndices(domain2), 0);
+    }
+
+    function testFailFileInvalidWhat() public {
+        router.file("meh", "aaa", address(888));
     }
 }
