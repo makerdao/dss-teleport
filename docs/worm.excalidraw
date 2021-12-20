@@ -25,7 +25,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -66,7 +65,6 @@
       "boundElementIds": [
         "WgWFNqlB88wcx3EgD-FD3"
       ],
-      "updated": 1638281429816,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeRegister\nWormhole()",
@@ -96,7 +94,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "fontSize": 20,
       "fontFamily": 2,
       "text": "L2 (eg. Optimism)",
@@ -132,8 +129,7 @@
         "fq8jSDRV-IF037ih7YVM9",
         "XKCLLxZEli2QggXrHUeM3",
         "PP-s6hcI2v0DnPW8FMOrR"
-      ],
-      "updated": 1638275961364
+      ]
     },
     {
       "type": "text",
@@ -157,7 +153,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "fontSize": 20,
       "fontFamily": 2,
       "text": "L2 Bridge",
@@ -188,8 +183,7 @@
         "3adj3D0B-5u-7udwPzBuu"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961364
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -215,7 +209,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -254,7 +247,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -293,7 +285,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -332,7 +323,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -371,7 +361,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -410,7 +399,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -448,8 +436,7 @@
         "3adj3D0B-5u-7udwPzBuu"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961364
+      "boundElementIds": []
     },
     {
       "type": "arrow",
@@ -473,7 +460,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "startBinding": null,
       "endBinding": {
         "elementId": "BWIXciVmje-PaZTYqghc7",
@@ -516,7 +502,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638281901621,
       "startBinding": {
         "elementId": "q8IO4lV4SFgAkr-kWnrHp",
         "focus": 2.4325719432680377,
@@ -563,7 +548,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "startBinding": {
         "elementId": "HHwkKSsQpSxJApXicnhMs",
         "focus": 1.9036787157228139,
@@ -610,7 +594,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281896069,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -642,7 +625,6 @@
       "boundElementIds": [
         "__UWpM0yLR60h7zCWXbyJ"
       ],
-      "updated": 1638281901621,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -672,7 +654,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281903120,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -701,8 +682,7 @@
       "seed": 1294048891,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961364
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -726,7 +706,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Maker Oracle Feeds\n(Offchain)",
@@ -760,7 +739,6 @@
         "WgWFNqlB88wcx3EgD-FD3",
         "YBZd0GmsWW9wCaBfeQ_Mx"
       ],
-      "updated": 1638275961364,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Watches init events",
@@ -793,8 +771,7 @@
         "QS8IJud6uI7i30pDlldws",
         "ZkD1BFOZKq5Kh0os4brXw",
         "cwVO2Er-ga2WnmPbbAVAb"
-      ],
-      "updated": 1638275961364
+      ]
     },
     {
       "type": "text",
@@ -818,7 +795,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "MCD Vat",
@@ -855,8 +831,7 @@
         "f0Tljr3pN3i0kzU9Q0SJq",
         "Cl9HXit8rDH-He8OSricM",
         "H357gPJXnU_ZEbResNFbY"
-      ],
-      "updated": 1638275961364
+      ]
     },
     {
       "type": "text",
@@ -880,7 +855,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Wormhole\nJoin",
@@ -910,7 +884,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "startBinding": {
         "elementId": "R9fGeESJ1QRlhmfNFJH_S",
         "focus": 0.10805298312057687,
@@ -958,8 +931,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "eg93Wg_nNf2rWhTUcdnXC"
-      ],
-      "updated": 1638275961364
+      ]
     },
     {
       "type": "text",
@@ -986,7 +958,6 @@
         "iEq1OR1wXXct5YO0Xx-Ln",
         "Yn5-uoOUmAq_7X0Nc-wet"
       ],
-      "updated": 1638275961364,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Wormhole\nOracleAuth",
@@ -1017,8 +988,7 @@
         "GXPO6PpOXr11sSnfgbMi1"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961364
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -1044,7 +1014,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1083,7 +1052,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1122,7 +1090,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1161,7 +1128,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1200,7 +1166,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1239,7 +1204,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -1277,8 +1241,7 @@
         "GXPO6PpOXr11sSnfgbMi1"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961364
+      "boundElementIds": []
     },
     {
       "type": "arrow",
@@ -1302,7 +1265,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961364,
       "startBinding": {
         "elementId": "aK14rOmqVWGaayk06ZiFi",
         "focus": -0.19490675571822555,
@@ -1345,7 +1307,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "cewXdL7M0xVB8xoA_qFfR",
         "focus": 1.0868559200921792,
@@ -1392,7 +1353,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "cewXdL7M0xVB8xoA_qFfR",
         "focus": 0.6168653090867715,
@@ -1435,7 +1395,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "R9fGeESJ1QRlhmfNFJH_S",
         "focus": 0.5234660178583942,
@@ -1482,7 +1441,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "R9fGeESJ1QRlhmfNFJH_S",
         "focus": -0.4244382514743981,
@@ -1529,7 +1487,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -1568,7 +1525,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": {
         "elementId": "Y824M-u9h-aMpJKFrDDoC",
@@ -1611,7 +1567,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -1650,7 +1605,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -1689,7 +1643,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -1728,7 +1681,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "getAttestations()",
@@ -1758,7 +1710,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638279852065,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "requestMint(oracleAttestation)",
@@ -1768,8 +1719,8 @@
     },
     {
       "type": "text",
-      "version": 387,
-      "versionNonce": 1651599067,
+      "version": 399,
+      "versionNonce": 380983277,
       "isDeleted": false,
       "id": "ihcY8XYbaLoyImuCt0qqO",
       "fillStyle": "solid",
@@ -1778,30 +1729,29 @@
       "roughness": 1,
       "opacity": 100,
       "angle": 0,
-      "x": 669.9121673275725,
+      "x": 687.9121673275725,
       "y": 561.7259823577573,
       "strokeColor": "#000000",
       "backgroundColor": "#ffffff",
-      "width": 126,
-      "height": 36,
+      "width": 90,
+      "height": 18,
       "seed": 1108205979,
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "cwVO2Er-ga2WnmPbbAVAb"
       ],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
-      "text": "registerWormhole\nAndWithdraw()",
-      "baseline": 32,
+      "text": "requestMin()",
+      "baseline": 14,
       "textAlign": "center",
       "verticalAlign": "top"
     },
     {
       "type": "text",
-      "version": 288,
-      "versionNonce": 629725621,
+      "version": 300,
+      "versionNonce": 1131423427,
       "isDeleted": false,
       "id": "JTt-EuEUz5LzvZ6SR6sXR",
       "fillStyle": "solid",
@@ -1810,23 +1760,22 @@
       "roughness": 1,
       "opacity": 100,
       "angle": 0,
-      "x": 766.5402967664932,
+      "x": 784.5402967664932,
       "y": 714.9405517578125,
       "strokeColor": "#000000",
       "backgroundColor": "#ffffff",
-      "width": 126,
-      "height": 36,
+      "width": 90,
+      "height": 18,
       "seed": 1927207861,
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "cwVO2Er-ga2WnmPbbAVAb"
       ],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
-      "text": "registerWormhole\nAndWithdraw()",
-      "baseline": 32,
+      "text": "requestMin()",
+      "baseline": 14,
       "textAlign": "center",
       "verticalAlign": "top"
     },
@@ -1856,8 +1805,7 @@
         "1zF9urfxYE3Edb6aPBcrv",
         "nl0XzEgDeyhhKnTeDAAN6",
         "4xGf0mPjkr9j_23MTqFFy"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "text",
@@ -1881,7 +1829,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 20,
       "fontFamily": 2,
       "text": "L1 Bridge",
@@ -1911,7 +1858,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "BWIXciVmje-PaZTYqghc7",
         "focus": -0.1318512069223357,
@@ -1958,7 +1904,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeFlush()",
@@ -1988,7 +1933,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "settle()\n",
@@ -2017,8 +1961,7 @@
       "seed": 447330005,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "rectangle",
@@ -2041,8 +1984,7 @@
       "seed": 1313382907,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -2066,7 +2008,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Fast Path",
@@ -2096,7 +2037,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Settlement Path",
@@ -2126,7 +2066,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 20,
       "fontFamily": 2,
       "text": "Ethereum",
@@ -2155,8 +2094,7 @@
       "seed": 2125632851,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -2180,7 +2118,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Slow Path",
@@ -2210,7 +2147,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "ijDxIznzUFCL-KRkY6iv2",
         "gap": 9.611090330979989,
@@ -2253,7 +2189,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281886307,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "flush()",
@@ -2287,8 +2222,7 @@
         "XKCLLxZEli2QggXrHUeM3",
         "1zF9urfxYE3Edb6aPBcrv",
         "upeUI8uFmjpHhON_f5a9c"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "text",
@@ -2312,7 +2246,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 13.082781896283288,
       "fontFamily": 2,
       "text": "Wormhole\nRouter",
@@ -2342,7 +2275,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "09Y0QWzve8iqlYDHpVCsq",
         "focus": -0.15380934893280426,
@@ -2389,7 +2321,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638279864803,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "requestMint()",
@@ -2419,7 +2350,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "09Y0QWzve8iqlYDHpVCsq",
         "focus": 0.25497906160668704,
@@ -2462,7 +2392,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": {
         "elementId": "R9fGeESJ1QRlhmfNFJH_S",
@@ -2505,7 +2434,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": {
         "elementId": "09Y0QWzve8iqlYDHpVCsq",
@@ -2548,7 +2476,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "BWIXciVmje-PaZTYqghc7",
         "focus": 0.5327617931203436,
@@ -2598,8 +2525,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "eAO46iae8sHue5aXGMkqR"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "line",
@@ -2625,7 +2551,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2664,7 +2589,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2703,7 +2627,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2742,7 +2665,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2781,7 +2703,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2821,8 +2742,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "eAO46iae8sHue5aXGMkqR"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "line",
@@ -2848,7 +2768,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2887,7 +2806,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2926,7 +2844,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -2965,7 +2882,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3004,7 +2920,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3042,8 +2957,7 @@
         "hbhKyimIp5SG2G3ja8Gi4"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -3069,7 +2983,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3108,7 +3021,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3147,7 +3059,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3186,7 +3097,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3225,7 +3135,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3264,7 +3173,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3315,7 +3223,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3362,7 +3269,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3405,7 +3311,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3452,7 +3357,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3495,7 +3399,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3538,7 +3441,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -3595,7 +3497,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -3640,7 +3541,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -3685,7 +3585,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -3730,7 +3629,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -3785,8 +3683,7 @@
       "boundElementIds": [
         "PP-s6hcI2v0DnPW8FMOrR",
         "YBZd0GmsWW9wCaBfeQ_Mx"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "line",
@@ -3812,7 +3709,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3851,7 +3747,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3890,7 +3785,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3929,7 +3823,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -3968,7 +3861,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4007,7 +3899,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4058,7 +3949,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4105,7 +3995,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4148,7 +4037,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4195,7 +4083,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4238,7 +4125,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4281,7 +4167,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -4338,7 +4223,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -4383,7 +4267,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -4428,7 +4311,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -4473,7 +4355,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -4527,8 +4408,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "tU9iGt9taXfc22FOCBtXM"
-      ],
-      "updated": 1638275961365
+      ]
     },
     {
       "type": "line",
@@ -4554,7 +4434,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4593,7 +4472,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4632,7 +4510,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4671,7 +4548,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4710,7 +4586,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4749,7 +4624,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4787,8 +4661,7 @@
         "wIZXb3jeVXXwRkfjNsF_N"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -4814,7 +4687,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -4888,8 +4760,7 @@
         "wIZXb3jeVXXwRkfjNsF_N"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "ellipse",
@@ -4914,8 +4785,7 @@
         "wIZXb3jeVXXwRkfjNsF_N"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "ellipse",
@@ -4940,8 +4810,7 @@
         "wIZXb3jeVXXwRkfjNsF_N"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961365
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -4965,7 +4834,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "keeper",
@@ -4995,7 +4863,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "users",
@@ -5025,7 +4892,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "startBinding": {
         "elementId": "0-BCqbB1NniBdsA-83lrk",
         "focus": -1.2733496394955213,
@@ -5072,7 +4938,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "settle()\n",
@@ -5102,7 +4967,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961365,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -5132,7 +4996,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -5162,7 +5025,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -5192,7 +5054,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -5231,7 +5092,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "L2-A (eg. Optimism)",
@@ -5271,8 +5131,7 @@
         "-Tu_dL1Jwhn08QDsjA4Z9",
         "Iu8rliIDiBtxNkqFR-_Tx",
         "KW1ENGA9V15oTPiifNIIp"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -5296,7 +5155,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 20,
       "fontFamily": 2,
       "text": "L2-A Bridge",
@@ -5327,8 +5185,7 @@
         "z78DlsXi0zC7Vm4G1CxTi"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -5354,7 +5211,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5393,7 +5249,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5432,7 +5287,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5471,7 +5325,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5510,7 +5363,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5549,7 +5401,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -5587,8 +5438,7 @@
         "z78DlsXi0zC7Vm4G1CxTi"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "arrow",
@@ -5612,7 +5462,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638281910121,
       "startBinding": {
         "elementId": "VoiUSjGk_rzQE3dB-CwQ5",
         "focus": 2.4488178427591,
@@ -5659,7 +5508,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638281913938,
       "startBinding": {
         "elementId": "e1BbdUhAGVepiXEdEfAmM",
         "focus": 2.4325719432680275,
@@ -5706,7 +5554,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "t-IVtTGle_VOU-ZBhwofD",
         "focus": 1.9036787157227972,
@@ -5755,7 +5602,6 @@
       "boundElementIds": [
         "QkvWlb1jGANAn1V4N8KuJ"
       ],
-      "updated": 1638281910121,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -5787,7 +5633,6 @@
       "boundElementIds": [
         "khYMEWWI2IU6sS04MOMzc"
       ],
-      "updated": 1638281913938,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -5817,7 +5662,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281917055,
       "fontSize": 13.33016213037634,
       "fontFamily": 2,
       "text": "initiateWormhole(\"L1\", ...)",
@@ -5848,8 +5692,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "eA-q10UyfTSoMFvlvzqOz"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -5873,7 +5716,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Maker Oracle Feeds\n(Offchain)",
@@ -5906,8 +5748,7 @@
         "HciRTzl2FoM-KEd5IXH1a",
         "FpqV5v6cr4iZ6UIoq5VbY",
         "-Vn78yGTewvphDg-8-aCE"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -5931,7 +5772,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "MCD Vat",
@@ -5967,8 +5807,7 @@
         "-Vn78yGTewvphDg-8-aCE",
         "f0Tljr3pN3i0kzU9Q0SJq",
         "lreSuMZv9QiJsesIPety7"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -5992,7 +5831,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Wormhole\nJoin",
@@ -6022,7 +5860,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "aTR91PG8PV67iSKBOm4GT",
         "focus": -1.909969992543258,
@@ -6073,8 +5910,7 @@
         "IhixRbts_A8phj6uucNnL",
         "wkpcsxhU2gaELBrAhYpaN",
         "3nsdgpSZoL3JH8xLsbKyP"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -6101,7 +5937,6 @@
         "NRszo9-Zn6jNvBrIjc-Vu",
         "wkpcsxhU2gaELBrAhYpaN"
       ],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Wormhole\nOracleAuth",
@@ -6131,7 +5966,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "73MbHrcmejbVocz89DC3l",
         "focus": -0.5171752368244363,
@@ -6174,7 +6008,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "aTR91PG8PV67iSKBOm4GT",
         "focus": 0.9572739239512581,
@@ -6221,7 +6054,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "0Ea7ecDDaXzweaE-LifAO",
         "focus": -1.2909122574314382,
@@ -6268,7 +6100,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "HWSPkOg8uVsU0BJ07M7NH",
         "focus": 1.078544633204153,
@@ -6291,8 +6122,8 @@
     },
     {
       "type": "text",
-      "version": 678,
-      "versionNonce": 919855099,
+      "version": 711,
+      "versionNonce": 307052771,
       "isDeleted": false,
       "id": "lhp72VelxFtN9BgObVs7k",
       "fillStyle": "solid",
@@ -6301,12 +6132,12 @@
       "roughness": 1,
       "opacity": 100,
       "angle": 0,
-      "x": 1295.7336184458982,
-      "y": 1158.822234687523,
+      "x": 1311.7336184458982,
+      "y": 1165.576140937523,
       "strokeColor": "#000000",
       "backgroundColor": "#ffffff",
-      "width": 126,
-      "height": 36,
+      "width": 94,
+      "height": 18,
       "seed": 411050291,
       "groupIds": [],
       "strokeSharpness": "sharp",
@@ -6314,18 +6145,17 @@
         "-Vn78yGTewvphDg-8-aCE",
         "NRszo9-Zn6jNvBrIjc-Vu"
       ],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
-      "text": "registerWormhole\nAndWithdraw()",
-      "baseline": 32,
+      "text": "requestMint()",
+      "baseline": 14,
       "textAlign": "center",
       "verticalAlign": "top"
     },
     {
       "type": "text",
-      "version": 568,
-      "versionNonce": 1226745237,
+      "version": 600,
+      "versionNonce": 1582778797,
       "isDeleted": false,
       "id": "ie36qJjJshwkkK0aiZLMR",
       "fillStyle": "solid",
@@ -6334,23 +6164,22 @@
       "roughness": 1,
       "opacity": 100,
       "angle": 0,
-      "x": 1466.567082480779,
-      "y": 1217.876788755688,
+      "x": 1471.20944359189,
+      "y": 1226.267413755688,
       "strokeColor": "#000000",
       "backgroundColor": "#ffffff",
-      "width": 101.15190972222217,
-      "height": 28.90054563492061,
+      "width": 72,
+      "height": 15,
       "seed": 1207172989,
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "-Vn78yGTewvphDg-8-aCE"
       ],
-      "updated": 1638275961366,
       "fontSize": 12.844686948853608,
       "fontFamily": 2,
-      "text": "registerWormhole\nAndWithdraw()",
-      "baseline": 25.90054563492061,
+      "text": "requestMin()",
+      "baseline": 12,
       "textAlign": "center",
       "verticalAlign": "top"
     },
@@ -6376,7 +6205,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638279907234,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "settle()",
@@ -6405,8 +6233,7 @@
       "seed": 1490842781,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "rectangle",
@@ -6429,8 +6256,7 @@
       "seed": 147353523,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -6454,7 +6280,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Fast Path",
@@ -6484,7 +6309,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Settlement Path",
@@ -6514,7 +6338,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Ethereum",
@@ -6543,8 +6366,7 @@
       "seed": 1696620275,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -6568,7 +6390,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "= Slow Path",
@@ -6598,7 +6419,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "tKAwpFmtH6hKh9_yMdKC4",
         "focus": -49.604157743233536,
@@ -6641,7 +6461,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281920332,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "flush()",
@@ -6679,8 +6498,7 @@
         "COYMmqHiL24dHvIa59G4R",
         "LrGrmInpC3iqk_mcC6Tw9",
         "TfDQZGPw81rrc3oWJoxsf"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -6704,7 +6522,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 13.082781896283288,
       "fontFamily": 2,
       "text": "Wormhole\nRouter",
@@ -6737,8 +6554,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "yafEmC9YmW3VXzdcgHMUR"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "line",
@@ -6764,7 +6580,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -6803,7 +6618,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -6842,7 +6656,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -6881,7 +6694,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -6920,7 +6732,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -6962,8 +6773,7 @@
         "yafEmC9YmW3VXzdcgHMUR",
         "IhixRbts_A8phj6uucNnL",
         "NcMjkRaugATHPtXQfhgbc"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "line",
@@ -6989,7 +6799,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7028,7 +6837,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7067,7 +6875,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7106,7 +6913,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7145,7 +6951,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7183,8 +6988,7 @@
         "mP5m0zvHFEn9EL9uStKh6"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -7210,7 +7014,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7249,7 +7052,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7288,7 +7090,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7327,7 +7128,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7366,7 +7166,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7405,7 +7204,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7456,7 +7254,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7503,7 +7300,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7546,7 +7342,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7593,7 +7388,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7636,7 +7430,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7679,7 +7472,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -7736,7 +7528,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -7781,7 +7572,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -7826,7 +7616,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -7871,7 +7660,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -7925,8 +7713,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "ejgZ1CFRkK5iCqCql-juX"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "line",
@@ -7952,7 +7739,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -7991,7 +7777,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8030,7 +7815,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8069,7 +7853,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8108,7 +7891,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8147,7 +7929,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8185,8 +7966,7 @@
         "9yKSnGoxyZC2GPb7Qdm80"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "line",
@@ -8212,7 +7992,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8286,8 +8065,7 @@
         "9yKSnGoxyZC2GPb7Qdm80"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "ellipse",
@@ -8314,8 +8092,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "ejgZ1CFRkK5iCqCql-juX"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "ellipse",
@@ -8340,8 +8117,7 @@
         "9yKSnGoxyZC2GPb7Qdm80"
       ],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -8365,7 +8141,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "keeper",
@@ -8395,7 +8170,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "users",
@@ -8425,7 +8199,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "settle()\n",
@@ -8455,7 +8228,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -8487,7 +8259,6 @@
       "boundElementIds": [
         "-Vn78yGTewvphDg-8-aCE"
       ],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -8520,7 +8291,6 @@
         "HciRTzl2FoM-KEd5IXH1a",
         "FpqV5v6cr4iZ6UIoq5VbY"
       ],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "mint()",
@@ -8549,8 +8319,7 @@
       "seed": 194095027,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638275961366
+      "boundElementIds": []
     },
     {
       "type": "text",
@@ -8574,7 +8343,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "L2-B (e.g Arbitrum)",
@@ -8608,8 +8376,7 @@
       "boundElementIds": [
         "7CbNxLP4hFE1FUHzuVb4A",
         "eA-q10UyfTSoMFvlvzqOz"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "line",
@@ -8635,7 +8402,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8674,7 +8440,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8713,7 +8478,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8752,7 +8516,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8791,7 +8554,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8830,7 +8592,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -8870,8 +8631,7 @@
       "strokeSharpness": "sharp",
       "boundElementIds": [
         "7CbNxLP4hFE1FUHzuVb4A"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -8899,7 +8659,6 @@
         "WgWFNqlB88wcx3EgD-FD3",
         "YBZd0GmsWW9wCaBfeQ_Mx"
       ],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "Watches init events",
@@ -8929,7 +8688,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -8968,7 +8726,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "cJDXAWwwONOQ_wIehec0Q",
         "focus": 1.0989184868563202,
@@ -9015,7 +8772,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281835267,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "requestMint(oracleAttestation)",
@@ -9045,7 +8801,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "pyf5JmVTxKD4ma6gtGsLp",
         "focus": 0.12119882335247573,
@@ -9092,7 +8847,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": {
         "elementId": "cJDXAWwwONOQ_wIehec0Q",
@@ -9143,8 +8897,7 @@
         "COYMmqHiL24dHvIa59G4R",
         "-Tu_dL1Jwhn08QDsjA4Z9",
         "LrGrmInpC3iqk_mcC6Tw9"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -9168,7 +8921,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 18.081195574076755,
       "fontFamily": 2,
       "text": "L1-A Bridge",
@@ -9206,8 +8958,7 @@
         "KEZlgcJJHO7et2zeDUoJG",
         "TfDQZGPw81rrc3oWJoxsf",
         "kOqq2oZXPKYhuD7Qx696i"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -9231,7 +8982,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 18.081195574076755,
       "fontFamily": 2,
       "text": "L1-B Bridge",
@@ -9261,7 +9011,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "y6uPWfpbufoNhLZD0L2FB",
         "focus": -0.052336168351205206,
@@ -9308,7 +9057,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeFlush()",
@@ -9338,7 +9086,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "8Yof7ZXCoMXG_poMb6uIG",
         "focus": -0.6192041045328958,
@@ -9385,7 +9132,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": {
         "elementId": "B-rcQxFIE2r-0vnRLzcv5",
@@ -9436,8 +9182,7 @@
         "NrHMDBnVWNkUuOfmiU6rQ",
         "kOqq2oZXPKYhuD7Qx696i",
         "0Qjo6tHnD0U3MB1skv7wQ"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "text",
@@ -9461,7 +9206,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "fontSize": 18.081195574076755,
       "fontFamily": 2,
       "text": "L2-B Bridge",
@@ -9491,7 +9235,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "B-rcQxFIE2r-0vnRLzcv5",
         "focus": 0.39031275619975264,
@@ -9538,7 +9281,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638279910005,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "initiateSettle()",
@@ -9568,7 +9310,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "P-LW7ZmEugLenhyEt4mit",
         "focus": -0.6370926076736902,
@@ -9610,8 +9351,7 @@
       "seed": 1052175229,
       "groupIds": [],
       "strokeSharpness": "sharp",
-      "boundElementIds": [],
-      "updated": 1638281819763
+      "boundElementIds": []
     },
     {
       "type": "ellipse",
@@ -9641,8 +9381,7 @@
         "YBZd0GmsWW9wCaBfeQ_Mx",
         "-Tu_dL1Jwhn08QDsjA4Z9",
         "Iu8rliIDiBtxNkqFR-_Tx"
-      ],
-      "updated": 1638275961366
+      ]
     },
     {
       "type": "line",
@@ -9668,7 +9407,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9707,7 +9445,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9746,7 +9483,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9785,7 +9521,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9824,7 +9559,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9863,7 +9597,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9914,7 +9647,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -9961,7 +9693,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -10004,7 +9735,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -10051,7 +9781,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -10094,7 +9823,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "lastCommittedPoint": null,
       "startArrowhead": null,
       "endArrowhead": null,
@@ -10137,7 +9865,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -10194,7 +9921,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -10239,7 +9965,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -10284,7 +10009,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -10329,7 +10053,6 @@
       ],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": null,
       "endBinding": null,
       "lastCommittedPoint": null,
@@ -10380,7 +10103,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "y6uPWfpbufoNhLZD0L2FB",
         "focus": 0.8427699514719371,
@@ -10427,7 +10149,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "y6uPWfpbufoNhLZD0L2FB",
         "focus": 0.57135047168068,
@@ -10474,7 +10195,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "y6uPWfpbufoNhLZD0L2FB",
         "focus": 0.3786033048723965,
@@ -10519,7 +10239,6 @@
       "boundElementIds": [
         "WgWFNqlB88wcx3EgD-FD3"
       ],
-      "updated": 1638281356990,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeRegister\nWormhole()",
@@ -10549,7 +10268,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "8Yof7ZXCoMXG_poMb6uIG",
         "focus": 0.13691632577545654,
@@ -10596,7 +10314,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "CcPAT8j3GFNan1k3rjpXc",
         "focus": 0.4176753854662163,
@@ -10643,7 +10360,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "B-rcQxFIE2r-0vnRLzcv5",
         "focus": 0.7104300294234216,
@@ -10690,7 +10406,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "P-LW7ZmEugLenhyEt4mit",
         "focus": 0.10992505260202395,
@@ -10733,7 +10448,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638279905087,
       "fontSize": 16.30247587898548,
       "fontFamily": 2,
       "text": "requestMint()",
@@ -10763,7 +10477,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281271963,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "initiateRequestMint()",
@@ -10793,7 +10506,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281283653,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeRequestMint()",
@@ -10823,7 +10535,6 @@
       "groupIds": [],
       "strokeSharpness": "round",
       "boundElementIds": [],
-      "updated": 1638275961366,
       "startBinding": {
         "elementId": "73MbHrcmejbVocz89DC3l",
         "focus": 0.0484024546208555,
@@ -10866,7 +10577,6 @@
       "groupIds": [],
       "strokeSharpness": "sharp",
       "boundElementIds": [],
-      "updated": 1638281377721,
       "fontSize": 16,
       "fontFamily": 2,
       "text": "finalizeSettle()",
@@ -10878,6 +10588,5 @@
   "appState": {
     "gridSize": null,
     "viewBackgroundColor": "#ffffff"
-  },
-  "files": {}
+  }
 }

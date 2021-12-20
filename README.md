@@ -24,7 +24,7 @@ To fast withdraw DAI from L2, user:
 * Calls `WormholeOracleAuth.requestMint(WormholeGUID wormholeGUID, bytes signatures, uint256 maxFee)` which will:
   * Check if `sender` is `operator` 
   *   Check if enough valid attestations (sigs) are provided
-  *   Call `WormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxfee)` which will
+  *   Call `WormholeJoin.requestMint(wormholeGUID, maxfee)` which will
         * Check if this wormhole hasn't been used before
         * Check if the debt ceiling hasn't been reached
         * Check the current fee via `WormholeFees`
@@ -46,7 +46,7 @@ If attestations cannot be obtained (Oracles down or censoring), user needs to wa
 
 * Relays `finalizeRegisterWormhole()`  message to `L1Bridge`
 * `L1Bridge` upon receiving `finalizeRegisterWormhole()` will call `requestMint()` on `WormholeRouter` which will:
-    * Call `WormholeJoin.registerWormholeAndWithdraw(wormholeGUID, maxfee)` which will
+    * Call `WormholeJoin.requestMint(wormholeGUID, maxfee)` which will
         * Check if this wormhole hasn't been used before
         * Check if the debt ceiling hasn't been reached
         * Check the current fee via `WormholeFees`
@@ -66,7 +66,7 @@ Settlement process is very similar, however DAI is transfered from source domain
 
 ### Slow (emergency) path
 
-For a slow path, once L2->L1 message from the source domain is received on L1 and can be relayed, user can relay the message which fill call `finalizeRequestMing()` on the target domain `L1Bridge`. This will pass L1->L2 message to `L2bridge` which will call `registerWormholeAndWithdraw()` on a `WormholeJoin` contract on target domain L2.
+For a slow path, once L2->L1 message from the source domain is received on L1 and can be relayed, user can relay the message which fill call `finalizeRequestMing()` on the target domain `L1Bridge`. This will pass L1->L2 message to `L2bridge` which will call `requestMint()` on a `WormholeJoin` contract on target domain L2.
 
 ## Technical Documenation
 
@@ -83,6 +83,7 @@ struct WormholeGUID {
 	uint48 timestamp;
 }
 ```
+Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique for each wormhole transfer.
 
 ### Contracts
 
@@ -94,7 +95,7 @@ struct WormholeGUID {
 * `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee)` - callable only by the wormhole operator, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
 
 **`WormholeJoin`**
-* `registerWormholeAndWithdraw(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `withdrawPending()` later
+* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `withdrawPending()` later
 * `withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormhomeRouter`, settles DAI debt
 
@@ -103,14 +104,14 @@ struct WormholeGUID {
 
 ### Authorization
 * `WormholeOracleAuth`
-  * `RequestMint` - operator (set by the user initiating wormhole)
+  * `requestMint` - operator (set by the user initiating wormhole)
   * `rely`, `deny`, `file`, `addSigners`, `removeSigners` - auth (Governance)
 * `WormholeRouter`
   * `requestMint` - L1 Bridge
   * `settle` - L1 Bridge
 * `WormholeJoin` 
   * `rely`, `deny`, `file` - auth (Governance)
-  * `registerWormholeAndWithdraw` - auth (`WormholeRouter`, `WormholeOracleAuth`)
+  * `requestMint` - auth (`WormholeRouter`, `WormholeOracleAuth`)
   * `withdrawPending` - operator
   * `settle` - anyone (typically keeper)
 * `L1WormholeBridge`
