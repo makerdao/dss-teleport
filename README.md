@@ -132,6 +132,25 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
   * `initalizeWormhole` - anyone (typically user)
   * `flush` - anyone (typically keeper)
 
+## Example
+
+Setup: Debt ceiling: 10M DAI
+
+| Operation | Available Debt |
+| --- | --- |
+| User A inititates wormhole for 2M | 10M
+| User A mints 2M on L1 with Oracle's attestations| 8M (10M-2M)
+| User B initiates wormhole for 9 M | 8M
+| Keeper flushes 2M (from UserA) and 9M (from UserB) | 8M
+| User C initiates wormhole for 5M | 8M
+| User C mints 5M on L1 with Oracle's attestations | 3M (8M - 5M)
+| After 7 days keepers calls finializeFlush() that burns 11M | 14M (3M + 11M)
+| User D inititates wormhole for 10M | 14M
+| User D mints 10M on L1 with Oracle's attestations | 4M (14M - 10M)
+| User B wants to withdraw from wormhole Ilk 9m using slow withdrawal path. They can withdraw only 4M | 0M (4M - 4M)
+| Keeper flushes 15M (from UserC and UserD) | 0M
+| After 7 days keepers calls finializeFlush() that burns 15M | 15M (0M + 15M)
+| User B can withdraw the rest of the funds (5M) | 10M (15M - 5M)
 
 ## Risks
 ### Oracle censoring or oracle failure
