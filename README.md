@@ -1,6 +1,8 @@
 # DAI Wormhole
 
-DAI Wormhole facility allows users to fast teleport DAI between "domains", i.e. different chains that have a settlement mechanism with Ethereum L1. If DAI is teleported from L2 -> L1, this is equvialent to "fast withdrawal". DAI will be minted on L1 as soon as the transaction is confirmed on L2 and sent to the user, and when transaction eventually settles on L1, DAI will be released from L1 Bridge escrow (to have DAI on L2 in the first place, it had to be put on L1 escrow some time before) and burned. 
+DAI Wormhole facility allows users to fast teleport DAI between "domains", i.e. different chains that have a settlement mechanism with Ethereum L1. 
+
+If DAI is teleported from L2 -> L1, this is equivalent to "fast withdrawal". First, DAI will be burned on L2, then minted on L1 and sent to the user as soon as the L2 transaction is confirmed. After a while, during a settlement process, DAI will be released from L1 Bridge escrow (to have DAI on L2 in the first place, it had to be put on L1 escrow some time before) and burned. 
 
 If DAI is teleported from L2 -> L2, on the source domain it will be burned and on the destination domain it will be minted, while settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
 
