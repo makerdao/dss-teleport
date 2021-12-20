@@ -63,6 +63,20 @@ contract WormholeRouter {
         emit Deny(usr);
     }
 
+    /**
+     * @notice Allows auth to configure the router. The only supported operation is "gateway",
+     * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
+     * and `requestMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
+     * conform to the GatewayLike interface. Examples of valid gateways include WormholeJoin (for the L1 domain)
+     * and L1 bridge contracts (for L2 domains).
+     * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
+     * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
+     * an array `allDomains` of all active domains as well as a mapping `domainIndices` of the indices of domain names within
+     * the `allDomains` array.
+     * @param what The name of the operation. Only "gateway" is supported.
+     * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
+     * @param gateway The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
+     */
     function file(bytes32 what, bytes32 domain, address gateway) external auth {
         if (what == "gateway") {
             address prevGateway = gateways[domain];
