@@ -4,6 +4,16 @@ DAI Wormhole facility allows users to fast teleport DAI between "domains", i.e. 
 
 If DAI is teleported from L2 -> L2, on the source domain it will be burned and on the destination domain it will be minted, while settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
 
+
+## Domains, Gateways and Wormhole Router
+
+On L1 each Domain must be associated with a Gateway, that is a contract that supports `requestMint()` and `settle()` operations. For any L2 Domain, Gateway is a bridge from L1 -> L2, whereas for the L1 Domain, Gateway is the `WormholeJoin` adapter contract.
+
+Wormhole Router keeps track of each Domain's Gateway and routes `requestMint()` or `settle()` requests to the appropriate contracts.
+
+![Domains](./docs/domains.png?raw=true)
+
+
 ## Roles
 
 * **Initiator** - person initiating DAI transfer by calling `initiateWormhole` . They can optionally specify Operator and Receiver 
@@ -88,6 +98,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 ### Contracts
 
 **`WormholeRouter`**
+* `file(what=="gateway", domain, gateway)` - collable only by Governance, configures gateway for a domain. If gateway is already configured, replaces it with a new one. 
 * `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable only by `L1Bridge`, requests `WormholeJoin` to mint DAI for the receiver of the wormhole
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `WormholeJoin` or target domain `L1 bridge` to settle DAI
 
