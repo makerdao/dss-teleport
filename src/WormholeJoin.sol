@@ -190,11 +190,10 @@ contract WormholeJoin {
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
-        require(wormholeGUID.amount <=  2 ** 248 - 1, "WormholeJoin/overflow");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = uint248(wormholeGUID.amount);
+        wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
         _withdraw(wormholeGUID, hashGUID, maxFee);
     }
