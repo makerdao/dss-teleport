@@ -165,5 +165,5 @@ If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 
 
 ## Related repositories
 
-* [Optimism wormhole bridge](https://github.com/makerdao/optimism-dai-bridge/pull/59)
-* [wormhole-integration-tests](https://github.com/makerdao/wormhole-integration-tests)
+* [Optimism Wormhole Bridge](https://github.com/makerdao/optimism-dai-bridge/pull/59)
+* [Integration tests](https://github.com/makerdao/wormhole-integration-tests)
