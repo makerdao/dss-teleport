@@ -120,6 +120,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
   * `requestMint` - operator (set by the user initiating wormhole)
   * `rely`, `deny`, `file`, `addSigners`, `removeSigners` - auth (Governance)
 * `WormholeRouter`
+  * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - L1 Bridge
   * `settle` - L1 Bridge
 * `WormholeJoin` 
