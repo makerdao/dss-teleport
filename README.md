@@ -78,7 +78,7 @@ Settlement process is very similar, however DAI is transfered from source domain
 
 ### Slow (emergency) path
 
-For a slow path, once L2->L1 message from the source domain is received on L1 and can be relayed, user can relay the message which fill call `finalizeRequestMing()` on the target domain `L1Bridge`. This will pass L1->L2 message to `L2bridge` which will call `requestMint()` on a `WormholeJoin` contract on target domain L2.
+For a slow path, once the L2->L1 message from the source domain is received on L1 and can be relayed, the user can relay the message, which will call `requestMint()` on the target domain `L1Bridge`. This will pass an L1->L2 message to `L2bridge` which will call `requestMint()` on a `WormholeJoin` contract on target domain L2.
 
 ## Technical Documenation
 
