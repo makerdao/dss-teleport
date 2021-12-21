@@ -168,7 +168,9 @@ contract WormholeJoin {
         wormholes[hashGUID].pending     -= uint248(amtToTake);
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
-            uint256 amtToGenerate = debt_ < 0 ? amtToTake - uint256(-debt_) : amtToTake;
+            uint256 amtToGenerate = debt_ < 0
+                                    ? uint256(int256(amtToTake) + debt_) // amtToTake - |debt_|
+                                    : amtToTake;
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
