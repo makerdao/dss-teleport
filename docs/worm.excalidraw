@@ -6613,8 +6613,8 @@
     },
     {
       "type": "text",
-      "version": 600,
-      "versionNonce": 1582778797,
+      "version": 601,
+      "versionNonce": 619938014,
       "isDeleted": false,
       "id": "ie36qJjJshwkkK0aiZLMR",
       "fillStyle": "solid",
@@ -6623,11 +6623,11 @@
       "roughness": 1,
       "opacity": 100,
       "angle": 0,
-      "x": 1471.20944359189,
+      "x": 1468.70944359189,
       "y": 1226.267413755688,
       "strokeColor": "#000000",
       "backgroundColor": "#ffffff",
-      "width": 72,
+      "width": 77,
       "height": 15,
       "seed": 1207172989,
       "groupIds": [],
@@ -6638,15 +6638,15 @@
           "id": "-Vn78yGTewvphDg-8-aCE"
         }
       ],
-      "updated": 1640082952830,
+      "updated": 1640092941932,
       "fontSize": 12.844686948853608,
       "fontFamily": 2,
-      "text": "requestMin()",
+      "text": "requestMint()",
       "baseline": 12,
       "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": ""
+      "originalText": "requestMint()"
     },
     {
       "type": "text",
