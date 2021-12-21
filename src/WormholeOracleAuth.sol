@@ -111,17 +111,18 @@ contract WormholeOracleAuth {
         bytes32 s;
         uint256 numValid;
         address lastSigner;
-        for (uint256 i; i < count; i++) {
+        for (uint256 i; i < count;) {
             (v,r,s) = splitSignature(signatures, i);
             address recovered = ecrecover(signHash, v, r, s);
             require(recovered > lastSigner, "WormholeOracleAuth/bad-sig-order"); // make sure signers are different
             lastSigner = recovered;
             if (signers[recovered]) {
-                numValid += 1;
+                unchecked { numValid += 1; }
                 if (numValid >= threshold_) {
                     return true;
                 }
             }
+            unchecked { i++; }
         }
     }
 
