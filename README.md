@@ -100,7 +100,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 ### Contracts
 
 **`WormholeRouter`**
-* `file(what=="gateway", domain, gateway)` - collable only by Governance, configures gateway for a domain. If gateway is already configured, replaces it with a new one. 
+* `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one. 
 * `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable only by `L1Bridge`, requests `WormholeJoin` to mint DAI for the receiver of the wormhole
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `WormholeJoin` or target domain `L1 bridge` to settle DAI
 
