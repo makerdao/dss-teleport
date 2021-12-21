@@ -100,8 +100,8 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 ### Contracts
 
 **`WormholeRouter`**
-* `file(what=="gateway", domain, gateway)` - collable only by Governance, configures gateway for a domain. If gateway is already configured, replaces it with a new one. 
-* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable only by `L1Bridge`, requests `WormholeJoin` to mint DAI for the receiver of the wormhole
+* `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one. 
+* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable only by `L1Bridge`, issues a request to mint DAI for the receiver of the wormhole. This request is made either directly to the L1 `WormholeJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `WormholeJoin` in the case of a teleport to another L2.
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `WormholeJoin` or target domain `L1 bridge` to settle DAI
 
 **`WormholeOracleAuth`**
@@ -120,6 +120,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
   * `requestMint` - operator (set by the user initiating wormhole)
   * `rely`, `deny`, `file`, `addSigners`, `removeSigners` - auth (Governance)
 * `WormholeRouter`
+  * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - L1 Bridge
   * `settle` - L1 Bridge
 * `WormholeJoin` 
