@@ -110,7 +110,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 **`WormholeJoin`**
 * `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `withdrawPending()` later
 * `withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
-* `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormhomeRouter`, settles DAI debt
+* `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormholeRouter`, settles DAI debt
 
 **`WormholeFees`**
 * `getFees(WormholeGUID calldata wormholeGUID) (uint256 fees)` - interface for getting current fee. Various implementations can be provided by the governance with different fee structures
