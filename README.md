@@ -162,3 +162,8 @@ If user is unable to obtain Oracle's attestations, slow path is taken - no user 
 If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 is burn and withdrawn whereas in reality is not), this will result in bad debt - DAI minted in a wormhole will never be settled. This will result in bad debt that eventually will have to be healed through a standard MakerDAO debt healing processes. 
 ### Source domain compromised
 ### Target domain compromised 
+
+## Related repositories
+
+* [Optimism Wormhole Bridge](https://github.com/makerdao/optimism-dai-bridge/pull/59)
+* [Integration tests](https://github.com/makerdao/wormhole-integration-tests)
