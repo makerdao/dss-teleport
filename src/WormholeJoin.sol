@@ -204,7 +204,7 @@ contract WormholeJoin {
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
-    function withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
         _withdraw(wormholeGUID, getGUIDHash(wormholeGUID), maxFee);
     }

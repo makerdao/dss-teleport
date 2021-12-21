@@ -401,7 +401,7 @@ contract WormholeJoinTest is DSTest {
         join.requestMint(guid, 99 ether);
     }
 
-    function testWithdrawPending() public {
+    function testMintPending() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -420,13 +420,13 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.withdrawPending(guid, 0);
+        join.mintPending(guid, 0);
 
         assertEq(dai.balanceOf(address(123)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
     }
 
-    function testFailWithdrawPendingWrongOperator() public {
+    function testFailMintPendingWrongOperator() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -441,7 +441,7 @@ contract WormholeJoinTest is DSTest {
         join.requestMint(guid, 0);
 
         join.file("line", "l2network", 225_000 ether);
-        join.withdrawPending(guid, 0);
+        join.mintPending(guid, 0);
     }
 
     function testSettle() public {

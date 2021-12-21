@@ -108,8 +108,8 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 * `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee)` - callable only by the wormhole operator, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
 
 **`WormholeJoin`**
-* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `withdrawPending()` later
-* `withdrawPending(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
+* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
+* `mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormhomeRouter`, settles DAI debt
 
 **`WormholeFees`**
@@ -126,7 +126,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 * `WormholeJoin` 
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - auth (`WormholeRouter`, `WormholeOracleAuth`)
-  * `withdrawPending` - operator
+  * `mintPending` - operator
   * `settle` - anyone (typically keeper)
 * `L1WormholeBridge`
   * `finalizeFlush()` - L2 bridge
