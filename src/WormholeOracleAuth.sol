@@ -116,7 +116,7 @@ contract WormholeOracleAuth {
             address recovered = ecrecover(signHash, v, r, s);
             require(recovered > lastSigner, "WormholeOracleAuth/bad-sig-order"); // make sure signers are different
             lastSigner = recovered;
-            if (signers[recovered]) {
+            if (signers[recovered] == 1) {
                 unchecked { numValid += 1; }
                 if (numValid >= threshold_) {
                     return true;
