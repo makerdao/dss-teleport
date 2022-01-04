@@ -26,7 +26,7 @@ interface WormholeJoinLike {
 contract WormholeOracleAuth {
 
     mapping (address => uint256) public wards;   // Auth
-    mapping (address => bool)    public signers; // Oracle feeds
+    mapping (address => uint256) public signers; // Oracle feeds
 
     WormholeJoinLike immutable public wormholeJoin;
 
@@ -34,7 +34,7 @@ contract WormholeOracleAuth {
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, bytes32 data);
+    event File(bytes32 indexed what, uint256 data);
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
 
@@ -59,9 +59,9 @@ contract WormholeOracleAuth {
         emit Deny(usr);
     }
 
-    function file(bytes32 what, bytes32 data) external auth {
+    function file(bytes32 what, uint256 data) external auth {
         if (what == "threshold") {
-            threshold = uint256(data);
+            threshold = data;
         } else {
             revert("WormholeOracleAuth/file-unrecognized-param");
         }
@@ -70,14 +70,14 @@ contract WormholeOracleAuth {
 
     function addSigners(address[] calldata signers_) external auth {
         for(uint i; i < signers_.length; i++) {
-            signers[signers_[i]] = true;
+            signers[signers_[i]] = 1;
         }
         emit SignersAdded(signers_);
     }
 
     function removeSigners(address[] calldata signers_) external auth {
         for(uint i; i < signers_.length; i++) {
-            signers[signers_[i]] = false;
+            signers[signers_[i]] = 0;
         }
         emit SignersRemoved(signers_);
     }

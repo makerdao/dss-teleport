@@ -40,7 +40,7 @@ contract WormholeRouter {
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, bytes32 domain, address gateway);
+    event File(bytes32 indexed what, bytes32 indexed domain, address gateway);
 
     modifier auth {
         require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
