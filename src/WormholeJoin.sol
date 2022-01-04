@@ -137,7 +137,7 @@ contract WormholeJoin {
     * @param hashGUID Hash of the prev struct
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
-    function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee) internal {
+    function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
@@ -195,7 +195,7 @@ contract WormholeJoin {
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
-        _withdraw(wormholeGUID, hashGUID, maxFee);
+        _mint(wormholeGUID, hashGUID, maxFee);
     }
 
     /**
@@ -205,7 +205,7 @@ contract WormholeJoin {
     **/
     function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
         require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
-        _withdraw(wormholeGUID, getGUIDHash(wormholeGUID), maxFee);
+        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFee);
     }
 
     /**
