@@ -160,7 +160,7 @@ contract WormholeJoin {
                             );
 
         uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_, amtToTake) : 0;
-        require(fee <= maxFee * amtToTake / wormholeGUID.amount, "WormholeJoin/max-fee-exceed");
+        require(fee <= maxFee * amtToTake / pending, "WormholeJoin/max-fee-exceed");
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
