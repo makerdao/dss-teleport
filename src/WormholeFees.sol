@@ -20,5 +20,5 @@ import "./WormholeGUID.sol";
 
 // Calculate fees for a given Wormhole GUID
 interface WormholeFees {
-    function getFees(WormholeGUID calldata wormholeGUID, uint256, int256) external view returns (uint256 fees);
+    function getFees(WormholeGUID calldata wormholeGUID, uint256, int256, uint256) external view returns (uint256 fees);
 }
