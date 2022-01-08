@@ -42,8 +42,15 @@ contract WormholeRouter {
     event Deny(address indexed usr);
     event File(bytes32 indexed what, bytes32 indexed domain, address gateway);
 
+    // --- Errors ---
+    error NotAuthorized();
+    error FileUnrecognizedParam();
+    error SenderNotGateway();
+    error UnsupportedTargetDomain();
+
+
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
+        if (wards[msg.sender] != 1) revert NotAuthorized();
         _;
     }
 
@@ -108,7 +115,7 @@ contract WormholeRouter {
                 domains[gateway] = domain;
             }
         } else {
-            revert("WormholeRouter/file-unrecognized-param");
+            revert FileUnrecognizedParam();
         }
         emit File(what, domain, gateway);
     }
@@ -123,9 +130,9 @@ contract WormholeRouter {
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
-        require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
+        if (msg.sender != gateways[wormholeGUID.sourceDomain]) revert SenderNotGateway();
         address gateway = gateways[wormholeGUID.targetDomain];
-        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
+        if (gateway == address(0)) revert UnsupportedTargetDomain();
         GatewayLike(gateway).requestMint(wormholeGUID, maxFee);
     }
 
@@ -137,9 +144,9 @@ contract WormholeRouter {
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
-        require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-gateway");
+        if (sourceDomain == bytes32(0)) revert SenderNotGateway();
         address gateway = gateways[targetDomain];
-        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
+        if (gateway == address(0)) revert UnsupportedTargetDomain();
          // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
         GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
