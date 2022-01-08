@@ -74,6 +74,15 @@ contract WormholeJoin {
         uint248 pending;
     }
 
+    // --- Errors ---
+    error NotAuthorized();
+    error FileUnrecognizedParam();
+    error IncorrectDomain();
+    error Overflow();
+    error MaxFeeExceeded();
+    error AlreadyBlessed();
+    error SenderNotOperator();
+
     constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
@@ -90,7 +99,7 @@ contract WormholeJoin {
     }
 
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeJoin/non-authed");
+        if (wards[msg.sender] != 1) revert NotAuthorized();
         _;
     }
 
@@ -108,7 +117,7 @@ contract WormholeJoin {
         if (what == "vow") {
             vow = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert FileUnrecognizedParam();
         }
         emit File(what, data);
     }
@@ -117,7 +126,7 @@ contract WormholeJoin {
         if (what == "fees") {
             fees[domain_] = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert FileUnrecognizedParam();
         }
         emit File(what, domain_, data);
     }
@@ -126,7 +135,7 @@ contract WormholeJoin {
         if (what == "line") {
             line[domain_] = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert FileUnrecognizedParam();
         }
         emit File(what, domain_, data);
     }
@@ -138,7 +147,7 @@ contract WormholeJoin {
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
     function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee) internal {
-        require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
+        if (wormholeGUID.targetDomain != domain) revert IncorrectDomain();
 
         bool vatLive = vat.live() == 1;
 
@@ -155,7 +164,7 @@ contract WormholeJoin {
         }
 
         uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_) : 0;
-        require(fee <= maxFee, "WormholeJoin/max-fee-exceed");
+        if (fee > maxFee) revert MaxFeeExceeded();
 
         uint256 amtToTake = _min(
                                 pending,
@@ -191,7 +200,7 @@ contract WormholeJoin {
     **/
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
+        if (wormholes[hashGUID].blessed) revert AlreadyBlessed();
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
@@ -204,7 +213,7 @@ contract WormholeJoin {
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
     **/
     function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
-        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        if (wormholeGUID.operator != msg.sender) revert SenderNotOperator();
         _withdraw(wormholeGUID, getGUIDHash(wormholeGUID), maxFee);
     }
 
@@ -214,7 +223,7 @@ contract WormholeJoin {
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
-        require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
+        if (batchedDaiToFlush > 2 ** 255) revert Overflow();
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
