@@ -38,8 +38,17 @@ contract WormholeOracleAuth {
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
 
+    // --- Errors ---
+    error NotAuthorized();
+    error FileUnrecognizedParam();
+    error NotOperator();
+    error NotEnoughValidSig();
+    error NotEnoughSig();
+    error BadSigOrder();
+    error BadV();
+
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeOracleAuth/non-authed");
+        if (wards[msg.sender] != 1) revert NotAuthorized();
         _;
     }
 
@@ -63,7 +72,7 @@ contract WormholeOracleAuth {
         if (what == "threshold") {
             threshold = data;
         } else {
-            revert("WormholeOracleAuth/file-unrecognized-param");
+            revert FileUnrecognizedParam();
         }
         emit File(what, data);
     }
@@ -90,8 +99,8 @@ contract WormholeOracleAuth {
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
-        require(wormholeGUID.operator == msg.sender, "WormholeOracleAuth/not-operator");
-        require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
+        if (wormholeGUID.operator != msg.sender) revert NotOperator();
+        if (!isValid(getSignHash(wormholeGUID), signatures, threshold)) revert NotEnoughValidSig();
         wormholeJoin.requestMint(wormholeGUID, maxFee);
     }
 
@@ -104,7 +113,7 @@ contract WormholeOracleAuth {
      */
     function isValid(bytes32 signHash, bytes memory signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
-        require(count >= threshold_, "WormholeOracleAuth/not-enough-sig");
+        if (count < threshold_) revert NotEnoughSig();
 
         uint8 v;
         bytes32 r;
@@ -114,7 +123,7 @@ contract WormholeOracleAuth {
         for (uint256 i; i < count;) {
             (v,r,s) = splitSignature(signatures, i);
             address recovered = ecrecover(signHash, v, r, s);
-            require(recovered > lastSigner, "WormholeOracleAuth/bad-sig-order"); // make sure signers are different
+            if (recovered < lastSigner) revert BadSigOrder(); // make sure signers are different
             lastSigner = recovered;
             if (signers[recovered] == 1) {
                 unchecked { numValid += 1; }
@@ -151,6 +160,6 @@ contract WormholeOracleAuth {
             s := mload(add(signatures, add(0x40, mul(0x41, index))))
             v := and(mload(add(signatures, add(0x41, mul(0x41, index)))), 0xff)
         }
-        require(v == 27 || v == 28, "WormholeOracleAuth/bad-v");
+        if (v != 27 && v != 28) revert BadV();
     }
 }
