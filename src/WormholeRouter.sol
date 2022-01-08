@@ -48,7 +48,6 @@ contract WormholeRouter {
     error SenderNotGateway();
     error UnsupportedTargetDomain();
 
-
     modifier auth {
         if (wards[msg.sender] != 1) revert NotAuthorized();
         _;
