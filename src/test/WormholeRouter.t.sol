@@ -35,6 +35,8 @@ contract WormholeRouterTest is DSTest {
     address internal wormholeJoin;
     bytes32 constant internal l1Domain = "ethereum";
 
+    uint256 internal constant WAD = 10**18;
+
     function setUp() public {
         dai = address(new DaiMock());
         wormholeJoin = address(new TargetMock());
@@ -208,7 +210,7 @@ contract WormholeRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(555));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 4 * WAD / 10000);
     }
 
     function testRequestMintTargetingL1() public {
@@ -224,7 +226,7 @@ contract WormholeRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, wormholeJoin);
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 4 * WAD / 10000);
     }
 
     function testRequestMintTargetingL2() public {
@@ -240,7 +242,7 @@ contract WormholeRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new TargetMock()));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 4 * WAD / 10000);
     }
 
     function testFailRequestMintTargetingInvalidDomain() public {
@@ -255,7 +257,7 @@ contract WormholeRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(this));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 4 * WAD / 10000);
     }
 
     function testFailSettleFromNotGateway() public {
