@@ -123,8 +123,6 @@ contract WormholeOracleAuthTest is DSTest {
         }
     }
 
-
-
     function test_isValid() public {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
