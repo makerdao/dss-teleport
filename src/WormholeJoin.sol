@@ -58,6 +58,7 @@ contract WormholeJoin {
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
 
+    uint256 constant public WAD = 10 ** 18;
     uint256 constant public RAY = 10 ** 27;
 
     event Rely(address indexed usr);
@@ -136,8 +137,9 @@ contract WormholeJoin {
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    * @param operatorFeePercentage The percent of post-fee DAI (in wad) to be paid to the operator
     **/
-    function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee) internal {
+    function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee, uint256 operatorFeePercentage) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
@@ -175,10 +177,15 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
-        daiJoin.exit(wormholeGUID.receiver, amtToTake - fee);
+        uint256 postFeeAmount = amtToTake - fee;
+        uint256 operatorFee = postFeeAmount * operatorFeePercentage / WAD;
+        daiJoin.exit(wormholeGUID.receiver, postFeeAmount - operatorFee);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
+        }
+        if (operatorFee > 0) {
+            vat.move(address(this), wormholeGUID.operator, operatorFee * RAY);
         }
 
         emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFee);
@@ -188,24 +195,26 @@ contract WormholeJoin {
     * @dev External authed function that registers the wormwhole and executes the withdrawl after
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    * @param operatorFeePercentage The percent of DAI (in wad) to be paid to the operator
     **/
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external auth {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFeePercentage) external auth {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
-        _withdraw(wormholeGUID, hashGUID, maxFee);
+        _withdraw(wormholeGUID, hashGUID, maxFee, operatorFeePercentage);
     }
 
     /**
     * @dev External function that executes the withdrawl of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFee Max amount of DAI (in wad) to be paid for the withdrawl
+    * @param operatorFeePercentage The percent of DAI (in wad) to be paid to the operator
     **/
-    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {
+    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFeePercentage) external {
         require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
-        _withdraw(wormholeGUID, getGUIDHash(wormholeGUID), maxFee);
+        _withdraw(wormholeGUID, getGUIDHash(wormholeGUID), maxFee, operatorFeePercentage);
     }
 
     /**

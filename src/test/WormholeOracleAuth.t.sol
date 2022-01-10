@@ -26,7 +26,7 @@ interface Hevm {
 }
 
 contract WormholeJoinMock {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFeePercentage) external {}
 }
 
 contract WormholeOracleAuthTest is DSTest {
@@ -88,7 +88,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
 }

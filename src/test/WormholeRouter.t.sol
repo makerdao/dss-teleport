@@ -21,7 +21,7 @@ import "ds-test/test.sol";
 import "src/WormholeRouter.sol";
 
 contract TargetMock {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFeePercentage) external {}
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
@@ -208,7 +208,7 @@ contract WormholeRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(555));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 100 ether, 0);
     }
 
     function testRequestMintTargetingL1() public {
@@ -224,7 +224,7 @@ contract WormholeRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, wormholeJoin);
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 100 ether, 0);
     }
 
     function testRequestMintTargetingL2() public {
@@ -240,7 +240,7 @@ contract WormholeRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new TargetMock()));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 100 ether, 0);
     }
 
     function testFailRequestMintTargetingInvalidDomain() public {
@@ -255,7 +255,7 @@ contract WormholeRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(this));
 
-        router.requestMint(guid, 100 ether);
+        router.requestMint(guid, 100 ether, 0);
     }
 
     function testFailSettleFromNotGateway() public {
