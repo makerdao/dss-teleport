@@ -141,6 +141,7 @@ contract WormholeJoin {
     **/
     function _withdraw(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFee, uint256 operatorFeePercentage) internal {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
+        require(operatorFeePercentage <= WAD, "WormholeJoin/operator-fee-too-high");
 
         bool vatLive = vat.live() == 1;
 
