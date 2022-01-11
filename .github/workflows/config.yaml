@@ -23,7 +23,7 @@ jobs:
         extraPullNames: dapp
 
     - name: Run tests
-      run: nix-shell --pure --argstr url ${{ secrets.ETH_RPC_URL }} --run 'dapp test -v --rpc'
+      run: nix-shell --pure --run 'dapp test -v --rpc'
 
   solhint:
     runs-on: ubuntu-latest

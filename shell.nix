@@ -15,7 +15,5 @@ mkShell {
   shellHook = ''
     export NIX_SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
     unset SSL_CERT_FILE
-
-    export ETH_RPC_URL="''${ETH_RPC_URL:-${url}}"
   '';
 }
