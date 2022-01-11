@@ -1,5 +1,4 @@
-{ url
-  , dappPkgs ? (
+{ dappPkgs ? (
     import (fetchTarball "https://github.com/makerdao/makerpkgs/tarball/master") {}
   ).dappPkgsVersions.hevm-0_49_0
 }: with dappPkgs;
