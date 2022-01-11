@@ -257,8 +257,11 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.fees("aaa"), address(888));
 
         assertEq(join.line("aaa"), 0);
-        assertTrue(_tryFile("line", "aaa", 10));
-        assertEq(join.line("aaa"), 10);
+        uint256 maxInt256 = uint256(type(int256).max);
+        assertTrue(_tryFile("line", "aaa", maxInt256));
+        assertEq(join.line("aaa"), maxInt256);
+
+        assertTrue(!_tryFile("line", "aaa", maxInt256 + 1));
 
         join.deny(address(this));
 

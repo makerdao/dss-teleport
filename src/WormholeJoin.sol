@@ -125,6 +125,7 @@ contract WormholeJoin {
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
+            require(data <= 2 ** 255 - 1, "WormholeJoin/not-allowed-bigger-int256");
             line[domain_] = data;
         } else {
             revert("WormholeJoin/file-unrecognized-param");
@@ -144,7 +145,6 @@ contract WormholeJoin {
         bool vatLive = vat.live() == 1;
 
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
-        require(line_ <= 2 ** 255 - 1, "WormholeJoin/overflow");
 
         int256 debt_ = debt[wormholeGUID.sourceDomain];
 
