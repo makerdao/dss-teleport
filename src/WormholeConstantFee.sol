@@ -26,7 +26,7 @@ contract WormholeConstantFee is WormholeFees {
         fee = _fee;
     }
 
-    function getFees(WormholeGUID calldata, uint256, int256) override external view returns (uint256) {
-        return fee;
+    function getFee(WormholeGUID calldata guid, uint256, int256, uint256, uint256 amtToTake) override external view returns (uint256) {
+        return guid.amount > 0 ? fee * amtToTake / guid.amount : 0;
     }
 }
