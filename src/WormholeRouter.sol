@@ -17,6 +17,7 @@
 pragma solidity 0.8.9;
 
 import "./WormholeGUID.sol";
+import "./utils/EnumerableSet.sol";
 
 interface TokenLike {
   function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
@@ -29,12 +30,13 @@ interface GatewayLike {
 
 contract WormholeRouter {
 
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
     mapping (address => uint256) public wards;          // Auth
     mapping (bytes32 => address) public gateways;       // GatewayLike contracts called by the router for each domain
     mapping (address => bytes32) public domains;        // Domains for each gateway
-    mapping (bytes32 => uint256) public domainIndices;  // The domain's position in the active domain array
 
-    bytes32[] public allDomains;  // Array of active domains
+    EnumerableSet.Bytes32Set private allDomains;
 
     TokenLike immutable public dai; // L1 DAI ERC20 token
 
@@ -71,8 +73,7 @@ contract WormholeRouter {
      * and L1 bridge contracts (for L2 domains).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
      * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
-     * an array `allDomains` of all active domains as well as a mapping `domainIndices` of the indices of domain names within
-     * the `allDomains` array. `domainIndices` is used to allow updating `allDomains` using only O(1) writes.
+     * the enumerable set `allDomains`.
      * @param what The name of the operation. Only "gateway" is supported.
      * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
      * @param data The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
@@ -83,25 +84,14 @@ contract WormholeRouter {
             if(prevGateway == address(0)) { 
                 // new domain => add it to allDomains
                 if(data != address(0)) {
-                    uint256 length = allDomains.length;
-                    require(length < type(uint256).max, "WormwholeRouter/allDomains-overflow");
-                    domainIndices[domain] = length;
-                    allDomains.push(domain);
+                    allDomains.add(domain);
                 }
             } else { 
                 // existing domain 
                 domains[prevGateway] = bytes32(0);
                 if(data == address(0)) {
                     // => remove domain from allDomains
-                    uint256 pos = domainIndices[domain];
-                    uint256 lastIndex = allDomains.length - 1;
-                    if (pos != lastIndex) {
-                        bytes32 lastDomain = allDomains[lastIndex];
-                        allDomains[pos] = lastDomain;
-                        domainIndices[lastDomain] = pos;
-                    }
-                    allDomains.pop();
-                    delete domainIndices[domain];
+                    allDomains.remove(domain);
                 }
             }
 
@@ -115,8 +105,14 @@ contract WormholeRouter {
         emit File(what, domain, data);
     }
 
-    function numActiveDomains() external view returns (uint256) {
-        return allDomains.length;
+    function numDomains() external view returns (uint256) {
+        return allDomains.length();
+    }
+    function domainAt(uint256 index) external view returns (bytes32) {
+        return allDomains.at(index);
+    }
+    function hasDomain(bytes32 domain) external view returns (bool) {
+        return allDomains.contains(domain);
     }
 
     /**
