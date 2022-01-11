@@ -134,7 +134,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev Internal function that executes the withdrawl after a wormhole is registered
+    * @dev Internal function that executes the mint after a wormhole is registered
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
@@ -186,7 +186,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External authed function that registers the wormwhole and executes the withdrawl after
+    * @dev External authed function that registers the wormwhole and executes the mint after
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     **/
@@ -200,7 +200,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External function that executes the withdrawl of any pending and available amount (only callable by operator)
+    * @dev External function that executes the mint of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     **/
