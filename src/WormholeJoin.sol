@@ -36,7 +36,7 @@ interface DaiJoinLike {
 }
 
 interface TokenLike {
-    function approve(address, uint256) external;
+    function approve(address, uint256) external returns (bool);
 }
 
 interface FeesLike {
