@@ -25,17 +25,32 @@ interface Hevm {
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
-contract WormholeJoinMock {
+contract GatewayMock {
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFeePercentage) external {}
+    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
 contract WormholeOracleAuthTest is DSTest {
 
     Hevm hevm = Hevm(HEVM_ADDRESS);
-    WormholeOracleAuth auth;
+    WormholeOracleAuth internal auth;
+    address internal wormholeJoin;
 
     function setUp() public {
-        auth = new WormholeOracleAuth(address(new WormholeJoinMock()));
+        wormholeJoin = address(new GatewayMock());
+        auth = new WormholeOracleAuth(wormholeJoin);
+    }
+
+    function _tryRely(address usr) internal returns (bool ok) {
+        (ok,) = address(auth).call(abi.encodeWithSignature("rely(address)", usr));
+    }
+
+    function _tryDeny(address usr) internal returns (bool ok) {
+        (ok,) = address(auth).call(abi.encodeWithSignature("deny(address)", usr));
+    }
+
+    function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
+        (ok,) = address(auth).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
     }
 
     function getSignatures(bytes32 signHash) internal returns (bytes memory signatures, address[] memory signers) {
@@ -50,6 +65,62 @@ contract WormholeOracleAuthTest is DSTest {
             signatures = abi.encodePacked(signatures, r, s, v);
         }
         assertEq(signatures.length, numSigners * 65);
+    }
+
+    function testConstructor() public {
+        assertEq(address(auth.wormholeJoin()), wormholeJoin);
+        assertEq(auth.wards(address(this)), 1);
+    }
+
+    function testRelyDeny() public {
+        assertEq(auth.wards(address(456)), 0);
+        assertTrue(_tryRely(address(456)));
+        assertEq(auth.wards(address(456)), 1);
+        assertTrue(_tryDeny(address(456)));
+        assertEq(auth.wards(address(456)), 0);
+
+        auth.deny(address(this));
+
+        assertTrue(!_tryRely(address(456)));
+        assertTrue(!_tryDeny(address(456)));
+    }
+
+    function testFileFailsWhenNotAuthed() public {
+        assertTrue(_tryFile("threshold", 888));
+        auth.deny(address(this));
+        assertTrue(!_tryFile("threshold", 888));
+    }
+
+    function testFileNewThreshold() public {
+        assertEq(auth.threshold(), 0);
+
+        assertTrue(_tryFile("threshold", 3));
+
+        assertEq(auth.threshold(), 3);
+    }
+
+    function testFailFileInvalidWhat() public {
+        auth.file("meh", 888);
+    }
+
+    function testAddRemoveSigners() public {
+        address[] memory signers = new address[](3);
+        for(uint i; i < signers.length; i++) {
+            signers[i] = address(uint160(i));
+            assertEq(auth.signers(address(uint160(i))), 0);
+        }
+
+        auth.addSigners(signers);
+
+        for(uint i; i < signers.length; i++) {
+            assertEq(auth.signers(address(uint160(i))), 1);
+        }
+
+        auth.removeSigners(signers);
+
+        for(uint i; i < signers.length; i++) {
+            assertEq(auth.signers(address(uint160(i))), 0);
+        }
     }
 
     function test_isValid() public {
