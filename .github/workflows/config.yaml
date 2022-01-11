@@ -22,7 +22,7 @@ jobs:
         extraPullNames: dapp
 
     - name: Run tests
-      run: nix-shell --pure --run 'dapp test -v --rpc'
+      run: nix-shell --pure --run 'dapp test -v'
       
     - name: Run coverage
       run: nix-shell --pure --run 'bash ./coverage.sh'
