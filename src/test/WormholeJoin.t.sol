@@ -178,6 +178,8 @@ contract DaiJoinMock {
 contract WormholeJoinTest is DSTest {
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
+    bytes32 constant internal ilk = "L2DAI";
+    bytes32 constant internal domain = "ethereum";
     WormholeJoin internal join;
     VatMock internal vat;
     DaiMock internal dai;
@@ -190,7 +192,7 @@ contract WormholeJoinTest is DSTest {
         vat = new VatMock();
         dai = new DaiMock();
         daiJoin = new DaiJoinMock(address(vat), address(dai));
-        join = new WormholeJoin(address(vat), address(daiJoin), "L2DAI", "ethereum");
+        join = new WormholeJoin(address(vat), address(daiJoin), ilk, domain);
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
         join.file("fees", "l2network", address(new WormholeConstantFee(0)));
@@ -233,6 +235,14 @@ contract WormholeJoinTest is DSTest {
         (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,bytes32,uint256)", what, domain_, data));
     }
 
+    function testConstructor() public {
+        assertEq(address(join.vat()), address(vat));
+        assertEq(address(join.daiJoin()), address(daiJoin));
+        assertEq(join.ilk(), ilk);
+        assertEq(join.domain(), domain);
+        assertEq(join.wards(address(this)), 1);
+    }
+
     function testRelyDeny() public {
         assertEq(join.wards(address(456)), 0);
         assertTrue(_tryRely(address(456)));
@@ -264,6 +274,12 @@ contract WormholeJoinTest is DSTest {
         assertTrue(!_tryFile("vow", address(888)));
         assertTrue(!_tryFile("fees", "aaa", address(888)));
         assertTrue(!_tryFile("line", "aaa", 10));
+    }
+
+    function testInvalidWhat() public {
+       assertTrue(!_tryFile("meh", address(888)));
+       assertTrue(!_tryFile("meh", domain, address(888)));
+       assertTrue(!_tryFile("meh", domain, 888));
     }
 
     function testRegisterAndWithdrawAll() public {
@@ -344,10 +360,11 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-
         assertEq(vat.dai(vow), 0);
+        WormholeConstantFee fees = new WormholeConstantFee(100 ether);
+        assertEq(fees.fee(), 100 ether);
 
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
+        join.file("fees", "l2network", address(fees));
         join.requestMint(guid, 101 ether);
 
         assertEq(vat.dai(vow), 100 * RAD);
