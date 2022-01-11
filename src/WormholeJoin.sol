@@ -40,7 +40,7 @@ interface TokenLike {
 }
 
 interface FeesLike {
-    function getFees(WormholeGUID calldata, uint256, int256, uint256) external view returns (uint256);
+    function getFees(WormholeGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256);
 }
 
 // Primary control for extending Wormhole credit
@@ -160,7 +160,7 @@ contract WormholeJoin {
                                 uint256(int256(line_) - debt_)
                             );
 
-        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_, amtToTake) : 0;
+        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFees(wormholeGUID, line_, debt_, pending, amtToTake) : 0;
         require(fee <= maxFeePercentage * amtToTake / WAD, "WormholeJoin/max-fee-exceed");
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
