@@ -20,7 +20,7 @@ import "ds-test/test.sol";
 
 import "src/WormholeRouter.sol";
 
-contract TargetMock {
+contract GatewayMock {
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
@@ -39,7 +39,7 @@ contract WormholeRouterTest is DSTest {
 
     function setUp() public {
         dai = address(new DaiMock());
-        wormholeJoin = address(new TargetMock());
+        wormholeJoin = address(new GatewayMock());
         router = new WormholeRouter(dai);
     }
 
@@ -240,7 +240,7 @@ contract WormholeRouterTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", "another-l2network", address(new TargetMock()));
+        router.file("gateway", "another-l2network", address(new GatewayMock()));
 
         router.requestMint(guid, 4 * WAD / 10000);
     }
@@ -275,7 +275,7 @@ contract WormholeRouterTest is DSTest {
 
     function testSettleTargetingL2() public {
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", "another-l2network", address(new TargetMock()));
+        router.file("gateway", "another-l2network", address(new GatewayMock()));
 
         router.settle("another-l2network", 100 ether);
     }

@@ -40,7 +40,7 @@ contract WormholeRouter {
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, bytes32 domain, address gateway);
+    event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     modifier auth {
         require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
@@ -75,21 +75,23 @@ contract WormholeRouter {
      * the `allDomains` array. `domainIndices` is used to allow updating `allDomains` using only O(1) writes.
      * @param what The name of the operation. Only "gateway" is supported.
      * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
-     * @param gateway The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
+     * @param data The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
      */
-    function file(bytes32 what, bytes32 domain, address gateway) external auth {
+    function file(bytes32 what, bytes32 domain, address data) external auth {
         if (what == "gateway") {
             address prevGateway = gateways[domain];
             if(prevGateway == address(0)) { 
                 // new domain => add it to allDomains
-                if(gateway != address(0)) {
-                    domainIndices[domain] = allDomains.length;
+                if(data != address(0)) {
+                    uint256 length = allDomains.length;
+                    require(length < type(uint256).max, "WormwholeRouter/allDomains-overflow");
+                    domainIndices[domain] = length;
                     allDomains.push(domain);
                 }
             } else { 
                 // existing domain 
                 domains[prevGateway] = bytes32(0);
-                if(gateway == address(0)) {
+                if(data == address(0)) {
                     // => remove domain from allDomains
                     uint256 pos = domainIndices[domain];
                     uint256 lastIndex = allDomains.length - 1;
@@ -103,14 +105,14 @@ contract WormholeRouter {
                 }
             }
 
-            gateways[domain] = gateway;
-            if(gateway != address(0)) {
-                domains[gateway] = domain;
+            gateways[domain] = data;
+            if(data != address(0)) {
+                domains[data] = domain;
             }
         } else {
             revert("WormholeRouter/file-unrecognized-param");
         }
-        emit File(what, domain, gateway);
+        emit File(what, domain, data);
     }
 
     function numActiveDomains() external view returns (uint256) {
