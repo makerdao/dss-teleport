@@ -113,7 +113,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormholeRouter`, settles DAI debt
 
 **`WormholeFees`**
-* `getFees(WormholeGUID calldata wormholeGUID) (uint256 fees)` - interface for getting current fee. Various implementations can be provided by the governance with different fee structures
+* `getFee(WormholeGUID calldata wormholeGUID) (uint256 fees)` - interface for getting current fee. Various implementations can be provided by the governance with different fee structures
 
 ### Authorization
 * `WormholeOracleAuth`
