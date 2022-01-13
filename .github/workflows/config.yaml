@@ -1,7 +1,6 @@
 on: [push, pull_request]
 
 jobs:
-
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -23,7 +22,10 @@ jobs:
         extraPullNames: dapp
 
     - name: Run tests
-      run: nix-shell --pure --argstr url ${{ secrets.ETH_RPC_URL }} --run 'dapp test -v --rpc'
+      run: nix-shell --pure --run 'dapp test -v'
+      
+    - name: Run coverage
+      run: nix-shell --pure --run 'bash ./coverage.sh'
 
   solhint:
     runs-on: ubuntu-latest
@@ -34,7 +36,7 @@ jobs:
       - name: Install Node 16
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Install solhint
         run: npm i -g solhint
