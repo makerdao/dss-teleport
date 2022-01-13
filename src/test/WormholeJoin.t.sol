@@ -287,10 +287,6 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawAll() public {
-        emit log_bytes32(addressToBytes32(address(123)));
-        emit log_named_address("addr",address(123));
-
-
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
