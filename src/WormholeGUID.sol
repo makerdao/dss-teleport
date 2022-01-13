@@ -31,7 +31,7 @@ function bytes32ToAddress(bytes32 addr) pure returns (address) {
     return address(uint160(uint256(addr)));
 }
 
-function addressToBytes(address addr) pure returns (bytes32){
+function addressToBytes32(address addr) pure returns (bytes32) {
     return bytes32(uint256(uint160(addr)));
 }
 
