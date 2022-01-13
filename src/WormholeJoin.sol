@@ -40,7 +40,7 @@ interface TokenLike {
 }
 
 interface FeesLike {
-    function getFee(WormholeGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256);
+    function getFee(WormholeGUID calldata, uint256, uint256, int256, uint256, uint256) external view returns (uint256);
 }
 
 // Primary control for extending Wormhole credit
@@ -50,6 +50,7 @@ contract WormholeJoin {
     mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
     mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
     mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
+    mapping (bytes32 =>        uint256) public ttl;       // Expected settlement duration per source domain
 
     address public vow;
 
@@ -127,6 +128,8 @@ contract WormholeJoin {
         if (what == "line") {
             require(data <= 2 ** 255 - 1, "WormholeJoin/not-allowed-bigger-int256");
             line[domain_] = data;
+        } else if (what == "ttl") {
+            ttl[domain_] = data;
         } else {
             revert("WormholeJoin/file-unrecognized-param");
         }
@@ -160,7 +163,7 @@ contract WormholeJoin {
                                 uint256(int256(line_) - debt_)
                             );
 
-        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFee(wormholeGUID, line_, debt_, pending, amtToTake) : 0;
+        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFee(wormholeGUID, line_, ttl[wormholeGUID.sourceDomain], debt_, pending, amtToTake) : 0;
         require(fee <= maxFeePercentage * amtToTake / WAD, "WormholeJoin/max-fee-exceed");
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending

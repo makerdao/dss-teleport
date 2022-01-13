@@ -22,6 +22,7 @@ import "src/WormholeJoin.sol";
 import "src/WormholeConstantFee.sol";
 
 interface Hevm {
+    function warp(uint) external;
     function addr(uint) external returns (address);
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
@@ -197,6 +198,7 @@ contract WormholeJoinTest is DSTest {
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
         join.file("fees", "l2network", address(new WormholeConstantFee(0)));
+        join.file("ttl", "l2network", 7 days);
         vat.hope(address(daiJoin));
     }
 
@@ -419,6 +421,31 @@ contract WormholeJoinTest is DSTest {
 
         join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
         join.requestMint(guid, 3 * WAD / 10000); // 0.03% * 250K < 100 (not enough)
+    }
+
+    function testRegisterAndWithdrawFeeTTLExpires() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: address(123),
+            operator: address(this),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        assertEq(vat.dai(vow), 0);
+        WormholeConstantFee fees = new WormholeConstantFee(100 ether);
+        assertEq(fees.fee(), 100 ether);
+
+        join.file("fees", "l2network", address(fees));
+        hevm.warp(block.timestamp + 7 days);    // Over ttl - you don't pay fees
+        join.requestMint(guid, 0); // 0.04% * 250K = 100 (just enough)
+
+        assertEq(vat.dai(vow), 0);
+        assertEq(dai.balanceOf(address(123)), 250_000 ether);
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
     }
 
     function testRegisterAndWithdrawPartialPayingFee() public {
