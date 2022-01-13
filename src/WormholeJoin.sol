@@ -78,6 +78,7 @@ contract WormholeJoin {
     // --- Errors ---
     error NotAuthorized();
     error FileUnrecognizedParam();
+    error NotAllowedBiggerInt256();
     error IncorrectDomain();
     error Overflow();
     error MaxFeeExceeded();
@@ -134,7 +135,7 @@ contract WormholeJoin {
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
-            require(data <= 2 ** 255 - 1, "WormholeJoin/not-allowed-bigger-int256");
+            if (data > 2 ** 255 - 1) revert NotAllowedBiggerInt256();
             line[domain_] = data;
         } else {
             revert FileUnrecognizedParam();
