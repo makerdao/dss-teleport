@@ -20,11 +20,19 @@ pragma solidity 0.8.9;
 struct WormholeGUID {
     bytes32 sourceDomain;
     bytes32 targetDomain;
-    address receiver;
-    address operator;
+    bytes32 receiver;
+    bytes32 operator;
     uint128 amount;
     uint80 nonce;
     uint48 timestamp;
+}
+
+function bytes32ToAddress(bytes32 addr) pure returns (address) {
+    return address(uint160(uint256(addr)));
+}
+
+function addressToBytes(address addr) pure returns (bytes32){
+    return bytes32(uint256(uint160(addr)));
 }
 
 // solhint-disable-next-line func-visibility

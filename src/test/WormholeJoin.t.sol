@@ -287,11 +287,15 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawAll() public {
+        emit log_bytes32(addressToBytes(address(123)));
+        emit log_named_address("addr",address(123));
+
+
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -316,8 +320,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -337,8 +341,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -359,8 +363,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -373,8 +377,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "etherium",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -386,8 +390,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -410,8 +414,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -425,8 +429,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -460,8 +464,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -478,8 +482,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -500,8 +504,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(this),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(this)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -525,8 +529,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(654),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(654)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -561,8 +565,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(654),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(654)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -586,8 +590,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(654),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(654)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -613,8 +617,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(654),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(654)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -637,8 +641,8 @@ contract WormholeJoinTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: address(123),
-            operator: address(654),
+            receiver: addressToBytes(address(123)),
+            operator: addressToBytes(address(654)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
