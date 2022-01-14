@@ -176,7 +176,7 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
-        daiJoin.exit(wormholeGUID.receiver, amtToTake - fee);
+        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), amtToTake - fee);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
@@ -202,8 +202,8 @@ contract WormholeJoin {
     function requestMint(
         bytes32 sourceDomain,
         bytes32 targetDomain,
-        address receiver,
-        address operator,
+        bytes32 receiver,
+        bytes32 operator,
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
@@ -232,21 +232,21 @@ contract WormholeJoin {
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     **/
     function mintPending(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage) external {
-        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
         _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
     }
 
     function mintPending(
         bytes32 sourceDomain,
         bytes32 targetDomain,
-        address receiver,
-        address operator,
+        bytes32 receiver,
+        bytes32 operator,
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
         uint256 maxFeePercentage
     ) external {
-        require(operator == msg.sender, "WormholeJoin/sender-not-operator");
+        require(bytes32ToAddress(operator) == msg.sender, "WormholeJoin/sender-not-operator");
 
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,

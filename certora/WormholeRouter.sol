@@ -130,8 +130,8 @@ contract WormholeRouter {
     function requestMint(
         bytes32 sourceDomain,
         bytes32 targetDomain,
-        address receiver,
-        address operator,
+        bytes32 receiver,
+        bytes32 operator,
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,

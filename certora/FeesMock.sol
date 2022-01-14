@@ -25,7 +25,7 @@ contract FeesMock {
         return fee;
     }
 
-    function getFee(bytes32, bytes32, address, address, uint128, uint80, uint48, uint256, int256, uint256, uint256) external view returns (uint256) {
+    function getFee(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48, uint256, int256, uint256, uint256) external view returns (uint256) {
         return fee;
     }
 }

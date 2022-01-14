@@ -9,7 +9,7 @@ methods {
     gateways(bytes32) returns (address) envfree
     hasDomain(bytes32) returns (bool) envfree
     numDomains() returns (uint256) envfree
-    requestMint((bytes32, bytes32, address, address, uint128, uint80, uint48), uint256) => DISPATCHER(true)
+    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
     dai.allowance(address, address) returns (uint256) envfree
@@ -160,11 +160,11 @@ rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
 rule requestMint_revert(
         bytes32 sourceDomain,
         bytes32 targetDomain,
-        address receiver,
-        address operator,
+        bytes32 receiver,
+        bytes32 operator,
         uint128 amount,
-        uint80 nonce,
-        uint48 timestamp,
+        uint80  nonce,
+        uint48  timestamp,
         uint256 maxFee
     ) {
     env e;
