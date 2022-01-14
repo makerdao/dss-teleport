@@ -27,10 +27,12 @@ struct WormholeGUID {
     uint48 timestamp;
 }
 
+// solhint-disable-next-line func-visibility
 function bytes32ToAddress(bytes32 addr) pure returns (address) {
     return address(uint160(uint256(addr)));
 }
 
+// solhint-disable-next-line func-visibility
 function addressToBytes32(address addr) pure returns (bytes32) {
     return bytes32(uint256(uint160(addr)));
 }
