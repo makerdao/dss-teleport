@@ -17,31 +17,32 @@
 pragma solidity 0.8.9;
 
 import "../src/WormholeGUID.sol";
+import "../src/utils/EnumerableSet.sol";
 
 interface TokenLike {
   function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
 }
 
 interface GatewayLike {
-    // function requestMint(bytes32 sourceDomain, bytes32 targetDomain, address receiver, address operator, uint128 amount, uint80 nonce, uint48 timestamp, uint256 maxFee) external;
     function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFee) external;
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
 contract WormholeRouter {
 
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
     mapping (address => uint256) public wards;          // Auth
     mapping (bytes32 => address) public gateways;       // GatewayLike contracts called by the router for each domain
     mapping (address => bytes32) public domains;        // Domains for each gateway
-    mapping (bytes32 => uint256) public domainIndices;  // The domain's position in the active domain array
 
-    bytes32[] public allDomains;  // Array of active domains
+    EnumerableSet.Bytes32Set private allDomains;
 
     TokenLike immutable public dai; // L1 DAI ERC20 token
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
-    event File(bytes32 indexed what, bytes32 domain, address data);
+    event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     modifier auth {
         require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
@@ -72,8 +73,7 @@ contract WormholeRouter {
      * and L1 bridge contracts (for L2 domains).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
      * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
-     * an array `allDomains` of all active domains as well as a mapping `domainIndices` of the indices of domain names within
-     * the `allDomains` array. `domainIndices` is used to allow updating `allDomains` using only O(1) writes.
+     * the enumerable set `allDomains`.
      * @param what The name of the operation. Only "gateway" is supported.
      * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
      * @param data The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
@@ -84,25 +84,14 @@ contract WormholeRouter {
             if(prevGateway == address(0)) { 
                 // new domain => add it to allDomains
                 if(data != address(0)) {
-                    uint256 length = allDomains.length;
-                    require(length < type(uint256).max, "WormwholeRouter/allDomains-overflow");
-                    domainIndices[domain] = length;
-                    allDomains.push(domain);
+                    allDomains.add(domain);
                 }
             } else { 
                 // existing domain 
                 domains[prevGateway] = bytes32(0);
                 if(data == address(0)) {
                     // => remove domain from allDomains
-                    uint256 pos = domainIndices[domain];
-                    uint256 lastIndex = allDomains.length - 1;
-                    if (pos != lastIndex) {
-                        bytes32 lastDomain = allDomains[lastIndex];
-                        allDomains[pos] = lastDomain;
-                        domainIndices[lastDomain] = pos;
-                    }
-                    allDomains.pop();
-                    delete domainIndices[domain];
+                    allDomains.remove(domain);
                 }
             }
 
@@ -116,20 +105,26 @@ contract WormholeRouter {
         emit File(what, domain, data);
     }
 
-    function numActiveDomains() external view returns (uint256) {
-        return allDomains.length;
+    function numDomains() external view returns (uint256) {
+        return allDomains.length();
+    }
+    function domainAt(uint256 index) external view returns (bytes32) {
+        return allDomains.at(index);
+    }
+    function hasDomain(bytes32 domain) external view returns (bool) {
+        return allDomains.contains(domain);
     }
 
     /**
      * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
      * @param wormholeGUID The wormhole GUID to register
-     * @param maxFee The maximum amount of fees to pay for the minting of DAI
+     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      */
-    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFee) external {
+    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage) external {
         require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
         address gateway = gateways[wormholeGUID.targetDomain];
         require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
-        GatewayLike(gateway).requestMint(wormholeGUID, maxFee);
+        GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage);
     }
 
     function requestMint(
@@ -140,7 +135,7 @@ contract WormholeRouter {
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) external {
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,
@@ -155,7 +150,7 @@ contract WormholeRouter {
         require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
         address gateway = gateways[wormholeGUID.targetDomain];
         require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
-        GatewayLike(gateway).requestMint(wormholeGUID, maxFee);
+        GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage);
     }
 
     /**

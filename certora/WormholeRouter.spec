@@ -4,11 +4,11 @@ using DaiMock as dai
 using WormholeJoinMock as join
 
 methods {
-    allDomains(uint256) returns (bytes32) envfree
+    domainAt(uint256) returns (bytes32) envfree
     domains(address) returns (bytes32) envfree
-    domainIndices(bytes32) returns (uint256) envfree
     gateways(bytes32) returns (address) envfree
-    numActiveDomains() returns (uint256) envfree
+    hasDomain(bytes32) returns (bool) envfree
+    numDomains() returns (uint256) envfree
     requestMint((bytes32, bytes32, address, address, uint128, uint80, uint48), uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
@@ -20,6 +20,18 @@ definition RAY() returns uint256 = 10^27;
 
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
+
+// ghost indexesGhost(bytes32) returns uint256 {
+//     init_state axiom forall bytes32 x. indexesGhost(x) == 0;
+// }
+
+// hook Sload uint256 v allDomains.t_bytes32[KEY bytes32 domain] STORAGE {
+//     require indexesGhost(domain) == v;
+// }
+
+// hook Sstore allDomains.t_bytes32[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
+//     havoc indexesGhost assuming indexesGhost@new(a) == n;
+// }
 
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
@@ -77,105 +89,71 @@ rule deny_revert(address usr) {
 rule file_domain_address(bytes32 what, bytes32 domain, address data) {
     env e;
 
+    bool whatIsGateway = what == 0x6761746577617900000000000000000000000000000000000000000000000000;
+    bool dataIsEmpty = data == 0x0000000000000000000000000000000000000000;
     address gatewayBefore = gateways(domain);
-    uint256 numActiveDomainsBefore = numActiveDomains();
-    uint256 pos = domainIndices(domain);
-    bytes32 lastDomain = allDomains(numActiveDomainsBefore - 1);
+    bool gatewayWasEmpty = gatewayBefore == 0x0000000000000000000000000000000000000000;
+    uint256 numDomainsBefore = numDomains();
+    bool hasDomainBefore = hasDomain(domain);
 
     file(e, what, domain, data);
 
-    uint256 numActiveDomainsAfter = numActiveDomains();
+    uint256 numDomainsAfter = numDomains();
 
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 // what is "gateway"
-        => gateways(domain) == data, "file did not set gateways(domain) as expected"
+        whatIsGateway => gateways(domain) == data, "file did not set gateways(domain) as expected"
     );
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        data != 0x0000000000000000000000000000000000000000
+        whatIsGateway && !dataIsEmpty
         => domains(data) == domain, "file did not set domains(gateway) as expected"
     );
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore == 0x0000000000000000000000000000000000000000 &&
-        data != 0x0000000000000000000000000000000000000000
-        => numActiveDomainsAfter == numActiveDomainsBefore + 1, "file did not set allDomains length as expected");
+        whatIsGateway && gatewayWasEmpty && !dataIsEmpty && !hasDomainBefore && numDomainsBefore < max_uint256
+        => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected");
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore == 0x0000000000000000000000000000000000000000 &&
-        data != 0x0000000000000000000000000000000000000000
-        => allDomains(numActiveDomainsBefore) == domain, "file did not set allDomains as expected");
+        whatIsGateway && gatewayWasEmpty && !dataIsEmpty
+        => domainAt(numDomainsBefore) == domain, "file did not set allDomains as expected");
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore == 0x0000000000000000000000000000000000000000 &&
-        data != 0x0000000000000000000000000000000000000000
-        => domainIndices(domain) == numActiveDomainsBefore, "file did not set domainIndices as expected");
-    assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore != 0x0000000000000000000000000000000000000000
+        whatIsGateway && !gatewayWasEmpty
         => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2");
     assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore != 0x0000000000000000000000000000000000000000 &&
-        data == 0x0000000000000000000000000000000000000000
-        => numActiveDomainsAfter == numActiveDomainsBefore - 1, "file did not set allDomains length as expected 2");
-    assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore != 0x0000000000000000000000000000000000000000 &&
-        data == 0x0000000000000000000000000000000000000000
-        => domainIndices(domain) == 0, "file did not set domainIndices as expected 2");
-    assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore != 0x0000000000000000000000000000000000000000 &&
-        data == 0x0000000000000000000000000000000000000000 &&
-        pos != numActiveDomainsBefore - 1
-        => allDomains(pos) == lastDomain, "file did not set allDomains as expected 2");
-    assert(
-        what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-        gatewayBefore != 0x0000000000000000000000000000000000000000 &&
-        data == 0x0000000000000000000000000000000000000000 &&
-        pos != numActiveDomainsBefore - 1
-        => domainIndices(lastDomain) == pos, "file did not set domainIndices as expected 3");
+        whatIsGateway && !gatewayWasEmpty && dataIsEmpty
+        => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected");
 }
 
 // Verify revert rules on file
 rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
     env e;
 
+    bool whatIsGateway = what == 0x6761746577617900000000000000000000000000000000000000000000000000;
+    bool dataIsEmpty = data == 0x0000000000000000000000000000000000000000;
     uint256 ward = wards(e.msg.sender);
     address gateway = gateways(domain);
-    uint256 numActiveDomains = numActiveDomains();
-    uint256 pos = domainIndices(domain);
+    bool gatewayWasEmpty = gateway == 0x0000000000000000000000000000000000000000;
+    uint256 numDomains = numDomains();
+    bool hasDomain = hasDomain(domain);
+    // uint256 pos = index(domain);
 
     file@withrevert(e, what, domain, data);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;
-    bool revert3 = what != 0x6761746577617900000000000000000000000000000000000000000000000000; // what is not "gateway"
-    bool revert4 = what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-                   gateway == 0x0000000000000000000000000000000000000000 &&
-                   data != 0x0000000000000000000000000000000000000000 &&
-                   numActiveDomains == max_uint256;
+    bool revert3 = !whatIsGateway;
     // The two following revert cases are in fact not possible due how the code as as a whole works.
     // TODO: see if we can make invariants to remove them.
-    bool revert5 = what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-                   gateway != 0x0000000000000000000000000000000000000000 &&
-                   data == 0x0000000000000000000000000000000000000000 &&
-                   numActiveDomains == 0;
-    bool revert6 = what == 0x6761746577617900000000000000000000000000000000000000000000000000 &&
-                   gateway != 0x0000000000000000000000000000000000000000 &&
-                   data == 0x0000000000000000000000000000000000000000 &&
-                   pos >= numActiveDomains;
+    bool revert4 = whatIsGateway && !gatewayWasEmpty && dataIsEmpty && hasDomain && numDomains == 0;
+    // bool revert5 = whatIsGateway && !gatewayWasEmpty && dataIsEmpty && hasDomain && pos > numDomains;
 
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
     assert(revert3 => lastReverted, "revert3 failed");
     assert(revert4 => lastReverted, "revert4 failed");
-    assert(revert5 => lastReverted, "revert5 failed");
-    assert(revert6 => lastReverted, "revert6 failed");
+    // assert(revert5 => lastReverted, "revert5 failed");
 
+    // This will fail as we can not build revert5 as missing getter to the indexes mapping
+    // TODO: Review if we can do it with ghost variables 
     assert(lastReverted => revert1 || revert2 || revert3 ||
-                           revert4 || revert5 || revert6, "Revert rules are not covering all the cases");
+                           revert4/* || revert5*/, "Revert rules are not covering all the cases");
 }
 
 // Verify revert rules on requestMint

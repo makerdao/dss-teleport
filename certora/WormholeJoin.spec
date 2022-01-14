@@ -17,7 +17,7 @@ methods {
     vow() returns (address) envfree
     wards(address) returns (uint256) envfree
     wormholes(bytes32) returns (bool, uint248) envfree
-    getFees((bytes32, bytes32, address, address, uint128, uint80, uint48), uint256, int256) => DISPATCHER(true)
+    getFee((bytes32, bytes32, address, address, uint128, uint80, uint48), uint256, int256, uint256, uint256) => DISPATCHER(true)
     aux.getGUIDHash(bytes32, bytes32, address, address, uint128, uint80, uint48) returns (bytes32) envfree
     vat.can(address, address) returns (uint256) envfree
     vat.dai(address) returns (uint256) envfree
@@ -30,10 +30,26 @@ methods {
     daiJoin.vat() returns (address) envfree
 }
 
+definition WAD() returns uint256 = 10^18;
 definition RAY() returns uint256 = 10^27;
 
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
+
+// ghost lineGhost(bytes32) returns mathint {
+//     init_state axiom forall bytes32 x. lineGhost(x) == 0;
+// }
+
+// hook Sload uint256 v line[KEY bytes32 domain] STORAGE {
+//     require lineGhost(domain) == v;
+// }
+
+// hook Sstore line[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
+//     havoc lineGhost assuming lineGhost@new(a) == n;
+// }
+
+// invariant checkLineGhost(bytes32 someKey) line(someKey) == lineGhost(someKey)
+// invariant lineCantExceedMaxInt256(bytes32 domain) line(domain) <= max_int256()
 
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
@@ -163,12 +179,15 @@ rule file_domain_uint256_revert(bytes32 what, bytes32 domain, uint256 data) {
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;
     bool revert3 = what != 0x6c696e6500000000000000000000000000000000000000000000000000000000; // what is not "line"
+    bool revert4 = what == 0x6c696e6500000000000000000000000000000000000000000000000000000000 && data > max_int256();
 
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
     assert(revert3 => lastReverted, "revert3 failed");
+    assert(revert4 => lastReverted, "revert4 failed");
 
-    assert(lastReverted => revert1 || revert2 || revert3, "Revert rules are not covering all the cases");
+    assert(lastReverted => revert1 || revert2 || revert3 ||
+                           revert4, "Revert rules are not covering all the cases");
 }
 
 definition canGenerate(uint256 line, int256 debt, uint248 pending)
@@ -207,10 +226,10 @@ definition amtToGenerate(bool canGenerate, uint256 amtToTake, int256 debt)
                         :
                             0;
 
-definition feeAmt(env e, bool canGenerate, bool vatLive, bytes32 sourceDomain, bytes32 targetDomain, address receiver, address operator, uint128 amount, uint80 nonce, uint48 timestamp, uint256 maxFee, uint256 line, int256 debt)
+definition feeAmt(env e, bool canGenerate, bool vatLive, bytes32 sourceDomain, bytes32 targetDomain, address receiver, address operator, uint128 amount, uint80 nonce, uint48 timestamp, uint256 line, int256 debt, uint256 pending, uint256 amtToTake)
     returns uint256 = canGenerate && vatLive
                         ?
-                            fees.getFees(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt)
+                            fees.getFee(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake)
                         :
                             0;
 
@@ -223,7 +242,7 @@ rule requestMint(
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -243,7 +262,7 @@ rule requestMint(
     uint256 gap = gap(canGenerate, line, debtBefore);
     uint256 amtToTake = amtToTake(canGenerate, gap, amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee, line, debtBefore);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
 
     uint256 joinDaiBalanceBefore = dai.balanceOf(receiver);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
@@ -252,7 +271,7 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee);
+    requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -286,7 +305,7 @@ rule requestMint_revert(
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -305,6 +324,7 @@ rule requestMint_revert(
 
     bool vatLive = vat.live() == 1;
     uint256 line = vatLive ? line(sourceDomain): 0;
+    require(to_mathint(line) <= max_int256()); // TODO: see to replace with a proper invariant
     int256 debt = debt(sourceDomain);
 
     bool    blessed;
@@ -315,7 +335,7 @@ rule requestMint_revert(
     uint256 gap = gap(canGenerate, line, debt);
     uint256 amtToTake = amtToTake(canGenerate, gap, amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee, line, debt);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
 
     uint256 ink;
     uint256 art;
@@ -328,18 +348,18 @@ rule requestMint_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee);
+    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = ward != 1;
     bool revert3  = blessed;
     bool revert4  = targetDomain != domain;
-    bool revert5  = line > max_int256();
-    bool revert6  = canGenerate && feeAmt > maxFee;
-    bool revert7  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
+    bool revert5  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
+    bool revert6  = canGenerate && maxFeePercentage * amtToTake > max_uint256;
+    bool revert7  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();
     bool revert8  = canGenerate && debt < 0 && to_mathint(debt) == min_int256();
     bool revert9  = canGenerate && to_mathint(debt) + to_mathint(amtToTake) > max_int256();
-    bool revert10  = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && gemWormwholeJoin + amtToGenerate > max_uint256;
+    bool revert10 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && gemWormwholeJoin + amtToGenerate > max_uint256;
     bool revert11 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && ink + amtToGenerate > max_uint256;
     bool revert12 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && art + amtToGenerate > max_uint256;
     bool revert13 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && amtToGenerate * RAY() > max_int256();
@@ -395,7 +415,7 @@ rule mintPending(
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -415,7 +435,7 @@ rule mintPending(
     uint256 gap = gap(canGenerate, line, debtBefore);
     uint256 amtToTake = amtToTake(canGenerate, gap, pendingBefore);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee, line, debtBefore);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
 
     uint256 joinDaiBalanceBefore = dai.balanceOf(receiver);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
@@ -424,7 +444,7 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee);
+    mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -457,7 +477,7 @@ rule mintPending_revert(
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -474,6 +494,7 @@ rule mintPending_revert(
 
     bool vatLive = vat.live() == 1;
     uint256 line = vatLive ? line(sourceDomain): 0;
+    require(to_mathint(line) <= max_int256()); // TODO: see to replace with a proper invariant
     int256 debt = debt(sourceDomain);
 
     bool    blessed;
@@ -484,7 +505,7 @@ rule mintPending_revert(
     uint256 gap = gap(canGenerate, line, debt);
     uint256 amtToTake = amtToTake(canGenerate, gap, pending);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee, line, debt);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
 
     uint256 ink;
     uint256 art;
@@ -497,14 +518,14 @@ rule mintPending_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    mintPending@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee);
+    mintPending@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = e.msg.sender != operator;
     bool revert3  = targetDomain != domain;
-    bool revert4  = line > max_int256();
-    bool revert5  = canGenerate && feeAmt > maxFee;
-    bool revert6  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
+    bool revert4  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
+    bool revert5  = canGenerate && maxFeePercentage * amtToTake > max_uint256;
+    bool revert6  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();
     bool revert7  = canGenerate && debt < 0 && to_mathint(debt) == min_int256();
     bool revert8  = canGenerate && to_mathint(debt) + to_mathint(amtToTake) > max_int256();
     bool revert9  = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && gemWormwholeJoin + amtToGenerate > max_uint256;
