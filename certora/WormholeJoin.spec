@@ -1,4 +1,4 @@
-// DssDirectDepositAaveDai.spec
+// WormholeJoin.spec
 
 using FeesMock as fees
 using Auxiliar as aux
