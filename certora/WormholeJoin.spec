@@ -109,7 +109,7 @@ rule file_address(bytes32 what, address data) {
 
     file(e, what, data);
 
-    assert(what == 0x766f770000000000000000000000000000000000000000000000000000000000 => vow() == data, "file did not set vow as expected");
+    assert(vow() == data, "file did not set vow as expected");
 }
 
 // Verify revert rules on file
@@ -137,7 +137,7 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
 
     file(e, what, domain, data);
 
-    assert(what == 0x6665657300000000000000000000000000000000000000000000000000000000 => fees(domain) == data, "file did not set fees as expected");
+    assert(fees(domain) == data, "file did not set fees as expected");
 }
 
 // Verify revert rules on file
@@ -165,7 +165,7 @@ rule file_domain_uint256(bytes32 what, bytes32 domain, uint256 data) {
 
     file(e, what, domain, data);
 
-    assert(what == 0x6c696e6500000000000000000000000000000000000000000000000000000000 => line(domain) == data, "file did not set line as expected");
+    assert(line(domain) == data, "file did not set line as expected");
 }
 
 // Verify revert rules on file
