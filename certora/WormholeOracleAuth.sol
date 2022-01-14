@@ -90,20 +90,20 @@ contract WormholeOracleAuth {
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage) external {
-        require(wormholeGUID.operator == msg.sender, "WormholeOracleAuth/not-operator");
+        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        wormholeJoin.requestMint(wormholeGUID, maxFee);
+        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
     }
     function requestMint(
         bytes32 sourceDomain,
         bytes32 targetDomain,
-        address receiver,
-        address operator,
+        bytes32 receiver,
+        bytes32 operator,
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
         bytes calldata signatures,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) external auth {
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,
@@ -114,7 +114,7 @@ contract WormholeOracleAuth {
             nonce: nonce,
             timestamp: timestamp
         });
-        require(wormholeGUID.operator == msg.sender, "WormholeOracleAuth/not-operator");
+        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
         wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
     }
