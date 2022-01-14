@@ -8,7 +8,7 @@
         "avoid-low-level-calls": ["off"],
         "max-line-length": ["error", 150],
         "func-param-name-mixedcase": "error",
-        "func-visibility": ["warn", { "ignoreConstructors": true }],
+        "func-visibility": ["error", { "ignoreConstructors": true }],
         "modifier-name-mixedcase": "error",
         "reason-string": ["off"]
       }
