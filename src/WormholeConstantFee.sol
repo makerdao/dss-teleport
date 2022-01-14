@@ -38,7 +38,7 @@ contract WormholeConstantFee is WormholeFees {
             return 0;
         }
 
-        // no fees for empty wormholes
+        // is empty wormhole?
         if (guid.amount == 0) {
             return 0;
         }
