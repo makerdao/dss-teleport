@@ -21,17 +21,17 @@ definition RAY() returns uint256 = 10^27;
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
 
-// ghost indexesGhost(bytes32) returns uint256 {
-//     init_state axiom forall bytes32 x. indexesGhost(x) == 0;
-// }
+ghost indexesGhost(bytes32) returns uint256 {
+    init_state axiom forall bytes32 x. indexesGhost(x) == 0;
+}
 
-// hook Sload uint256 v allDomains.t_bytes32[KEY bytes32 domain] STORAGE {
-//     require indexesGhost(domain) == v;
-// }
+hook Sload uint256 v currentContract.allDomains._inner._indexes[KEY bytes32 domain] STORAGE {
+    require indexesGhost(domain) == v;
+}
 
-// hook Sstore allDomains.t_bytes32[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
-//     havoc indexesGhost assuming indexesGhost@new(a) == n;
-// }
+hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
+    havoc indexesGhost assuming indexesGhost@new(a) == n;
+}
 
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
@@ -132,28 +132,26 @@ rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
     bool gatewayWasEmpty = gateway == 0x0000000000000000000000000000000000000000;
     uint256 numDomains = numDomains();
     bool hasDomain = hasDomain(domain);
-    // uint256 pos = index(domain);
+    uint256 pos = indexesGhost(domain);
 
     file@withrevert(e, what, domain, data);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;
     bool revert3 = !whatIsGateway;
-    // The two following revert cases are in fact not possible due how the code as as a whole works.
+    // The two following revert cases are in fact not possible due how the code as a whole works.
     // TODO: see if we can make invariants to remove them.
     bool revert4 = whatIsGateway && !gatewayWasEmpty && dataIsEmpty && hasDomain && numDomains == 0;
-    // bool revert5 = whatIsGateway && !gatewayWasEmpty && dataIsEmpty && hasDomain && pos > numDomains;
+    bool revert5 = whatIsGateway && !gatewayWasEmpty && dataIsEmpty && hasDomain && pos > numDomains;
 
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
     assert(revert3 => lastReverted, "revert3 failed");
     assert(revert4 => lastReverted, "revert4 failed");
-    // assert(revert5 => lastReverted, "revert5 failed");
+    assert(revert5 => lastReverted, "revert5 failed");
 
-    // This will fail as we can not build revert5 as missing getter to the indexes mapping
-    // TODO: Review if we can do it with ghost variables 
     assert(lastReverted => revert1 || revert2 || revert3 ||
-                           revert4/* || revert5*/, "Revert rules are not covering all the cases");
+                           revert4 || revert5, "Revert rules are not covering all the cases");
 }
 
 // Verify revert rules on requestMint
