@@ -24,8 +24,8 @@ contract WormholeConstantFee is WormholeFees {
     uint256 immutable public ttl;
 
     /**
-    * @param _fee - Constant fee in WAD
-    * @param _ttl - time in seconds to finalize flush (not wormhole). Usually, for optimistic rollups should be 8 days.
+    * @param _fee Constant fee in WAD
+    * @param _ttl Time in seconds to finalize flush (not wormhole). Usually, for optimistic rollups should be 8 days.
     **/
     constructor(uint256 _fee, uint256 _ttl) {
         fee = _fee;
