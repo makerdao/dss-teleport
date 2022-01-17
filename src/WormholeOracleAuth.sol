@@ -96,12 +96,12 @@ contract WormholeOracleAuth {
      * @param wormholeGUID The wormhole GUID to register
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
-     * @param maxFee The maximum amount of fees to pay for the minting of DAI
+     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
-        if (wormholeGUID.operator != msg.sender) revert SenderNotOperator(msg.sender, wormholeGUID.operator);
+    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage) external {
+        if (bytes32ToAddress(wormholeGUID.operator) != msg.sender) revert SenderNotOperator(msg.sender, bytes32ToAddress(wormholeGUID.operator));
         if (!isValid(getSignHash(wormholeGUID), signatures, threshold)) revert NotEnoughValidSig(signatures, threshold);
-        wormholeJoin.requestMint(wormholeGUID, maxFee);
+        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
     }
 
     /**

@@ -189,8 +189,8 @@ contract WormholeRouterTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
-            receiver: address(123),
-            operator: address(234),
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -204,8 +204,8 @@ contract WormholeRouterTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
-            receiver: address(123),
-            operator: address(234),
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -220,8 +220,8 @@ contract WormholeRouterTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
-            receiver: address(123),
-            operator: address(234),
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -236,8 +236,8 @@ contract WormholeRouterTest is DSTest {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "invalid-network",
-            receiver: address(123),
-            operator: address(234),
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
