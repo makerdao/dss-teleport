@@ -45,13 +45,14 @@ contract WormholeRouter {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     // --- Errors ---
-    error NotAuthorized();
-    error FileUnrecognizedParam();
-    error SenderNotGateway();
-    error UnsupportedTargetDomain();
+    error NotAuthorized(address sender, uint256 wards);
+    error FileUnrecognizedParam(bytes32 what);
+    error SenderNotGateway(address sender, address gateway);
+    error SenderNotDomain(address sender, bytes32 domain);
+    error UnsupportedTargetDomain(address domain);
 
     modifier auth {
-        if (wards[msg.sender] != 1) revert NotAuthorized();
+        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender, wards[msg.sender]);
         _;
     }
 
@@ -106,7 +107,7 @@ contract WormholeRouter {
                 domains[data] = domain;
             }
         } else {
-            revert FileUnrecognizedParam();
+            revert FileUnrecognizedParam(what);
         }
         emit File(what, domain, data);
     }
@@ -127,9 +128,9 @@ contract WormholeRouter {
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      */
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external {
-        if (msg.sender != gateways[wormholeGUID.sourceDomain]) revert SenderNotGateway();
+        if (msg.sender != gateways[wormholeGUID.sourceDomain]) revert SenderNotGateway(msg.sender, gateways[wormholeGUID.sourceDomain]);
         address gateway = gateways[wormholeGUID.targetDomain];
-        if (gateway == address(0)) revert UnsupportedTargetDomain();
+        if (gateway == address(0)) revert UnsupportedTargetDomain(gateway);
         GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage);
     }
 
@@ -141,9 +142,9 @@ contract WormholeRouter {
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
-        if (sourceDomain == bytes32(0)) revert SenderNotGateway();
+        if (sourceDomain == bytes32(0)) revert SenderNotDomain(msg.sender, sourceDomain);
         address gateway = gateways[targetDomain];
-        if (gateway == address(0)) revert UnsupportedTargetDomain();
+        if (gateway == address(0)) revert UnsupportedTargetDomain(gateway);
          // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
         GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
