@@ -23,6 +23,10 @@ jobs:
 
     - name: Run tests
       run: nix-shell --pure --run 'dapp test -v'
+
+      # if fails, run locally: "nix-shell --run 'dapp snapshot'"
+    - name: Ensure gas snapshot
+      run: nix-shell --pure --run 'dapp check-snapshot'
       
     - name: Run coverage
       run: nix-shell --pure --run 'bash ./coverage.sh'
