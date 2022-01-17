@@ -163,7 +163,7 @@ rule requestMint_revert(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -173,7 +173,7 @@ rule requestMint_revert(
 
     address sourceGateway = gateways(sourceDomain);
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFee);
+    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = sourceGateway != e.msg.sender;
