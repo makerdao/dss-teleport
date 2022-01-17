@@ -39,16 +39,16 @@ contract WormholeOracleAuth {
     event SignersRemoved(address[] signers);
 
     // --- Errors ---
-    error NotAuthorized();
-    error FileUnrecognizedParam();
-    error NotOperator();
-    error NotEnoughValidSig();
-    error NotEnoughSig();
-    error BadSigOrder();
-    error BadV();
+    error NotAuthorized(address sender, uint256 wards);
+    error FileUnrecognizedParam(bytes32 what);
+    error SenderNotOperator(address sender, address operator);
+    error NotEnoughValidSig(bytes signatures, uint256 threshold);
+    error NotEnoughSig(uint256 count, uint256 threshold);
+    error BadSigOrder(address recovered, address lastSigner);
+    error BadV(uint8 v);
 
     modifier auth {
-        if (wards[msg.sender] != 1) revert NotAuthorized();
+        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender, wards[msg.sender]);
         _;
     }
 
@@ -72,7 +72,7 @@ contract WormholeOracleAuth {
         if (what == "threshold") {
             threshold = data;
         } else {
-            revert FileUnrecognizedParam();
+            revert FileUnrecognizedParam(what);
         }
         emit File(what, data);
     }
@@ -99,8 +99,8 @@ contract WormholeOracleAuth {
      * @param maxFee The maximum amount of fees to pay for the minting of DAI
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFee) external {
-        if (wormholeGUID.operator != msg.sender) revert NotOperator();
-        if (!isValid(getSignHash(wormholeGUID), signatures, threshold)) revert NotEnoughValidSig();
+        if (wormholeGUID.operator != msg.sender) revert SenderNotOperator(msg.sender, wormholeGUID.operator);
+        if (!isValid(getSignHash(wormholeGUID), signatures, threshold)) revert NotEnoughValidSig(signatures, threshold);
         wormholeJoin.requestMint(wormholeGUID, maxFee);
     }
 
@@ -113,7 +113,7 @@ contract WormholeOracleAuth {
      */
     function isValid(bytes32 signHash, bytes memory signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
-        if (count < threshold_) revert NotEnoughSig();
+        if (count < threshold_) revert NotEnoughSig(count, threshold_);
 
         uint8 v;
         bytes32 r;
@@ -123,7 +123,7 @@ contract WormholeOracleAuth {
         for (uint256 i; i < count;) {
             (v,r,s) = splitSignature(signatures, i);
             address recovered = ecrecover(signHash, v, r, s);
-            if (recovered < lastSigner) revert BadSigOrder(); // make sure signers are different
+            if (recovered < lastSigner) revert BadSigOrder(recovered, lastSigner); // make sure signers are different
             lastSigner = recovered;
             if (signers[recovered] == 1) {
                 unchecked { numValid += 1; }
@@ -160,6 +160,6 @@ contract WormholeOracleAuth {
             s := mload(add(signatures, add(0x40, mul(0x41, index))))
             v := and(mload(add(signatures, add(0x41, mul(0x41, index)))), 0xff)
         }
-        if (v != 27 && v != 28) revert BadV();
+        if (v != 27 && v != 28) revert BadV(v);
     }
 }
