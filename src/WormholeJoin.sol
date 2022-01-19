@@ -205,7 +205,8 @@ contract WormholeJoin {
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     **/
     function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external {
-        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
+        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
+            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
         _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
     }
 
