@@ -145,7 +145,7 @@ contract WormholeOracleAuthTest is DSTest {
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
-    function test_mint() public {
+    function test_mintByOperator() public {
         WormholeGUID memory guid;
         guid.operator = addressToBytes32(address(this));
         guid.sourceDomain = bytes32("l2network");
@@ -162,7 +162,24 @@ contract WormholeOracleAuthTest is DSTest {
         auth.requestMint(guid, signatures, maxFee);
     }
 
-    function testFail_mint_notOperator() public {
+    function test_mintByReceiver() public {
+        WormholeGUID memory guid;
+        guid.operator = addressToBytes32(address(0x000));
+        guid.sourceDomain = bytes32("l2network");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = addressToBytes32(address(this));
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.requestMint(guid, signatures, maxFee);
+    }
+
+    function testFail_mint_notOperatorNorReceiver() public {
         WormholeGUID memory guid;
         guid.operator = addressToBytes32(address(0x123));
         guid.sourceDomain = bytes32("l2network");
