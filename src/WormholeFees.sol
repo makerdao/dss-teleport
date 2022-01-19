@@ -26,7 +26,7 @@ interface WormholeFees {
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param line Debt ceiling
     * @param debt Current debt
-    * @param pending Amount left to withdrawal
+    * @param pending Amount left to withdraw
     * @param amtToTake Amount to take. Can be less or equal to wormholeGUID.amount b/c of debt ceiling or because it is pending
     **/
     function getFee(
