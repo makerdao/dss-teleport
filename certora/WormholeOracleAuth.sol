@@ -116,7 +116,7 @@ contract WormholeOracleAuth {
         });
         require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
+        // wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
     }
 
     /**
@@ -158,6 +158,26 @@ contract WormholeOracleAuth {
             "\x19Ethereum Signed Message:\n32",
             getGUIDHash(wormholeGUID)
         ));
+    }
+    function getSignHash(
+        bytes32 sourceDomain,
+        bytes32 targetDomain,
+        bytes32 receiver,
+        bytes32 operator,
+        uint128 amount,
+        uint80 nonce,
+        uint48 timestamp
+    ) external pure returns (bytes32 signHash) {
+        WormholeGUID memory wormholeGUID = WormholeGUID({
+            sourceDomain: sourceDomain,
+            targetDomain: targetDomain,
+            receiver: receiver,
+            operator: operator,
+            amount: amount,
+            nonce: nonce,
+            timestamp: timestamp
+        });
+        signHash = getSignHash(wormholeGUID);
     }
 
     /**
