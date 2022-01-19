@@ -162,6 +162,23 @@ contract WormholeOracleAuthTest is DSTest {
         auth.requestMint(guid, signatures, maxFee);
     }
 
+    function test_mintByOperatorNotReceiver() public {
+        WormholeGUID memory guid;
+        guid.operator = addressToBytes32(address(this));
+        guid.sourceDomain = bytes32("l2network");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = addressToBytes32(address(0x123));
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.requestMint(guid, signatures, maxFee);
+    }
+
     function test_mintByReceiver() public {
         WormholeGUID memory guid;
         guid.operator = addressToBytes32(address(0x000));
