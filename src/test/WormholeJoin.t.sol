@@ -496,7 +496,32 @@ contract WormholeJoinTest is DSTest {
         join.mintPending(guid, 3 * WAD / 10000); // 0.03% * 50 < 20 (not enough)
     }
 
-    function testMintPending() public {
+    function testMintPendingByOperator() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(this)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.file("line", "l2network", 200_000 ether);
+        join.requestMint(guid, 0);
+
+        assertEq(dai.balanceOf(address(this)), 200_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+
+        join.file("line", "l2network", 225_000 ether);
+        join.mintPending(guid, 0);
+
+        assertEq(dai.balanceOf(address(this)), 225_000 ether);
+        assertEq(_pending(guid), 25_000 ether);
+    }
+
+    function testMintPendingByOperatorNotReceiver() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -518,6 +543,31 @@ contract WormholeJoinTest is DSTest {
         join.mintPending(guid, 0);
 
         assertEq(dai.balanceOf(address(123)), 225_000 ether);
+        assertEq(_pending(guid), 25_000 ether);
+    }
+
+    function testMintPendingByReceiver() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(this)),
+            operator: addressToBytes32(address(0x123)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.file("line", "l2network", 200_000 ether);
+        join.requestMint(guid, 0);
+
+        assertEq(dai.balanceOf(address(this)), 200_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+
+        join.file("line", "l2network", 225_000 ether);
+        join.mintPending(guid, 0);
+
+        assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
     }
 
