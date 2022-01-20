@@ -67,7 +67,7 @@ contract WormholeJoin {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
-    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage);
+    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
@@ -82,7 +82,7 @@ contract WormholeJoin {
     error IncorrectDomain(bytes32 domain);
     error MaxFeeExceeded(uint256 fee, uint256 maxFee);
     error AlreadyBlessed(bytes32 hashGUID);
-    error SenderNotOperator(address sender, address operator);
+    error SenderNotReceiverNorOperator(address sender, address receiver, address operator);
 
     constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
@@ -147,8 +147,9 @@ contract WormholeJoin {
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
+    * @param operatorFee The amount of DAI to pay to the operator
     **/
-    function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage) internal {
+    function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage, uint256 operatorFee) internal {
         if (wormholeGUID.targetDomain != domain) revert IncorrectDomain(wormholeGUID.targetDomain);
 
         bool vatLive = vat.live() == 1;
@@ -160,7 +161,7 @@ contract WormholeJoin {
         // Stop execution if there isn't anything available to withdraw
         uint248 pending = wormholes[hashGUID].pending;
         if (int256(line_) <= debt_ || pending == 0) {
-            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage);
+            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee);
             return;
         }
 
@@ -186,37 +187,45 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
-        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), amtToTake - fee);
+        uint256 postFeeAmount = amtToTake - fee;
+        require(operatorFee <= postFeeAmount, "WormholeJoin/operator-fee-too-high");
+        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
         }
+        if (operatorFee > 0) {
+            vat.move(address(this), bytes32ToAddress(wormholeGUID.operator), operatorFee * RAY);
+        }
 
-        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage);
+        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);
     }
 
     /**
     * @dev External authed function that registers the wormwhole and executes the mint after
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
+    * @param operatorFee The amount of DAI to pay to the operator
     **/
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external auth {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external auth {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         if (wormholes[hashGUID].blessed) revert AlreadyBlessed(hashGUID);
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
-        _mint(wormholeGUID, hashGUID, maxFeePercentage);
+        _mint(wormholeGUID, hashGUID, maxFeePercentage, operatorFee);
     }
 
     /**
     * @dev External function that executes the mint of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
+    * @param operatorFee The amount of DAI to pay to the operator
     **/
-    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external {
-        if (bytes32ToAddress(wormholeGUID.operator) != msg.sender) revert SenderNotOperator(msg.sender, bytes32ToAddress(wormholeGUID.operator));
-        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
+    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external {
+        if (bytes32ToAddress(wormholeGUID.receiver) != msg.sender && bytes32ToAddress(wormholeGUID.operator) != msg.sender)
+            revert SenderNotReceiverNorOperator(msg.sender, bytes32ToAddress(wormholeGUID.receiver), bytes32ToAddress(wormholeGUID.operator));
+        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
     }
 
     /**

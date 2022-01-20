@@ -19,7 +19,7 @@ pragma solidity 0.8.9;
 import "./WormholeGUID.sol";
 
 interface WormholeJoinLike {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFee) external;
 }
 
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
@@ -41,7 +41,7 @@ contract WormholeOracleAuth {
     // --- Errors ---
     error NotAuthorized(address sender);
     error FileUnrecognizedParam(bytes32 what);
-    error SenderNotOperator(address sender, address operator);
+    error SenderNotReceiverNorOperator(address sender, address receiver, address operator);
     error NotEnoughValidSig(bytes signatures, uint256 threshold);
     error NotEnoughSig(uint256 count, uint256 threshold);
     error BadSigOrder(address recovered, address lastSigner);
@@ -97,11 +97,13 @@ contract WormholeOracleAuth {
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
+     * @param operatorFee The amount of DAI to pay to the operator
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage) external {
-        if (bytes32ToAddress(wormholeGUID.operator) != msg.sender) revert SenderNotOperator(msg.sender, bytes32ToAddress(wormholeGUID.operator));
+    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee) external {
+        if (bytes32ToAddress(wormholeGUID.receiver) != msg.sender && bytes32ToAddress(wormholeGUID.operator) != msg.sender) 
+            revert SenderNotReceiverNorOperator(msg.sender, bytes32ToAddress(wormholeGUID.receiver), bytes32ToAddress(wormholeGUID.operator));
         if (!isValid(getSignHash(wormholeGUID), signatures, threshold)) revert NotEnoughValidSig(signatures, threshold);
-        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
+        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 
     /**
