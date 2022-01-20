@@ -180,13 +180,13 @@ contract WormholeJoin {
         }
         uint256 postFeeAmount = amtToTake - fee;
         uint256 operatorFee = postFeeAmount * operatorFeePercentage / WAD;
-        daiJoin.exit(wormholeGUID.receiver, postFeeAmount - operatorFee);
+        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
         }
         if (operatorFee > 0) {
-            vat.move(address(this), wormholeGUID.operator, operatorFee * RAY);
+            vat.move(address(this), bytes32ToAddress(wormholeGUID.operator), operatorFee * RAY);
         }
 
         emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFeePercentage);
@@ -214,7 +214,7 @@ contract WormholeJoin {
     * @param operatorFeePercentage The percent of post-fee DAI (in WAD) to be paid to the operator
     **/
     function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFeePercentage) external {
-        require(wormholeGUID.operator == msg.sender, "WormholeJoin/sender-not-operator");
+        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
         _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFeePercentage);
     }
 
