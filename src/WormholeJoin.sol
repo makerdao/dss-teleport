@@ -150,6 +150,7 @@ contract WormholeJoin {
     **/
     function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage) internal {
         if (wormholeGUID.targetDomain != domain) revert IncorrectDomain(wormholeGUID.targetDomain);
+
         bool vatLive = vat.live() == 1;
 
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
