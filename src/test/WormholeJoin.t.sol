@@ -439,7 +439,7 @@ contract WormholeJoinTest is DSTest {
 
         join.file("fees", "l2network", address(fees));
         hevm.warp(block.timestamp + TTL + 1 days);    // Over ttl - you don't pay fees
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(vat.dai(vow), 0);
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
@@ -535,14 +535,14 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0);
+        join.mintPending(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
@@ -585,14 +585,14 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0);
+        join.mintPending(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
@@ -813,7 +813,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(vat.dai(address(this)), 0);
-        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether)));
+        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
         join.requestMint(guid, 40 ether / 10000, 249 ether);
         assertEq(vat.dai(address(this)), 249 * RAD);
         assertEq(vat.dai(vow), 1000 * RAD);

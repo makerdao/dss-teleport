@@ -176,7 +176,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mintByReceiver() public {
@@ -193,7 +193,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function testFail_mint_notOperatorNorReceiver() public {
@@ -210,7 +210,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
 }
