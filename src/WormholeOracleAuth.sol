@@ -39,7 +39,7 @@ contract WormholeOracleAuth {
     event SignersRemoved(address[] signers);
 
     // --- Errors ---
-    error NotAuthorized(address sender, uint256 wards);
+    error NotAuthorized(address sender);
     error FileUnrecognizedParam(bytes32 what);
     error SenderNotOperator(address sender, address operator);
     error NotEnoughValidSig(bytes signatures, uint256 threshold);
@@ -48,7 +48,7 @@ contract WormholeOracleAuth {
     error BadV(uint8 v);
 
     modifier auth {
-        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender, wards[msg.sender]);
+        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender);
         _;
     }
 

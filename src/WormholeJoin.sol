@@ -76,14 +76,13 @@ contract WormholeJoin {
     }
 
     // --- Errors ---
-    error NotAuthorized(address sender, uint256 wards);
+    error NotAuthorized(address sender);
     error FileUnrecognizedParam(bytes32 what);
-    error NotAllowedBiggerInt256(uint256 data);
-    error IncorrectDomain(bytes32 targetDomain, bytes32 domain);
-    error MaxFeeExceeded(uint256 fee, uint256 maxFee);
-    error AlreadyBlessed(bytes32 hashGUID, bool blessed);
-    error SenderNotOperator(address sender, address operator);
     error Overflow(uint256 amount);
+    error IncorrectDomain(bytes32 domain);
+    error MaxFeeExceeded(uint256 fee, uint256 maxFee);
+    error AlreadyBlessed(bytes32 hashGUID);
+    error SenderNotOperator(address sender, address operator);
 
     constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
         wards[msg.sender] = 1;
@@ -101,7 +100,7 @@ contract WormholeJoin {
     }
 
     modifier auth {
-        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender, wards[msg.sender]);
+        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender);
         _;
     }
 
@@ -135,7 +134,7 @@ contract WormholeJoin {
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
-            if (data > 2 ** 255 - 1) revert NotAllowedBiggerInt256(data);
+            if (data > 2 ** 255 - 1) revert Overflow(data);
             line[domain_] = data;
         } else {
             revert FileUnrecognizedParam(what);
@@ -150,7 +149,7 @@ contract WormholeJoin {
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     **/
     function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage) internal {
-        if (wormholeGUID.targetDomain != domain) revert IncorrectDomain(wormholeGUID.targetDomain, domain);
+        if (wormholeGUID.targetDomain != domain) revert IncorrectDomain(wormholeGUID.targetDomain);
         bool vatLive = vat.live() == 1;
 
         uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
@@ -170,7 +169,8 @@ contract WormholeJoin {
                             );
 
         uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFee(wormholeGUID, line_, debt_, pending, amtToTake) : 0;
-        if (fee > maxFeePercentage * amtToTake / WAD) revert MaxFeeExceeded(fee, maxFeePercentage * amtToTake / WAD);
+        uint256 maxFee = maxFeePercentage * amtToTake / WAD;
+        if (fee > maxFee) revert MaxFeeExceeded(fee, maxFee);
 
         // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
@@ -201,7 +201,7 @@ contract WormholeJoin {
     **/
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external auth {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        if (wormholes[hashGUID].blessed) revert AlreadyBlessed(hashGUID, wormholes[hashGUID].blessed);
+        if (wormholes[hashGUID].blessed) revert AlreadyBlessed(hashGUID);
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);

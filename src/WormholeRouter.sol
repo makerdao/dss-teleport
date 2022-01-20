@@ -45,14 +45,14 @@ contract WormholeRouter {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     // --- Errors ---
-    error NotAuthorized(address sender, uint256 wards);
+    error NotAuthorized(address sender);
     error FileUnrecognizedParam(bytes32 what);
     error SenderNotGateway(address sender, address gateway);
-    error SenderNotDomain(address sender, bytes32 domain);
-    error UnsupportedTargetDomain(address domain);
+    error SenderNotDomain(address sender);
+    error UnsupportedTargetDomain(bytes32 domain);
 
     modifier auth {
-        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender, wards[msg.sender]);
+        if (wards[msg.sender] != 1) revert NotAuthorized(msg.sender);
         _;
     }
 
@@ -130,7 +130,7 @@ contract WormholeRouter {
     function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external {
         if (msg.sender != gateways[wormholeGUID.sourceDomain]) revert SenderNotGateway(msg.sender, gateways[wormholeGUID.sourceDomain]);
         address gateway = gateways[wormholeGUID.targetDomain];
-        if (gateway == address(0)) revert UnsupportedTargetDomain(gateway);
+        if (gateway == address(0)) revert UnsupportedTargetDomain(wormholeGUID.targetDomain);
         GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage);
     }
 
@@ -142,9 +142,9 @@ contract WormholeRouter {
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
-        if (sourceDomain == bytes32(0)) revert SenderNotDomain(msg.sender, sourceDomain);
+        if (sourceDomain == bytes32(0)) revert SenderNotDomain(msg.sender);
         address gateway = gateways[targetDomain];
-        if (gateway == address(0)) revert UnsupportedTargetDomain(gateway);
+        if (gateway == address(0)) revert UnsupportedTargetDomain(targetDomain);
          // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
         GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
