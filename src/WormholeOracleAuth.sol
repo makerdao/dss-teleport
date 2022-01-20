@@ -91,7 +91,8 @@ contract WormholeOracleAuth {
      * @param operatorFee The amount of DAI to pay to the operator
      */
     function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee) external {
-        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-operator");
+        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
+            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
         wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }

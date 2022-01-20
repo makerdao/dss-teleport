@@ -210,11 +210,12 @@ contract WormholeJoin {
     * @dev External function that executes the mint of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @param operatorFeePercentage The percent of post-fee DAI (in WAD) to be paid to the operator
+    * @param operatorFee The amount of DAI to pay to the operator
     **/
-    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFeePercentage) external {
-        require(bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
-        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFeePercentage);
+    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external {
+        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
+            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
+        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
     }
 
     /**
