@@ -673,7 +673,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(vat.dai(address(this)), 0);
-        join.requestMint(guid, 0, 10 ether / 10000);   // 0.1% fee
+        join.requestMint(guid, 0, 250 ether);
         assertEq(vat.dai(address(this)), 250 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_750 ether);
         assertEq(_pending(guid), 0);
@@ -691,7 +691,7 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 10001 ether / 10000);   // Slightly over 100%
+        join.requestMint(guid, 0, 250_001 ether);   // Slightly over the amount
     }
 
     function testRegisterAndWithdrawPartialPayingOperatorFee() public {
@@ -706,7 +706,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 10 ether / 10000);    // 0.1% fee
+        join.requestMint(guid, 0, 200 ether);
 
         assertEq(vat.dai(address(this)), 200 * RAD);
         assertEq(dai.balanceOf(address(123)), 199_800 ether);
@@ -716,7 +716,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 200_000 ether);
 
         join.file("line", "l2network", 250_000 ether);
-        join.mintPending(guid, 0, 1 ether / 10000);     // 0.01% fee
+        join.mintPending(guid, 0, 5 ether);
 
         assertEq(vat.dai(address(this)), 205 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_795 ether);
@@ -737,7 +737,7 @@ contract WormholeJoinTest is DSTest {
         });
         assertEq(vat.dai(address(this)), 0);
         join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether)));
-        join.requestMint(guid, 1000 ether, 10 ether / 10000);   // 0.1% fee
+        join.requestMint(guid, 40 ether / 10000, 249 ether);
         assertEq(vat.dai(address(this)), 249 * RAD);
         assertEq(vat.dai(vow), 1000 * RAD);
         assertEq(dai.balanceOf(address(123)), 248_751 ether);
