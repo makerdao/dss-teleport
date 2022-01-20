@@ -37,9 +37,14 @@ hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n 
 rule rely(address usr) {
     env e;
 
+    address other;
+    require(other != usr);
+    uint256 wardOther = wards(other);
+
     rely(e, usr);
 
     assert(wards(usr) == 1, "rely did not set the wards as expected");
+    assert(wards(other) == wardOther, "rely affected other wards which wasn't expected");
 }
 
 // Verify revert rules on rely
@@ -63,9 +68,14 @@ rule rely_revert(address usr) {
 rule deny(address usr) {
     env e;
 
+    address other;
+    require(other != usr);
+    uint256 wardOther = wards(other);
+
     deny(e, usr);
 
     assert(wards(usr) == 0, "deny did not set the wards as expected");
+    assert(wards(other) == wardOther, "deny affected other wards which wasn't expected");
 }
 
 // Verify revert rules on deny
