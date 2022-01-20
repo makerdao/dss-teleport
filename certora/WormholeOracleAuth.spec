@@ -99,20 +99,14 @@ rule file_uint256_revert(bytes32 what, uint256 data) {
 rule addSigners(address[] signers_) {
     env e;
 
+    uint256 i;
     uint256 length = signers_.length;
+
+    require(i < length);
 
     addSigners(e, signers_);
 
-    assert(length >= 1  => signers(signers_[0]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 2  => signers(signers_[1]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 3  => signers(signers_[2]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 4  => signers(signers_[3]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 5  => signers(signers_[4]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 6  => signers(signers_[5]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 7  => signers(signers_[6]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 8  => signers(signers_[7]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 9  => signers(signers_[8]) == 1, "addSigners did not set signer as expected");
-    assert(length >= 10 => signers(signers_[9]) == 1, "addSigners did not set signer as expected");
+    assert(signers(signers_[i]) == 1, "addSigners did not set signer as expected");
 }
 
 // Verify revert rules on addSigners
@@ -136,20 +130,14 @@ rule addSigners_revert(address[] signers_) {
 rule removeSigners(address[] signers_) {
     env e;
 
+    uint256 i;
     uint256 length = signers_.length;
+
+    require(i < length);
 
     removeSigners(e, signers_);
 
-    assert(length >= 1  => signers(signers_[0]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 2  => signers(signers_[1]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 3  => signers(signers_[2]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 4  => signers(signers_[3]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 5  => signers(signers_[4]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 6  => signers(signers_[5]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 7  => signers(signers_[6]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 8  => signers(signers_[7]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 9  => signers(signers_[8]) == 0, "removeSigners did not set signer as expected");
-    assert(length >= 10 => signers(signers_[9]) == 0, "removeSigners did not set signer as expected");
+    assert(signers(signers_[i]) == 0, "addSigners did not set signer as expected");
 }
 
 // Verify revert rules on removeSigners
