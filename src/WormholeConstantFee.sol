@@ -21,12 +21,28 @@ import {WormholeGUID} from "./WormholeGUID.sol";
 
 contract WormholeConstantFee is WormholeFees {
     uint256 immutable public fee;
+    uint256 immutable public ttl;
 
-    constructor(uint256 _fee) {
+    /**
+    * @param _fee Constant fee in WAD
+    * @param _ttl Time in seconds to finalize flush (not wormhole)
+    **/
+    constructor(uint256 _fee, uint256 _ttl) {
         fee = _fee;
+        ttl = _ttl;
     }
 
     function getFee(WormholeGUID calldata guid, uint256, int256, uint256, uint256 amtToTake) override external view returns (uint256) {
-        return guid.amount > 0 ? fee * amtToTake / guid.amount : 0;
+        // is slow withdrawal?
+        if (block.timestamp >= uint256(guid.timestamp) + ttl) {
+            return 0;
+        }
+
+        // is empty wormhole?
+        if (guid.amount == 0) {
+            return 0;
+        }
+
+        return fee * amtToTake / guid.amount;
     }
 }
