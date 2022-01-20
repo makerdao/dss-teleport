@@ -206,7 +206,7 @@ contract WormholeJoin {
     **/
     function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
-            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/sender-not-operator");
+            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
         _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
     }
 
