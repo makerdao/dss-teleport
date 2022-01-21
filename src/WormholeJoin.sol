@@ -57,7 +57,6 @@ contract WormholeJoin {
     DaiJoinLike immutable public daiJoin;
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
-    uint256               public totalDebt;
 
     uint256 constant public WAD = 10 ** 18;
     uint256 constant public RAY = 10 ** 27;
@@ -135,6 +134,14 @@ contract WormholeJoin {
     }
 
     /**
+    * @dev External view function to get the total debt used by this contract
+    **/
+    function totalDebt() external view returns (uint256) {
+        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+        return art * RAY;
+    }
+
+    /**
     * @dev Internal function that executes the mint after a wormhole is registered
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
@@ -177,8 +184,6 @@ contract WormholeJoin {
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
-
-            totalDebt += amtToGenerate * RAY;
         }
         uint256 postFeeAmount = amtToTake - fee;
         daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
@@ -233,8 +238,6 @@ contract WormholeJoin {
             uint256 amtToPayBack = _min(batchedDaiToFlush, art);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
-
-            totalDebt -= amtToPayBack * RAY;
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
         emit Settle(sourceDomain, batchedDaiToFlush);
