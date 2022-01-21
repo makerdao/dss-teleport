@@ -178,7 +178,7 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
 
-            totalDebt += amtToGenerate;
+            totalDebt += amtToGenerate * RAY;
         }
         uint256 postFeeAmount = amtToTake - fee;
         daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
@@ -234,7 +234,7 @@ contract WormholeJoin {
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
 
-            totalDebt -= amtToPayBack;
+            totalDebt -= amtToPayBack * RAY;
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
         emit Settle(sourceDomain, batchedDaiToFlush);
