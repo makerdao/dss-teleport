@@ -26,7 +26,7 @@ interface Hevm {
 }
 
 contract GatewayMock {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFee) external {}
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
@@ -145,7 +145,7 @@ contract WormholeOracleAuthTest is DSTest {
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
-    function test_mint() public {
+    function test_mintByOperator() public {
         WormholeGUID memory guid;
         guid.operator = addressToBytes32(address(this));
         guid.sourceDomain = bytes32("l2network");
@@ -159,7 +159,58 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
+    }
+
+    function test_mintByOperatorNotReceiver() public {
+        WormholeGUID memory guid;
+        guid.operator = addressToBytes32(address(this));
+        guid.sourceDomain = bytes32("l2network");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = addressToBytes32(address(0x123));
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.requestMint(guid, signatures, maxFee, 0);
+    }
+
+    function test_mintByReceiver() public {
+        WormholeGUID memory guid;
+        guid.operator = addressToBytes32(address(0x000));
+        guid.sourceDomain = bytes32("l2network");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = addressToBytes32(address(this));
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.requestMint(guid, signatures, maxFee, 0);
+    }
+
+    function testFail_mint_notOperatorNorReceiver() public {
+        WormholeGUID memory guid;
+        guid.operator = addressToBytes32(address(0x123));
+        guid.sourceDomain = bytes32("l2network");
+        guid.targetDomain = bytes32("ethereum");
+        guid.receiver = addressToBytes32(address(0x987));
+        guid.amount = 100;
+
+        bytes32 signHash = auth.getSignHash(guid);
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+        auth.addSigners(signers);
+
+        uint maxFee = 0;
+
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
 }

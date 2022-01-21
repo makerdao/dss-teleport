@@ -20,6 +20,15 @@ import "./WormholeGUID.sol";
 
 // Calculate fees for a given Wormhole GUID
 interface WormholeFees {
+    /**
+    * @dev Return fee for particular wormhole. It should return 0 for wormholes that are being slow withdrawn. 
+    * note: We define slow withdrawal as wormhole older than x. x has to be enough to finalize flush (not wormhole itself).
+    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param line Debt ceiling
+    * @param debt Current debt
+    * @param pending Amount left to withdraw
+    * @param amtToTake Amount to take. Can be less or equal to wormholeGUID.amount b/c of debt ceiling or because it is pending
+    **/
     function getFee(
         WormholeGUID calldata wormholeGUID, uint256 line, int256 debt, uint256 pending, uint256 amtToTake
     ) external view returns (uint256 fees);

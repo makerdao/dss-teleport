@@ -26,6 +26,7 @@ import "./mocks/DaiMock.sol";
 import "./mocks/DaiJoinMock.sol";
 
 interface Hevm {
+    function warp(uint) external;
     function addr(uint) external returns (address);
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
@@ -43,6 +44,7 @@ contract WormholeJoinTest is DSTest {
 
     uint256 internal constant WAD = 10**18;
     uint256 internal constant RAD = 10**45;
+    uint256 internal constant TTL = 8 days;
 
     function setUp() public {
         vat = new VatMock();
@@ -51,7 +53,7 @@ contract WormholeJoinTest is DSTest {
         join = new WormholeJoin(address(vat), address(daiJoin), ilk, domain);
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
-        join.file("fees", "l2network", address(new WormholeConstantFee(0)));
+        join.file("fees", "l2network", address(new WormholeConstantFee(0, TTL)));
         vat.hope(address(daiJoin));
     }
 
@@ -158,7 +160,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
 
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertTrue(_blessed(guid));
@@ -179,7 +181,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
@@ -200,7 +202,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 0);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 0);
         assertTrue(_blessed(guid));
@@ -220,8 +222,8 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
+        join.requestMint(guid, 0, 0);
     }
 
     function testFailRegisterWrongDomain() public {
@@ -234,7 +236,7 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
     }
 
     function testRegisterAndWithdrawPayingFee() public {
@@ -248,11 +250,11 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(vat.dai(vow), 0);
-        WormholeConstantFee fees = new WormholeConstantFee(100 ether);
+        WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
         assertEq(fees.fee(), 100 ether);
 
         join.file("fees", "l2network", address(fees));
-        join.requestMint(guid, 4 * WAD / 10000); // 0.04% * 250K = 100 (just enough)
+        join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 250K = 100 (just enough)
 
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
@@ -272,8 +274,33 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
-        join.requestMint(guid, 3 * WAD / 10000); // 0.03% * 250K < 100 (not enough)
+        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 250K < 100 (not enough)
+    }
+
+    function testRegisterAndWithdrawFeeTTLExpires() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        assertEq(vat.dai(vow), 0);
+        WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
+        assertEq(fees.fee(), 100 ether);
+
+        join.file("fees", "l2network", address(fees));
+        hevm.warp(block.timestamp + TTL + 1 days);    // Over ttl - you don't pay fees
+        join.requestMint(guid, 0, 0);
+
+        assertEq(vat.dai(vow), 0);
+        assertEq(dai.balanceOf(address(123)), 250_000 ether);
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
     }
 
     function testRegisterAndWithdrawPartialPayingFee() public {
@@ -290,8 +317,8 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
-        join.requestMint(guid, 4 * WAD / 10000); // 0.04% * 200K = 80 (just enough as fee is also proportional)
+        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 200K = 80 (just enough as fee is also proportional)
 
         assertEq(vat.dai(vow), 80 * RAD);
         assertEq(dai.balanceOf(address(123)), 199_920 ether);
@@ -302,7 +329,7 @@ contract WormholeJoinTest is DSTest {
 
         join.file("line", "l2network", 250_000 ether);
 
-        join.mintPending(guid, 4 * WAD / 10000); // 0.04% * 50 = 20 (just enough as fee is also proportional)
+        join.mintPending(guid, 4 * WAD / 10000, 0); // 0.04% * 50 = 20 (just enough as fee is also proportional)
 
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
@@ -325,8 +352,8 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
-        join.requestMint(guid, 3 * WAD / 10000); // 0.03% * 200K < 80 (not enough)
+        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 200K < 80 (not enough)
     }
 
     function testFailRegisterAndWithdrawPartialPayingFee2() public {
@@ -343,15 +370,40 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
-        join.requestMint(guid, 4 * WAD / 10000);
+        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.requestMint(guid, 4 * WAD / 10000, 0);
 
         join.file("line", "l2network", 250_000 ether);
 
-        join.mintPending(guid, 3 * WAD / 10000); // 0.03% * 50 < 20 (not enough)
+        join.mintPending(guid, 3 * WAD / 10000, 0); // 0.03% * 50 < 20 (not enough)
     }
 
-    function testMintPending() public {
+    function testMintPendingByOperator() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(this)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.file("line", "l2network", 200_000 ether);
+        join.requestMint(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(this)), 200_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+
+        join.file("line", "l2network", 225_000 ether);
+        join.mintPending(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(this)), 225_000 ether);
+        assertEq(_pending(guid), 25_000 ether);
+    }
+
+    function testMintPendingByOperatorNotReceiver() public {
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -363,16 +415,41 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0);
+        join.mintPending(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 225_000 ether);
+        assertEq(_pending(guid), 25_000 ether);
+    }
+
+    function testMintPendingByReceiver() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(this)),
+            operator: addressToBytes32(address(0x123)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.file("line", "l2network", 200_000 ether);
+        join.requestMint(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(this)), 200_000 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+
+        join.file("line", "l2network", 225_000 ether);
+        join.mintPending(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
     }
 
@@ -388,10 +465,10 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0);
+        join.mintPending(guid, 0, 0);
     }
 
     function testSettle() public {
@@ -423,7 +500,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertEq(_ink(), 150_000 ether);
@@ -449,7 +526,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 100_000 ether);
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertEq(_pending(guid), 50_000 ether);
@@ -478,8 +555,8 @@ contract WormholeJoinTest is DSTest {
         vat.cage();
         assertEq(vat.live(), 0);
 
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether)));
-        join.requestMint(guid, 0);
+        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 100_000 ether); // Can't pay more than DAI is already in the join
         assertEq(_pending(guid), 150_000 ether);
@@ -499,7 +576,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0);
+        join.requestMint(guid, 0, 0);
 
         assertEq(join.debt("l2network"), 250_000 ether);
         assertEq(_ink(), 250_000 ether);
@@ -513,6 +590,90 @@ contract WormholeJoinTest is DSTest {
         join.settle("l2network", 250_000 ether);
 
         assertEq(join.debt("l2network"), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+    }
+
+    function testRegisterAndWithdrawPayingOperatorFee() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        assertEq(vat.dai(address(this)), 0);
+        join.requestMint(guid, 0, 250 ether);
+        assertEq(vat.dai(address(this)), 250 * RAD);
+        assertEq(dai.balanceOf(address(123)), 249_750 ether);
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+    }
+
+    function testFailOperatorFeeTooHigh() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 250_001 ether);   // Slightly over the amount
+    }
+
+    function testRegisterAndWithdrawPartialPayingOperatorFee() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.file("line", "l2network", 200_000 ether);
+        join.requestMint(guid, 0, 200 ether);
+
+        assertEq(vat.dai(address(this)), 200 * RAD);
+        assertEq(dai.balanceOf(address(123)), 199_800 ether);
+        assertTrue(_blessed(guid));
+        assertEq(_pending(guid), 50_000 ether);
+        assertEq(_ink(), 200_000 ether);
+        assertEq(_art(), 200_000 ether);
+
+        join.file("line", "l2network", 250_000 ether);
+        join.mintPending(guid, 0, 5 ether);
+
+        assertEq(vat.dai(address(this)), 205 * RAD);
+        assertEq(dai.balanceOf(address(123)), 249_795 ether);
+        assertEq(_pending(guid), 0);
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+    }
+
+    function testRegisterAndWithdrawPayingTwoFees() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        assertEq(vat.dai(address(this)), 0);
+        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
+        join.requestMint(guid, 40 ether / 10000, 249 ether);
+        assertEq(vat.dai(address(this)), 249 * RAD);
+        assertEq(vat.dai(vow), 1000 * RAD);
+        assertEq(dai.balanceOf(address(123)), 248_751 ether);
+        assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
     }
