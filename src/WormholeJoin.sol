@@ -57,6 +57,7 @@ contract WormholeJoin {
     DaiJoinLike immutable public daiJoin;
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
+    uint256               public totalDebt;
 
     uint256 constant public WAD = 10 ** 18;
     uint256 constant public RAY = 10 ** 27;
@@ -176,9 +177,10 @@ contract WormholeJoin {
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
+
+            totalDebt += amtToGenerate;
         }
         uint256 postFeeAmount = amtToTake - fee;
-        require(operatorFee <= postFeeAmount, "WormholeJoin/operator-fee-too-high");
         daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
 
         if (fee > 0) {
@@ -231,6 +233,8 @@ contract WormholeJoin {
             uint256 amtToPayBack = _min(batchedDaiToFlush, art);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
+
+            totalDebt -= amtToPayBack;
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
         emit Settle(sourceDomain, batchedDaiToFlush);
