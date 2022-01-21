@@ -34,7 +34,7 @@ To fast withdraw DAI from L2, user:
 * Calls `l2bridge.initiateWormhole()` - this burns DAI on L2 and sends `finalizeRegisterWormhole()` L2 -> L1 message to withdraw DAI from L2 bridge. This message, in normal cicumstances, will never be relayed and it will eventually expire in L1 message queue
 * Waits for withdrawal attestations to be available and obtains them via Oracle API
 * Calls `WormholeOracleAuth.requestMint(WormholeGUID wormholeGUID, bytes signatures, uint256 maxFeePercentage, uint256 operatorFee)` which will:
-  * Check if `sender` is `operator` 
+  * Check if `sender` is `operator` or `receiver` 
   *   Check if enough valid attestations (sigs) are provided
   *   Call `WormholeJoin.requestMint(wormholeGUID, maxfeePercentage, operatorFee)` which will
         * Check if this wormhole hasn't been used before
@@ -88,14 +88,14 @@ Each Wormhole is described with the following struct:
 struct WormholeGUID {
 	bytes32 sourceDomain;
 	bytes32 targetDomain;
-	address receiver;
-	address operator;
+	bytes32 receiver;
+	bytes32 operator;
 	uint128 amount;
 	uint80 nonce;
 	uint48 timestamp;
 }
 ```
-Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique for each wormhole transfer.
+Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique for each wormhole transfer. We use `bytes32` for addresses to support not EVM compliant domains.
 
 ### Contracts
 
@@ -117,7 +117,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 
 ### Authorization
 * `WormholeOracleAuth`
-  * `requestMint` - operator (set by the user initiating wormhole)
+  * `requestMint` - operator or receiver (set by the user initiating wormhole)
   * `rely`, `deny`, `file`, `addSigners`, `removeSigners` - auth (Governance)
 * `WormholeRouter`
   * `rely`, `deny`, `file` - auth (Governance)
@@ -126,7 +126,7 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 * `WormholeJoin` 
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - auth (`WormholeRouter`, `WormholeOracleAuth`)
-  * `mintPending` - operator
+  * `mintPending` - operator or receiver
   * `settle` - anyone (typically keeper)
 * `L1WormholeBridge`
   * `finalizeFlush()` - L2 bridge
