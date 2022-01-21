@@ -257,8 +257,6 @@ contract WormholeJoin {
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external {
-        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
-            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,
             targetDomain: targetDomain,
@@ -268,6 +266,8 @@ contract WormholeJoin {
             nonce: nonce,
             timestamp: timestamp
         });
+        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
+            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
         _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
     }
 

@@ -9,7 +9,7 @@ methods {
     threshold() returns (uint256) envfree
     wards(address) returns (uint256) envfree
     wormholeJoin() returns (address) envfree
-    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256) => DISPATCHER(true)
+    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256, uint256) => DISPATCHER(true)
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     aux.callEcrecover(bytes32, uint256, bytes32, bytes32) returns (address) envfree
     aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256, uint256) envfree
@@ -178,7 +178,8 @@ rule requestMint_revert(
         uint80 nonce,
         uint48 timestamp,
         bytes signatures,
-        uint256 maxFeePercentage
+        uint256 maxFeePercentage,
+        uint256 operatorFee
 ) {
     env e;
 
@@ -214,7 +215,7 @@ rule requestMint_revert(
     uint256 numValid;
     a, numValid = aux.processUpToIndex(hash, signatures, count);
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, signatures, maxFeePercentage);
+    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, signatures, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;

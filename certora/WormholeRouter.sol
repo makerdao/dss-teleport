@@ -24,7 +24,7 @@ interface TokenLike {
 }
 
 interface GatewayLike {
-    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFee) external;
+    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFee, uint256 operatorFee) external;
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
