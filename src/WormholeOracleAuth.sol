@@ -127,10 +127,11 @@ contract WormholeOracleAuth {
             unchecked { i++; }
         }
     }
-
-    // TODO: this is NOT following the format proposed in 
-    // https://clever-salsa-671.notion.site/L2-Fast-Bridge-Architecture-rev-2-wormhole-0ba5074adcf749e791a0576c130d7534
-    // Need to confirm with the Oracle CU that the below format is acceptable
+    
+    /**
+     * @notice This has to match what oracles are signing
+     * @param wormholeGUID The wormhole GUID to calculate hash
+     */
     function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
         signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32",
