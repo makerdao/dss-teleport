@@ -1,6 +1,12 @@
 pragma solidity 0.8.9;
 
+interface OracleLike {
+    function signers(address) external view returns (uint256);
+}
+
 contract Auxiliar {
+    OracleLike public oracle;
+
     function getGUIDHash(
         bytes32 sourceDomain,
         bytes32 targetDomain,
@@ -35,7 +41,7 @@ contract Auxiliar {
         signer = ecrecover(digest, uint8(v), r, s);
     }
 
-    function splitSignature(bytes memory signatures, uint256 index) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+    function splitSignature(bytes memory signatures, uint256 index) public pure returns (uint8 v, bytes32 r, bytes32 s) {
         assembly {
             r := mload(add(signatures, add(0x20, mul(0x41, index))))
             s := mload(add(signatures, add(0x40, mul(0x41, index))))
@@ -43,27 +49,28 @@ contract Auxiliar {
         }
     }
 
-    function getNumValid(address target, bytes32 signHash, bytes memory signatures) external view returns (uint256 numValid) {
-        uint256 count = signatures.length / 65;
-
+    function processUpToIndex(
+        bytes32 signHash,
+        bytes memory signatures,
+        uint256 index
+    ) external view returns (
+        uint256 numProcessed,
+        uint256 numValid
+    ) {
         uint8 v;
         bytes32 r;
         bytes32 s;
         address lastSigner;
-        for (uint256 i; i < count;) {
+        for (uint256 i; i < index;) {
             (v, r, s) = splitSignature(signatures, i);
             if (v != 27 && v != 28) break;
             address recovered = ecrecover(signHash, v, r, s);
             if (recovered <= lastSigner) break;
             lastSigner = recovered;
-            if (OracleLike(target).signers(recovered) == 1) {
+            if (oracle.signers(recovered) == 1) {
                 unchecked { numValid += 1; }
             }
             unchecked { i++; }
         }
     }
-}
-
-interface OracleLike {
-    function signers(address) external view returns (uint256);
 }
