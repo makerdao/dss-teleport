@@ -25,6 +25,7 @@ struct WormholeGUID {
     uint128 amount;
     uint80 nonce;
     uint48 timestamp;
+    bytes32 data;
 }
 
 // solhint-disable-next-line func-visibility
@@ -46,6 +47,7 @@ function getGUIDHash(WormholeGUID memory wormholeGUID) pure returns (bytes32 gui
         wormholeGUID.operator,
         wormholeGUID.amount,
         wormholeGUID.nonce,
-        wormholeGUID.timestamp
+        wormholeGUID.timestamp,
+        wormholeGUID.data
     ));
 }

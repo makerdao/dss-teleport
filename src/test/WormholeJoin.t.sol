@@ -296,7 +296,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         assertEq(dai.balanceOf(address(123)), 0);
@@ -322,7 +323,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -343,7 +345,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 0);
@@ -365,7 +368,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         join.requestMint(guid, 0, 0);
         join.requestMint(guid, 0, 0);
@@ -379,7 +383,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         join.requestMint(guid, 0, 0);
     }
@@ -392,7 +397,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         assertEq(vat.dai(vow), 0);
         WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
@@ -416,7 +422,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
@@ -431,7 +438,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         assertEq(vat.dai(vow), 0);
         WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
@@ -456,7 +464,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         assertEq(vat.dai(vow), 0);
@@ -491,7 +500,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         assertEq(vat.dai(vow), 0);
@@ -509,7 +519,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         assertEq(vat.dai(vow), 0);
@@ -531,7 +542,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -556,7 +568,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -581,7 +594,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(0x123)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -606,7 +620,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(654)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -642,7 +657,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(654)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.requestMint(guid, 0, 0);
@@ -667,7 +683,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(654)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 100_000 ether);
@@ -694,7 +711,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(654)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         vat.cage();
@@ -718,7 +736,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(654)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.requestMint(guid, 0, 0);
@@ -747,7 +766,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         assertEq(vat.dai(address(this)), 0);
         join.requestMint(guid, 0, 250 ether);
@@ -766,7 +786,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         join.requestMint(guid, 0, 250_001 ether);   // Slightly over the amount
     }
@@ -779,7 +800,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
 
         join.file("line", "l2network", 200_000 ether);
@@ -810,7 +832,8 @@ contract WormholeJoinTest is DSTest {
             operator: addressToBytes32(address(this)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         assertEq(vat.dai(address(this)), 0);
         join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));

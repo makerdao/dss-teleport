@@ -193,7 +193,8 @@ contract WormholeRouterTest is DSTest {
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         router.file("gateway", "l2network", address(555));
 
@@ -208,7 +209,8 @@ contract WormholeRouterTest is DSTest {
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, wormholeJoin);
@@ -224,7 +226,8 @@ contract WormholeRouterTest is DSTest {
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
@@ -240,7 +243,8 @@ contract WormholeRouterTest is DSTest {
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
             nonce: 5,
-            timestamp: uint48(block.timestamp)
+            timestamp: uint48(block.timestamp),
+            data: 0
         });
         router.file("gateway", "l2network", address(this));
 
