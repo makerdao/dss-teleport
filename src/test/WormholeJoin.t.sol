@@ -21,159 +21,14 @@ import "ds-test/test.sol";
 import "src/WormholeJoin.sol";
 import "src/WormholeConstantFee.sol";
 
+import "./mocks/VatMock.sol";
+import "./mocks/DaiMock.sol";
+import "./mocks/DaiJoinMock.sol";
+
 interface Hevm {
     function warp(uint) external;
     function addr(uint) external returns (address);
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
-}
-
-contract VatMock {
-    uint256 internal constant RAY = 10 ** 27;
-    uint256 public live = 1;
-
-    struct Urn {
-        uint256 ink;   // Locked Collateral  [wad]
-        uint256 art;   // Normalised Debt    [wad]
-    }
-
-    mapping (address => mapping (address => uint256)) public can;
-    mapping (bytes32 => mapping (address => Urn ))    public urns;
-    mapping (bytes32 => mapping (address => uint256)) public gem;
-    mapping (address => uint256)                      public dai;
-
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x);
-    }
-    function add(uint256 x, int256 y) internal pure returns (uint256 z) {
-        z = x + uint256(y);
-        require(y >= 0 || z <= x);
-        require(y <= 0 || z >= x);
-    }
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x);
-    }
-    function sub(uint256 x, int256 y) internal pure returns (uint256 z) {
-        z = x - uint256(y);
-        require(y <= 0 || z <= x);
-        require(y >= 0 || z >= x);
-    }
-    function mul(uint256 x, int256 y) internal pure returns (int256 z) {
-        z = int256(x) * y;
-        require(int256(x) >= 0);
-        require(y == 0 || z / y == int256(x));
-    }
-
-    function either(bool x, bool y) internal pure returns (bool z) {
-        assembly{ z := or(x, y)}
-    }
-
-    function wish(address bit, address usr) internal view returns (bool) {
-        return either(bit == usr, can[bit][usr] == 1);
-    }
-
-    function hope(address usr) external {
-        can[msg.sender][usr] = 1;
-    }
-
-    function cage() external {
-        live = 0;
-    }
-
-    function frob(bytes32 i, address u, address v, address w, int dink, int dart) external {
-        Urn memory urn = urns[i][u];
-
-        urn.ink = add(urn.ink, dink);
-        urn.art = add(urn.art, dart);
-
-        int dtab = mul(RAY, dart);
-
-        gem[i][v] = sub(gem[i][v], dink);
-        dai[w]    = add(dai[w],    dtab);
-
-        urns[i][u] = urn;
-    }
-
-    function move(address src, address dst, uint256 rad) external {
-        require(wish(src, msg.sender), "Vat/not-allowed");
-        dai[src] = sub(dai[src], rad);
-        dai[dst] = add(dai[dst], rad);
-    }
-
-    function slip(bytes32 ilk, address usr, int256 wad) external {
-        gem[ilk][usr] = add(gem[ilk][usr], wad);
-    }
-
-    function suck(address, address v, uint rad) external {
-        dai[v] = add(dai[v], rad);
-    }
-}
-
-contract DaiMock {
-    mapping (address => uint)                      public balanceOf;
-    mapping (address => mapping (address => uint)) public allowance;
-
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x);
-    }
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x);
-    }
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
-
-    function transfer(address dst, uint256 wad) external returns (bool) {
-        return transferFrom(msg.sender, dst, wad);
-    }
-    function transferFrom(address src, address dst, uint256 wad)
-        public returns (bool)
-    {
-        require(balanceOf[src] >= wad, "Dai/insufficient-balance");
-        if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
-            require(allowance[src][msg.sender] >= wad, "Dai/insufficient-allowance");
-            allowance[src][msg.sender] = sub(allowance[src][msg.sender], wad);
-        }
-        balanceOf[src] = sub(balanceOf[src], wad);
-        balanceOf[dst] = add(balanceOf[dst], wad);
-        return true;
-    }
-    function mint(address usr, uint256 wad) external  {
-        balanceOf[usr] = add(balanceOf[usr], wad);
-    }
-    function burn(address usr, uint256 wad) external {
-        require(balanceOf[usr] >= wad, "Dai/insufficient-balance");
-        if (usr != msg.sender && allowance[usr][msg.sender] != type(uint256).max) {
-            require(allowance[usr][msg.sender] >= wad, "Dai/insufficient-allowance");
-            allowance[usr][msg.sender] = sub(allowance[usr][msg.sender], wad);
-        }
-        balanceOf[usr] = sub(balanceOf[usr], wad);
-    }
-    function approve(address usr, uint256 wad) external returns (bool) {
-        allowance[msg.sender][usr] = wad;
-        return true;
-    }
-}
-
-contract DaiJoinMock {
-    VatMock public vat;
-    DaiMock public dai;
-
-    constructor(address vat_, address dai_) {
-        vat = VatMock(vat_);
-        dai = DaiMock(dai_);
-    }
-    uint256 internal constant RAY = 10 ** 27;
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x);
-    }
-    function join(address usr, uint256 wad) external {
-        vat.move(address(this), usr, mul(RAY, wad));
-        dai.burn(msg.sender, wad);
-    }
-    function exit(address usr, uint256 wad) external {
-        vat.move(msg.sender, address(this), mul(RAY, wad));
-        dai.mint(usr, wad);
-    }
 }
 
 contract WormholeJoinTest is DSTest {
@@ -312,6 +167,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
     }
 
     function testRegisterAndWithdrawPartial() public {
@@ -333,6 +189,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 50_000 ether);
         assertEq(_ink(), 200_000 ether);
         assertEq(_art(), 200_000 ether);
+        assertEq(join.totalDebt(), 200_000 * RAD);
     }
 
     function testRegisterAndWithdrawNothing() public {
@@ -354,6 +211,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 250_000 ether);
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
+        assertEq(join.totalDebt(), 0);
     }
 
 
@@ -406,6 +264,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
     }
 
     function testFailRegisterAndWithdrawPayingFee() public {
@@ -446,6 +305,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
     }
 
     function testRegisterAndWithdrawPartialPayingFee() public {
@@ -471,6 +331,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 50_000 ether);
         assertEq(_ink(), 200_000 ether);
         assertEq(_art(), 200_000 ether);
+        assertEq(join.totalDebt(), 200_000 * RAD);
 
         join.file("line", "l2network", 250_000 ether);
 
@@ -481,6 +342,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
     }
 
     function testFailRegisterAndWithdrawPartialPayingFee() public {
@@ -625,6 +487,7 @@ contract WormholeJoinTest is DSTest {
         join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
+        assertEq(join.totalDebt(), 0);
     }
 
     function testWithdrawNegativeDebt() public {
@@ -634,6 +497,7 @@ contract WormholeJoinTest is DSTest {
         join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
+        assertEq(join.totalDebt(), 0);
 
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
@@ -650,6 +514,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertEq(_ink(), 150_000 ether);
         assertEq(_art(), 150_000 ether);
+        assertEq(join.totalDebt(), 150_000 * RAD);
     }
 
     function testWithdrawPartialNegativeDebt() public {
@@ -659,6 +524,7 @@ contract WormholeJoinTest is DSTest {
         join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
+        assertEq(join.totalDebt(), 0);
 
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
@@ -677,6 +543,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 50_000 ether);
         assertEq(_ink(), 100_000 ether);
         assertEq(_art(), 100_000 ether);
+        assertEq(join.totalDebt(), 100_000 * RAD);
     }
 
     function testWithdrawVatCaged() public {
@@ -686,6 +553,7 @@ contract WormholeJoinTest is DSTest {
         join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
+        assertEq(join.totalDebt(), 0);
 
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
@@ -708,6 +576,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
         assertEq(vat.dai(vow), 0); // No fees regardless the contract set
+        assertEq(join.totalDebt(), 0);
     }
 
     function testSettleVatCaged() public {
@@ -726,6 +595,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network"), 250_000 ether);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
 
         vat.cage();
 
@@ -737,6 +607,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network"), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+        assertEq(join.totalDebt(), 250_000 * RAD);
     }
 
     function testRegisterAndWithdrawPayingOperatorFee() public {
@@ -821,5 +692,68 @@ contract WormholeJoinTest is DSTest {
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
+    }
+
+    function testTotalDebtSeveralDomains() public {
+        join.file("line", "l2network_2", 1_000_000 ether);
+        join.file("fees", "l2network_2", address(new WormholeConstantFee(0, TTL)));
+        join.file("line", "l2network_3", 1_000_000 ether);
+        join.file("fees", "l2network_3", address(new WormholeConstantFee(0, TTL)));
+
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network", 100_000 ether);
+
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network_2",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 150_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        guid = WormholeGUID({
+            sourceDomain: "l2network_3",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 50_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(join.debt("l2network"), -100_000 ether);
+        assertEq(join.debt("l2network_2"), 150_000 ether);
+        assertEq(join.debt("l2network_3"), 50_000 ether);
+        assertEq(join.totalDebt(), 200_000 * RAD);
+
+        guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 50_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(join.debt("l2network"), -50_000 ether);
+        assertEq(join.debt("l2network_2"), 150_000 ether);
+        assertEq(join.debt("l2network_3"), 50_000 ether);
+        assertEq(join.totalDebt(), 200_000 * RAD);
+
+        vat.suck(address(0), address(this), 10_000 * RAD);
+        daiJoin.exit(address(join), 10_000 ether);
+        join.settle("l2network_3", 10_000 ether);
+
+        assertEq(join.debt("l2network"), -50_000 ether);
+        assertEq(join.debt("l2network_2"), 150_000 ether);
+        assertEq(join.debt("l2network_3"), 40_000 ether);
+        assertEq(join.totalDebt(), 190_000 * RAD);
     }
 }
