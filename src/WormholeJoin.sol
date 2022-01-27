@@ -134,6 +134,14 @@ contract WormholeJoin {
     }
 
     /**
+    * @dev External view function to get the total debt used by this contract
+    **/
+    function totalDebt() external view returns (uint256) {
+        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+        return art * RAY;
+    }
+
+    /**
     * @dev Internal function that executes the mint after a wormhole is registered
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
@@ -178,7 +186,6 @@ contract WormholeJoin {
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
         uint256 postFeeAmount = amtToTake - fee;
-        require(operatorFee <= postFeeAmount, "WormholeJoin/operator-fee-too-high");
         daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
 
         if (fee > 0) {
