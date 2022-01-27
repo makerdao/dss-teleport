@@ -62,7 +62,6 @@ contract GelatoRelay {
         bytes32 r,
         bytes32 s
     ) external {
-        require(bytes32ToAddress(wormholeGUID.receiver) == address(this), "GelatoRelay/invalid-receiver");
         require(block.timestamp < expiry, "GelatoRelay/expired");
         bytes32 userHash = keccak256(abi.encode(receiver, maxFeePercentage, expiry));
         address recovered = ecrecover(userHash, v, r, s);
