@@ -63,7 +63,8 @@ contract GelatoRelay {
         bytes32 s
     ) external {
         require(block.timestamp < expiry, "GelatoRelay/expired");
-        bytes32 userHash = keccak256(abi.encode(receiver, maxFeePercentage, expiry));
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, expiry));
         address recovered = ecrecover(userHash, v, r, s);
         require(bytes32ToAddress(wormholeGUID.operator) == recovered, "GelatoRelay/invalid-signature");
 
@@ -71,7 +72,6 @@ contract GelatoRelay {
         // FIXME This is not great, would prefer requestMint to say how much was sent (minus fee)
         uint256 prevBal = dai.balanceOf(address(this));
         oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, 0);
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
         require(pending == 0, "GelatoRelay/partial-mint-disallowed");
 
