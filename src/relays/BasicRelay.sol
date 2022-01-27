@@ -38,7 +38,8 @@ interface WormholeJoinLike {
 }
 
 // Relay messages automatically on the target domain
-contract GelatoRelay {
+// User provides gasFee which is paid to the msg.sender
+contract BasicRelay {
 
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
@@ -57,25 +58,27 @@ contract GelatoRelay {
         bytes calldata signatures,
         address receiver,
         uint256 maxFeePercentage,
+        uint256 gasFee,
         uint256 expiry,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external {
-        require(block.timestamp < expiry, "GelatoRelay/expired");
+        require(block.timestamp < expiry, "BasicRelay/expired");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, expiry));
+        bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, gasFee, expiry));
         address recovered = ecrecover(userHash, v, r, s);
-        require(bytes32ToAddress(wormholeGUID.operator) == recovered, "GelatoRelay/invalid-signature");
+        require(bytes32ToAddress(wormholeGUID.operator) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint
         // FIXME This is not great, would prefer requestMint to say how much was sent (minus fee)
         uint256 prevBal = dai.balanceOf(address(this));
         oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, 0);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
-        require(pending == 0, "GelatoRelay/partial-mint-disallowed");
+        require(pending == 0, "BasicRelay/partial-mint-disallowed");
 
-        // TODO send some fee to the relayer respecting the maxFeePercentage
+        // Send the gas fee to the relayer
+        dai.transfer(msg.sender, gasFee);
 
         // Send the rest to the end user
         dai.transfer(recovered, dai.balanceOf(address(this)) - prevBal);
