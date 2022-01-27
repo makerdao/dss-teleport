@@ -21,7 +21,9 @@ import "ds-test/test.sol";
 import "src/WormholeRouter.sol";
 
 contract GatewayMock {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external {}
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external returns (uint256) {
+        return 0;
+    }
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
