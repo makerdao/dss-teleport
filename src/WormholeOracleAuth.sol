@@ -19,7 +19,7 @@ pragma solidity 0.8.9;
 import "./WormholeGUID.sol";
 
 interface WormholeJoinLike {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee, uint256 operatorFee) external;
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external;
 }
 
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
@@ -88,13 +88,12 @@ contract WormholeOracleAuth {
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-     * @param operatorFee The amount of DAI to pay to the operator
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee) external {
+    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage) external {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        wormholeJoin.requestMint(wormholeGUID, maxFeePercentage);
     }
 
     /**
