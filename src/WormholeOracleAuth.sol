@@ -19,7 +19,10 @@ pragma solidity 0.8.9;
 import "./WormholeGUID.sol";
 
 interface WormholeJoinLike {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external returns (uint256 postFeeAmount);
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        uint256 maxFee
+    ) external returns (uint256 postFeeAmount);
 }
 
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
