@@ -291,7 +291,7 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
+    uint256 postFeeAmount = requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -316,6 +316,7 @@ rule requestMint(
     assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
+    assert(postFeeAmount == amtToTake - feeAmt, "postFeeAmount is not the value expected");
 }
 
 // Verify revert rules on requestMint
@@ -482,7 +483,7 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
+    uint256 postFeeAmount = mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -505,6 +506,7 @@ rule mintPending(
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
+    assert(postFeeAmount == amtToTake - feeAmt, "postFeeAmount is not the value expected");
 }
 
 // Verify revert rules on mintPending
