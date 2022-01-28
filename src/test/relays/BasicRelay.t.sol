@@ -159,4 +159,86 @@ contract BasicRelayTest is DSTest {
         assertEq(dai.balanceOf(receiver), 98 ether);
         assertEq(dai.balanceOf(address(this)), 1 ether);
     }
+
+    function testFail_relay_expired() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address signer = hevm.addr(sk);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(relay)),
+            operator: addressToBytes32(signer),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        bytes32 hashGUID = getGUIDHash(guid);
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = keccak256(abi.encode(
+            hashGUID,
+            receiver,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        ));
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        hevm.warp(block.timestamp + 1);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            receiver,
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+    }
+
+    function testFail_relay_bad_signature() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address signer = hevm.addr(sk);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(relay)),
+            operator: addressToBytes32(signer),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        bytes32 hashGUID = getGUIDHash(guid);
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = keccak256(abi.encode(
+            hashGUID,
+            address(456),
+            maxFeePercentage,
+            gasFee,
+            expiry
+        ));
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            receiver,
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+    }
 }
