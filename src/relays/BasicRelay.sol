@@ -30,9 +30,14 @@ interface TokenLike {
 }
 
 interface WormholeOracleAuthLike {
-    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee) external;
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        bytes calldata signatures,
+        uint256 maxFeePercentage
+    ) external returns (uint256 postFeeAmount);
     function wormholeJoin() external view returns (WormholeJoinLike);
 }
+
 interface WormholeJoinLike {
     function wormholes(bytes32 hashGUID) external view returns (bool, uint248);
 }
@@ -64,16 +69,14 @@ contract BasicRelay {
         bytes32 r,
         bytes32 s
     ) external {
-        require(block.timestamp < expiry, "BasicRelay/expired");
+        require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, gasFee, expiry));
         address recovered = ecrecover(userHash, v, r, s);
         require(bytes32ToAddress(wormholeGUID.operator) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint
-        // FIXME This is not great, would prefer requestMint to say how much was sent (minus fee)
-        uint256 prevBal = dai.balanceOf(address(this));
-        oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, 0);
+        uint256 postFeeAmount = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
         require(pending == 0, "BasicRelay/partial-mint-disallowed");
 
@@ -81,7 +84,7 @@ contract BasicRelay {
         dai.transfer(msg.sender, gasFee);
 
         // Send the rest to the end user
-        dai.transfer(recovered, dai.balanceOf(address(this)) - prevBal);
+        dai.transfer(receiver, postFeeAmount - gasFee);
     }
 
 }
