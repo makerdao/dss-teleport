@@ -244,13 +244,6 @@ definition feeAmt(env e, bool canGenerate, bool vatLive, bytes32 sourceDomain, b
                         :
                             0;
 
-definition operatorFeeAmt(bool canGenerate, uint256 operatorFee)
-    returns uint256 = canGenerate
-                        ?
-                            operatorFee
-                        :
-                            0;
-
 // Verify that requestMint behaves correctly
 rule requestMint(
         bytes32 sourceDomain,
@@ -260,8 +253,7 @@ rule requestMint(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -290,7 +282,6 @@ rule requestMint(
     uint256 amtToTake = amtToTake(canGenerate, gap, amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
     uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
-    uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
@@ -300,7 +291,7 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -320,9 +311,9 @@ rule requestMint(
     assert(blessedBefore == false, "blessed before call should be false");
     assert(blessedAfter == true, "blessed after call should be true");
     assert(pendingAfter == amount - amtToTake, "pending has not acted as expected");
-    assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt - operatorFeeAmt, "balance of receiver did not increase as expected");
+    assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt, "balance of receiver did not increase as expected");
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
-    assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore + operatorFeeAmt * RAY(), "balance of operator did not increase as expected");
+    assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
 }
@@ -336,8 +327,7 @@ rule requestMint_revert(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -374,7 +364,6 @@ rule requestMint_revert(
     uint256 amtToTake = amtToTake(canGenerate, gap, amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
     uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
-    uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 ink;
     uint256 art;
@@ -388,7 +377,7 @@ rule requestMint_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = ward != 1;
@@ -408,13 +397,10 @@ rule requestMint_revert(
     bool revert16 = canGenerate && (amtToTake - feeAmt) * RAY() > max_uint256;
     bool revert17 = canGenerate && can != 1;
     bool revert18 = canGenerate && vatDaiWormwholeJoin + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
-    bool revert19 = canGenerate && amtToTake - feeAmt < operatorFeeAmt;
-    bool revert20 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt - operatorFeeAmt) * RAY() > max_uint256;
-    bool revert21 = canGenerate && daiReceiver + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
-    bool revert22 = canGenerate && feeAmt * RAY() > max_uint256;
-    bool revert23 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
-    bool revert24 = canGenerate && operatorFeeAmt * RAY() > max_uint256;
-    bool revert25 = canGenerate && vatDaiOperator + operatorFeeAmt * RAY() > max_uint256;
+    bool revert19 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt) * RAY() > max_uint256;
+    bool revert20 = canGenerate && daiReceiver + (amtToTake - feeAmt) > max_uint256;
+    bool revert21 = canGenerate && feeAmt * RAY() > max_uint256;
+    bool revert22 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");
@@ -438,9 +424,6 @@ rule requestMint_revert(
     assert(revert20 => lastReverted, "revert20 failed");
     assert(revert21 => lastReverted, "revert21 failed");
     assert(revert22 => lastReverted, "revert22 failed");
-    assert(revert23 => lastReverted, "revert23 failed");
-    assert(revert24 => lastReverted, "revert24 failed");
-    assert(revert25 => lastReverted, "revert24 failed");
 
     assert(lastReverted => revert1  || revert2  || revert3  ||
                            revert4  || revert5  || revert6  ||
@@ -449,8 +432,7 @@ rule requestMint_revert(
                            revert13 || revert14 || revert15 ||
                            revert16 || revert17 || revert18 ||
                            revert19 || revert20 || revert21 ||
-                           revert22 || revert23 || revert24 ||
-                           revert25, "Revert rules are not covering all the cases");
+                           revert22, "Revert rules are not covering all the cases");
 }
 
 // Verify that mintPending behaves correctly
@@ -462,8 +444,7 @@ rule mintPending(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -492,7 +473,6 @@ rule mintPending(
     uint256 amtToTake = amtToTake(canGenerate, gap, pendingBefore);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
     uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
-    uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
@@ -502,7 +482,7 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -521,9 +501,8 @@ rule mintPending(
     assert(to_mathint(debtAfter) == to_mathint(debtBefore) + to_mathint(amtToTake), "debt has not increased as expected");
     assert(blessedAfter == blessedBefore, "blessed has changed when it should not happen");
     assert(pendingAfter == pendingBefore - amtToTake, "pending has not decreased as expected");
-    assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt - operatorFeeAmt, "balance of receiver did not increase as expected");
+    assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt, "balance of receiver did not increase as expected");
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
-    assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore + operatorFeeAmt * RAY(), "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
 }
@@ -537,8 +516,7 @@ rule mintPending_revert(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
+        uint256 maxFeePercentage
     ) {
     env e;
 
@@ -573,7 +551,6 @@ rule mintPending_revert(
     uint256 amtToTake = amtToTake(canGenerate, gap, pending);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
     uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
-    uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 ink;
     uint256 art;
@@ -587,7 +564,7 @@ rule mintPending_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    mintPending@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    mintPending@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = e.msg.sender != receiverAddr && e.msg.sender != operatorAddr;
@@ -606,13 +583,10 @@ rule mintPending_revert(
     bool revert15 = canGenerate && (amtToTake - feeAmt) * RAY() > max_uint256;
     bool revert16 = canGenerate && can != 1;
     bool revert17 = canGenerate && vatDaiWormwholeJoin + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
-    bool revert18 = canGenerate && amtToTake - feeAmt < operatorFeeAmt;
-    bool revert19 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt - operatorFeeAmt) * RAY() > max_uint256;
-    bool revert20 = canGenerate && daiReceiver + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
-    bool revert21 = canGenerate && feeAmt * RAY() > max_uint256;
-    bool revert22 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
-    bool revert23 = canGenerate && operatorFeeAmt * RAY() > max_uint256;
-    bool revert24 = canGenerate && vatDaiOperator + operatorFeeAmt * RAY() > max_uint256;
+    bool revert18 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt) * RAY() > max_uint256;
+    bool revert19 = canGenerate && daiReceiver + (amtToTake - feeAmt) > max_uint256;
+    bool revert20 = canGenerate && feeAmt * RAY() > max_uint256;
+    bool revert21 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");
@@ -635,9 +609,6 @@ rule mintPending_revert(
     assert(revert19 => lastReverted, "revert19 failed");
     assert(revert20 => lastReverted, "revert20 failed");
     assert(revert21 => lastReverted, "revert21 failed");
-    assert(revert22 => lastReverted, "revert22 failed");
-    assert(revert23 => lastReverted, "revert23 failed");
-    assert(revert24 => lastReverted, "revert24 failed");
 
     assert(lastReverted => revert1  || revert2  || revert3  ||
                            revert4  || revert5  || revert6  ||
@@ -645,8 +616,7 @@ rule mintPending_revert(
                            revert10 || revert11 || revert12 ||
                            revert13 || revert14 || revert15 ||
                            revert16 || revert17 || revert18 ||
-                           revert19 || revert20 || revert21 ||
-                           revert22 || revert23 || revert24, "Revert rules are not covering all the cases");
+                           revert19 || revert20 || revert21, "Revert rules are not covering all the cases");
 }
 
 rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {

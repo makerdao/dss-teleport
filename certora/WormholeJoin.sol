@@ -67,7 +67,7 @@ contract WormholeJoin {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
-    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee);
+    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage);
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
@@ -134,13 +134,21 @@ contract WormholeJoin {
     }
 
     /**
+    * @dev External view function to get the total debt used by this contract
+    **/
+    function totalDebt() external view returns (uint256) {
+        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+        return art * RAY;
+    }
+
+    /**
     * @dev Internal function that executes the mint after a wormhole is registered
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param hashGUID Hash of the prev struct
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @param operatorFee The amount of DAI to pay to the operator
+    * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function _mint(WormholeGUID memory wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage, uint256 operatorFee) internal {
+    function _mint(WormholeGUID memory wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage) internal returns (uint256 postFeeAmount) {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
@@ -152,8 +160,8 @@ contract WormholeJoin {
         // Stop execution if there isn't anything available to withdraw
         uint248 pending = wormholes[hashGUID].pending;
         if (int256(line_) <= debt_ || pending == 0) {
-            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee);
-            return;
+            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage);
+            return 0;
         }
 
         uint256 amtToTake = _min(
@@ -177,33 +185,29 @@ contract WormholeJoin {
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
         }
-        uint256 postFeeAmount = amtToTake - fee;
-        require(operatorFee <= postFeeAmount, "WormholeJoin/operator-fee-too-high");
-        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount - operatorFee);
+        postFeeAmount = amtToTake - fee;
+        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
         }
-        if (operatorFee > 0) {
-            vat.move(address(this), bytes32ToAddress(wormholeGUID.operator), operatorFee * RAY);
-        }
 
-        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);
+        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage);
     }
 
     /**
     * @dev External authed function that registers the wormwhole and executes the mint after
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @param operatorFee The amount of DAI to pay to the operator
+    * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external auth {
+    function requestMint(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage) external auth returns (uint256 postFeeAmount) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
-        _mint(wormholeGUID, hashGUID, maxFeePercentage, operatorFee);
+        return _mint(wormholeGUID, hashGUID, maxFeePercentage);
     }
 
     function requestMint(
@@ -214,9 +218,8 @@ contract WormholeJoin {
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external auth {
+        uint256 maxFeePercentage
+    ) external auth returns (uint256 postFeeAmount) {
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,
             targetDomain: targetDomain,
@@ -231,19 +234,19 @@ contract WormholeJoin {
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = wormholeGUID.amount;
         emit Register(hashGUID, wormholeGUID);
-        _mint(wormholeGUID, hashGUID, maxFeePercentage, operatorFee);
+        return _mint(wormholeGUID, hashGUID, maxFeePercentage);
     }
 
     /**
     * @dev External function that executes the mint of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @param operatorFee The amount of DAI to pay to the operator
+    * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function mintPending(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external {
+    function mintPending(WormholeGUID memory wormholeGUID, uint256 maxFeePercentage) external returns (uint256 postFeeAmount) {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
-        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
+        return _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
     }
 
     function mintPending(
@@ -254,9 +257,8 @@ contract WormholeJoin {
         uint128 amount,
         uint80 nonce,
         uint48 timestamp,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external {
+        uint256 maxFeePercentage
+    ) external returns (uint256 postFeeAmount) {
         WormholeGUID memory wormholeGUID = WormholeGUID({
             sourceDomain: sourceDomain,
             targetDomain: targetDomain,
@@ -268,7 +270,7 @@ contract WormholeJoin {
         });
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
-        _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
+        return _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);
     }
 
     /**
