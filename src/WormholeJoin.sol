@@ -199,9 +199,9 @@ contract WormholeJoin {
     * @dev External authed function that registers the wormwhole and executes the mint after
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @return The amount of DAI sent to the receiver after taking out fees
+    * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external auth returns (uint256) {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external auth returns (uint256 postFeeAmount) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
@@ -214,9 +214,9 @@ contract WormholeJoin {
     * @dev External function that executes the mint of any pending and available amount (only callable by operator)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-    * @return The amount of DAI sent to the receiver after taking out fees
+    * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external returns (uint256) {
+    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external returns (uint256 postFeeAmount) {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
         return _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage);

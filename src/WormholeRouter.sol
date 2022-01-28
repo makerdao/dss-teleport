@@ -24,7 +24,7 @@ interface TokenLike {
 }
 
 interface GatewayLike {
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external returns (uint256);
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFee) external returns (uint256 postFeeAmount);
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
@@ -119,9 +119,9 @@ contract WormholeRouter {
      * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
      * @param wormholeGUID The wormhole GUID to register
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-     * @return The amount of DAI sent to the receiver after taking out fees
+     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external returns (uint256) {
+    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage) external returns (uint256 postFeeAmount) {
         require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
         address gateway = gateways[wormholeGUID.targetDomain];
         require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
