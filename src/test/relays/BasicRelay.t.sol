@@ -36,6 +36,7 @@ contract WormholeJoinMock {
     mapping (bytes32 => WormholeStatus) public wormholes;
 
     DaiMock public dai;
+    uint256 public maxMint;
 
     struct WormholeStatus {
         bool    blessed;
@@ -46,17 +47,24 @@ contract WormholeJoinMock {
         dai = _dai;
     }
 
+    function setMaxMint(uint256 amt) external {
+        maxMint = amt;
+    }
+
     function requestMint(
         WormholeGUID calldata wormholeGUID,
         uint256
     ) external returns (uint256 postFeeAmount) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = 0;
 
         // Take 1%
-        uint256 fee = wormholeGUID.amount * 1 / 100;
-        uint256 remainder = wormholeGUID.amount - fee;
+        uint256 amount = wormholeGUID.amount;
+        if (amount > maxMint) amount = maxMint;
+        uint256 fee = amount * 1 / 100;
+        uint256 remainder = amount - fee;
+
+        wormholes[hashGUID].blessed = true;
+        wormholes[hashGUID].pending = uint248(wormholeGUID.amount - amount);
 
         // Mint the DAI and send it to receiver
         dai.mint(bytes32ToAddress(wormholeGUID.receiver), remainder);
@@ -106,6 +114,7 @@ contract BasicRelayTest is DSTest {
         join = new WormholeJoinMock(dai);
         oracleAuth = new WormholeOracleAuthMock(join);
         relay = new BasicRelay(address(oracleAuth), address(daiJoin));
+        join.setMaxMint(100 ether);
     }
 
     function test_constructor_args() public {
@@ -222,6 +231,48 @@ contract BasicRelayTest is DSTest {
         bytes32 signHash = keccak256(abi.encode(
             hashGUID,
             address(456),
+            maxFeePercentage,
+            gasFee,
+            expiry
+        ));
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            receiver,
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+    }
+
+    function testFail_relay_partial_mint() public {
+        join.setMaxMint(50 ether);
+
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address signer = hevm.addr(sk);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(relay)),
+            operator: addressToBytes32(signer),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        bytes32 hashGUID = getGUIDHash(guid);
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = keccak256(abi.encode(
+            hashGUID,
+            receiver,
             maxFeePercentage,
             gasFee,
             expiry
