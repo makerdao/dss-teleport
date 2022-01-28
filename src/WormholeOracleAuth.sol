@@ -93,7 +93,11 @@ contract WormholeOracleAuth {
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage) external returns (uint256 postFeeAmount) {
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        bytes calldata signatures,
+        uint256 maxFeePercentage
+    ) external returns (uint256 postFeeAmount) {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
