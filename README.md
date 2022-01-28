@@ -33,10 +33,10 @@ To fast withdraw DAI from L2, user:
 
 * Calls `l2bridge.initiateWormhole()` - this burns DAI on L2 and sends `finalizeRegisterWormhole()` L2 -> L1 message to withdraw DAI from L2 bridge. This message, in normal cicumstances, will never be relayed and it will eventually expire in L1 message queue
 * Waits for withdrawal attestations to be available and obtains them via Oracle API
-* Calls `WormholeOracleAuth.requestMint(WormholeGUID wormholeGUID, bytes signatures, uint256 maxFeePercentage, uint256 operatorFee)` which will:
+* Calls `WormholeOracleAuth.requestMint(WormholeGUID wormholeGUID, bytes signatures, uint256 maxFeePercentage)` which will:
   * Check if `sender` is `operator` or `receiver` 
   *   Check if enough valid attestations (sigs) are provided
-  *   Call `WormholeJoin.requestMint(wormholeGUID, maxfeePercentage, operatorFee)` which will
+  *   Call `WormholeJoin.requestMint(wormholeGUID, maxfeePercentage)` which will
         * Check if this wormhole hasn't been used before
         * Check if the debt ceiling hasn't been reached
         * Check the current fee via `WormholeFees`
@@ -58,7 +58,7 @@ If attestations cannot be obtained (Oracles down or censoring), user needs to wa
 
 * Relays `finalizeRegisterWormhole()`  message to `L1Bridge`
 * `L1Bridge` upon receiving `finalizeRegisterWormhole()` will call `requestMint()` on `WormholeRouter` which will:
-    * Call `WormholeJoin.requestMint(wormholeGUID, maxfeePercentage, operatorFee)` which will
+    * Call `WormholeJoin.requestMint(wormholeGUID, maxfeePercentage)` which will
         * Check if this wormhole hasn't been used before
         * Check if the debt ceiling hasn't been reached
         * Check the current fee via `WormholeFees`
@@ -101,15 +101,15 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 
 **`WormholeRouter`**
 * `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one. 
-* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by `L1Bridge`, issues a request to mint DAI for the receiver of the wormhole. This request is made either directly to the L1 `WormholeJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `WormholeJoin` in the case of a teleport to another L2.
+* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage)` - callable only by `L1Bridge`, issues a request to mint DAI for the receiver of the wormhole. This request is made either directly to the L1 `WormholeJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `WormholeJoin` in the case of a teleport to another L2.
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `WormholeJoin` or target domain `L1 bridge` to settle DAI
 
 **`WormholeOracleAuth`**
-* `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by the wormhole operator, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
+* `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage)` - callable only by the wormhole operator, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
 
 **`WormholeJoin`**
-* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
-* `mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
+* `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
+* `mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormholeRouter`, settles DAI debt
 
 **`WormholeFees`**
