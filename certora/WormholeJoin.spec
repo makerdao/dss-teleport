@@ -37,20 +37,9 @@ definition RAY() returns uint256 = 10^27;
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
 
-// ghost lineGhost(bytes32) returns mathint {
-//     init_state axiom forall bytes32 x. lineGhost(x) == 0;
-// }
-
-// hook Sload uint256 v line[KEY bytes32 domain] STORAGE {
-//     require lineGhost(domain) == v;
-// }
-
-// hook Sstore line[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
-//     havoc lineGhost assuming lineGhost@new(a) == n;
-// }
-
-// invariant checkLineGhost(bytes32 someKey) line(someKey) == lineGhost(someKey)
-// invariant lineCantExceedMaxInt256(bytes32 domain) line(domain) <= max_int256()
+invariant lineCantExceedMaxInt256(bytes32 domain)
+to_mathint(line(domain)) <= max_int256()
+filtered { f -> !f.isFallback }
 
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
@@ -332,6 +321,8 @@ rule requestMint_revert(
     ) {
     env e;
 
+    requireInvariant lineCantExceedMaxInt256(sourceDomain);
+
     address receiverAddr = aux.bytes32ToAddress(receiver);
     address operatorAddr = aux.bytes32ToAddress(operator);
 
@@ -353,7 +344,6 @@ rule requestMint_revert(
 
     bool vatLive = vat.live() == 1;
     uint256 line = vatLive ? line(sourceDomain): 0;
-    require(to_mathint(line) <= max_int256()); // TODO: see to replace with a proper invariant
     int256 debt = debt(sourceDomain);
 
     bool    blessed;
@@ -522,6 +512,8 @@ rule mintPending_revert(
     ) {
     env e;
 
+    requireInvariant lineCantExceedMaxInt256(sourceDomain);
+
     address receiverAddr = aux.bytes32ToAddress(receiver);
     address operatorAddr = aux.bytes32ToAddress(operator);
 
@@ -541,7 +533,6 @@ rule mintPending_revert(
 
     bool vatLive = vat.live() == 1;
     uint256 line = vatLive ? line(sourceDomain): 0;
-    require(to_mathint(line) <= max_int256()); // TODO: see to replace with a proper invariant
     int256 debt = debt(sourceDomain);
 
     bool    blessed;
