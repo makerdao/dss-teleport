@@ -58,6 +58,17 @@ contract BasicRelay {
         wormholeJoin = oracleAuth.wormholeJoin();
     }
 
+    /**
+     * @notice Gasless relay for the Oracle fast path
+     * The final signature is ABI-encoded `hashGUID`, `receiver`, `maxFeePercentage`, `gasFee`, `expiry`
+     * @param wormholeGUID The wormhole GUID
+     * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
+     * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
+     * @param receiver The end user to receive the DAI.
+     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
+     * @param gasFee DAI gas fee (in WAD)
+     * @param expiry Maximum time for when the query is valid
+     */
     function relay(
         WormholeGUID calldata wormholeGUID,
         bytes calldata signatures,
