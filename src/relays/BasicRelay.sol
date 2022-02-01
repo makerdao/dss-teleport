@@ -46,6 +46,8 @@ interface WormholeJoinLike {
 // User provides gasFee which is paid to the msg.sender
 contract BasicRelay {
 
+    mapping (bytes32 => uint256) public wormholes; // Wormholes that have been executed
+
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
     WormholeOracleAuthLike public immutable oracleAuth;
@@ -82,19 +84,58 @@ contract BasicRelay {
     ) external {
         require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        require(wormholes[hashGUID] == 0, "BasicRelay/already-executed");
         bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, gasFee, expiry));
         address recovered = ecrecover(userHash, v, r, s);
         require(bytes32ToAddress(wormholeGUID.operator) == recovered, "BasicRelay/invalid-signature");
 
-        // Initiate mint
+        // Initiate mint and mark the wormhole as done
         uint256 postFeeAmount = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
         require(pending == 0, "BasicRelay/partial-mint-disallowed");
+        wormholes[hashGUID] = 1;
 
         // Send the gas fee to the relayer
         dai.transfer(msg.sender, gasFee);
 
         // Send the rest to the end user
+        dai.transfer(receiver, postFeeAmount - gasFee);
+    }
+
+    /**
+     * @notice Extract DAI out if it was sent to this contract ouside of the relay
+     * The final signature is ABI-encoded `hashGUID`, `receiver`, `gasFee`, `expiry`
+     * @param wormholeGUID The wormhole GUID
+     * @param receiver The end user to receive the DAI.
+     * @param gasFee DAI gas fee (in WAD)
+     * @param expiry Maximum time for when the query is valid
+     */
+    function extract(
+        WormholeGUID calldata wormholeGUID,
+        address receiver,
+        uint256 gasFee,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(block.timestamp <= expiry, "BasicRelay/expired");
+        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        require(wormholes[hashGUID] == 0, "BasicRelay/already-executed");
+        bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, gasFee, expiry));
+        address recovered = ecrecover(userHash, v, r, s);
+        require(bytes32ToAddress(wormholeGUID.operator) == recovered, "BasicRelay/invalid-signature");
+
+        // Confirm that the wormhole has sent it's DAI to this contract
+        (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
+        require(pending == 0, "BasicRelay/mints-still-pending");
+        wormholes[hashGUID] = 1;
+
+        // Send the gas fee to the relayer
+        dai.transfer(msg.sender, gasFee);
+
+        // Send the rest to the end user
+        // FIXME need to fetch how much DAI was sent to this contract
         dai.transfer(receiver, postFeeAmount - gasFee);
     }
 
