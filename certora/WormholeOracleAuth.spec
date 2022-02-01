@@ -15,6 +15,7 @@ methods {
     aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256, uint256) envfree
     aux.splitSignature(bytes, uint256) returns (uint8, bytes32, bytes32) envfree
     aux.oracle() returns (address) envfree
+    aux.checkMalformedArray(address[]) envfree
 }
 
 // Verify that wards behaves correctly on rely
@@ -127,15 +128,20 @@ rule addSigners_revert(address[] signers_) {
 
     uint256 ward = wards(e.msg.sender);
 
+    aux.checkMalformedArray@withrevert(signers_);
+    bool malformed = lastReverted; // Nasty workaround to catch malformed array revert case
+
     addSigners@withrevert(e, signers_);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;
+    bool revert3 = malformed;
 
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
+    assert(revert3 => lastReverted, "revert3 failed");
 
-    assert(lastReverted => revert1 || revert2, "Revert rules are not covering all the cases");
+    assert(lastReverted => revert1 || revert2 || revert3, "Revert rules are not covering all the cases");
 }
 
 // Verify that removeSigners behaves correctly
@@ -158,15 +164,20 @@ rule removeSigners_revert(address[] signers_) {
 
     uint256 ward = wards(e.msg.sender);
 
+    aux.checkMalformedArray@withrevert(signers_);
+    bool malformed = lastReverted; // Nasty workaround to catch malformed array revert case
+
     removeSigners@withrevert(e, signers_);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;
+    bool revert3 = malformed;
 
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
+    assert(revert3 => lastReverted, "revert3 failed");
 
-    assert(lastReverted => revert1 || revert2, "Revert rules are not covering all the cases");
+    assert(lastReverted => revert1 || revert2 || revert3, "Revert rules are not covering all the cases");
 }
 
 rule requestMint_revert(

@@ -73,4 +73,6 @@ contract Auxiliar {
             unchecked { i++; }
         }
     }
+
+    function checkMalformedArray(address[] memory) external pure {}
 }
