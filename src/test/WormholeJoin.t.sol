@@ -66,11 +66,15 @@ contract WormholeJoinTest is DSTest {
     }
 
     function _blessed(WormholeGUID memory guid) internal view returns (bool blessed_) {
-        (blessed_, ) = join.wormholes(getGUIDHash(guid));
+        (blessed_,,) = join.wormholes(getGUIDHash(guid));
     }
 
     function _pending(WormholeGUID memory guid) internal view returns (uint248 pending_) {
-        (, pending_) = join.wormholes(getGUIDHash(guid));
+        (, pending_,) = join.wormholes(getGUIDHash(guid));
+    }
+
+    function _sent(WormholeGUID memory guid) internal view returns (uint256 sent_) {
+        (,, sent_) = join.wormholes(getGUIDHash(guid));
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -157,6 +161,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 0);
         assertTrue(!_blessed(guid));
         assertEq(_pending(guid), 0);
+        assertEq(_sent(guid), 0);
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
 
@@ -165,6 +170,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 0);
+        assertEq(_sent(guid), 250_000 ether);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
         assertEq(join.totalDebt(), 250_000 * RAD);
@@ -188,6 +194,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 200_000 ether);
         assertEq(_ink(), 200_000 ether);
         assertEq(_art(), 200_000 ether);
         assertEq(join.totalDebt(), 200_000 * RAD);
@@ -211,6 +218,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 0);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 250_000 ether);
+        assertEq(_sent(guid), 0);
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
         assertEq(join.totalDebt(), 0);
@@ -265,6 +273,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
         assertEq(_pending(guid), 0);
+        assertEq(_sent(guid), 249_900 ether);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
         assertEq(join.totalDebt(), 250_000 * RAD);
@@ -307,6 +316,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertEq(_pending(guid), 0);
+        assertEq(_sent(guid), 250_000 ether);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
         assertEq(join.totalDebt(), 250_000 * RAD);
@@ -333,6 +343,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 199_920 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 199_920 ether);
         assertEq(_ink(), 200_000 ether);
         assertEq(_art(), 200_000 ether);
         assertEq(join.totalDebt(), 200_000 * RAD);
@@ -344,6 +355,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
         assertEq(_pending(guid), 0);
+        assertEq(_sent(guid), 249_900 ether);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
         assertEq(join.totalDebt(), 250_000 * RAD);
@@ -406,12 +418,14 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 200_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
         join.mintPending(guid, 0);
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
+        assertEq(_sent(guid), 225_000 ether);
     }
 
     function testMintPendingByOperatorNotReceiver() public {
@@ -431,12 +445,14 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 200_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
         join.mintPending(guid, 0);
 
         assertEq(dai.balanceOf(address(123)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
+        assertEq(_sent(guid), 225_000 ether);
     }
 
     function testMintPendingByReceiver() public {
@@ -456,12 +472,14 @@ contract WormholeJoinTest is DSTest {
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 200_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
         join.mintPending(guid, 0);
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
+        assertEq(_sent(guid), 225_000 ether);
     }
 
     function testFailMintPendingWrongOperator() public {
@@ -545,6 +563,7 @@ contract WormholeJoinTest is DSTest {
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertEq(_pending(guid), 50_000 ether);
+        assertEq(_sent(guid), 200_000 ether);
         assertEq(_ink(), 100_000 ether);
         assertEq(_art(), 100_000 ether);
         assertEq(join.totalDebt(), 100_000 * RAD);
@@ -577,6 +596,7 @@ contract WormholeJoinTest is DSTest {
 
         assertEq(dai.balanceOf(address(123)), 100_000 ether); // Can't pay more than DAI is already in the join
         assertEq(_pending(guid), 150_000 ether);
+        assertEq(_sent(guid), 100_000 ether);
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
         assertEq(vat.dai(vow), 0); // No fees regardless the contract set

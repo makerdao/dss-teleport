@@ -73,6 +73,7 @@ contract WormholeJoin {
     struct WormholeStatus {
         bool    blessed;
         uint248 pending;
+        uint256 sent;
     }
 
     constructor(address vat_, address daiJoin_, bytes32 ilk_, bytes32 domain_) {
@@ -187,6 +188,7 @@ contract WormholeJoin {
         }
         postFeeAmount = amtToTake - fee;
         daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount);
+        wormholes[hashGUID].sent += postFeeAmount;
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
