@@ -26,7 +26,7 @@ interface Hevm {
 }
 
 contract GatewayMock {
-    function requestMint(WormholeGUID calldata, uint256) external returns (uint256 postFeeAmount) {
+    function requestMint(WormholeGUID calldata, uint256, uint256) external returns (uint256 postFeeAmount) {
         return 0;
     }
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
@@ -161,7 +161,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mintByOperatorNotReceiver() public {
@@ -178,7 +178,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mintByReceiver() public {
@@ -195,7 +195,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function testFail_mint_notOperatorNorReceiver() public {
@@ -212,7 +212,7 @@ contract WormholeOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        auth.requestMint(guid, signatures, maxFee);
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
 }
