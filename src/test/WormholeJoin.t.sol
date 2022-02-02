@@ -699,6 +699,21 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 250_000 ether);
     }
 
+    function testFailRegisterAndWithdrawOperatorFeeTooHigh() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        assertEq(vat.dai(address(this)), 0);
+        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
+        join.requestMint(guid, 40 ether / 10000, 249_001 ether);    // Too many fees
+    }
+
     function testTotalDebtSeveralDomains() public {
         join.file("line", "l2network_2", 1_000_000 ether);
         join.file("fees", "l2network_2", address(new WormholeConstantFee(0, TTL)));
