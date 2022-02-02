@@ -149,7 +149,12 @@ contract WormholeJoin {
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function _mint(WormholeGUID calldata wormholeGUID, bytes32 hashGUID, uint256 maxFeePercentage, uint256 operatorFee) internal returns (uint256 postFeeAmount) {
+    function _mint(
+        WormholeGUID calldata wormholeGUID,
+        bytes32 hashGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) internal returns (uint256 postFeeAmount) {
         require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
@@ -206,7 +211,11 @@ contract WormholeJoin {
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external auth returns (uint256 postFeeAmount) {
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) external auth returns (uint256 postFeeAmount) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
         require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
         wormholes[hashGUID].blessed = true;
