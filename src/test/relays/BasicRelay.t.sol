@@ -53,7 +53,8 @@ contract WormholeJoinMock {
 
     function requestMint(
         WormholeGUID calldata wormholeGUID,
-        uint256
+        uint256,
+        uint256 operatorFee
     ) external returns (uint256 postFeeAmount) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
 
@@ -66,8 +67,9 @@ contract WormholeJoinMock {
         wormholes[hashGUID].blessed = true;
         wormholes[hashGUID].pending = uint248(wormholeGUID.amount - amount);
 
-        // Mint the DAI and send it to receiver
-        dai.mint(bytes32ToAddress(wormholeGUID.receiver), remainder);
+        // Mint the DAI and send it to receiver/operator
+        dai.mint(bytes32ToAddress(wormholeGUID.receiver), remainder - operatorFee);
+        dai.mint(bytes32ToAddress(wormholeGUID.operator), operatorFee);
 
         return remainder;
     }
@@ -84,9 +86,10 @@ contract WormholeOracleAuthMock {
     function requestMint(
         WormholeGUID calldata wormholeGUID,
         bytes calldata,
-        uint256 maxFeePercentage
+        uint256 maxFeePercentage,
+        uint256 operatorFee
     ) external returns (uint256 postFeeAmount) {
-        return join.requestMint(wormholeGUID, maxFeePercentage);
+        return join.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 
     function wormholeJoin() external view returns (address) {
@@ -126,13 +129,12 @@ contract BasicRelayTest is DSTest {
 
     function test_relay() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
-        address signer = hevm.addr(sk);
-        address receiver = address(123);
+        address receiver = hevm.addr(sk);
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: addressToBytes32(address(relay)),
-            operator: addressToBytes32(signer),
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
             amount: 100 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -143,7 +145,6 @@ contract BasicRelayTest is DSTest {
         uint256 expiry = block.timestamp;
         bytes32 signHash = keccak256(abi.encode(
             hashGUID,
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry
@@ -156,7 +157,6 @@ contract BasicRelayTest is DSTest {
         relay.relay(
             guid,
             "",     // Not testing OracleAuth signatures here
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry,
@@ -171,13 +171,12 @@ contract BasicRelayTest is DSTest {
 
     function testFail_relay_expired() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
-        address signer = hevm.addr(sk);
-        address receiver = address(123);
+        address receiver = hevm.addr(sk);
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: addressToBytes32(address(relay)),
-            operator: addressToBytes32(signer),
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
             amount: 100 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -188,7 +187,6 @@ contract BasicRelayTest is DSTest {
         uint256 expiry = block.timestamp;
         bytes32 signHash = keccak256(abi.encode(
             hashGUID,
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry
@@ -201,7 +199,6 @@ contract BasicRelayTest is DSTest {
         relay.relay(
             guid,
             "",     // Not testing OracleAuth signatures here
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry,
@@ -213,13 +210,12 @@ contract BasicRelayTest is DSTest {
 
     function testFail_relay_bad_signature() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
-        address signer = hevm.addr(sk);
-        address receiver = address(123);
+        address receiver = hevm.addr(sk);
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: addressToBytes32(address(relay)),
-            operator: addressToBytes32(signer),
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
             amount: 100 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -230,8 +226,7 @@ contract BasicRelayTest is DSTest {
         uint256 expiry = block.timestamp;
         bytes32 signHash = keccak256(abi.encode(
             hashGUID,
-            address(456),
-            maxFeePercentage,
+            maxFeePercentage + 1,
             gasFee,
             expiry
         ));
@@ -241,7 +236,6 @@ contract BasicRelayTest is DSTest {
         relay.relay(
             guid,
             "",     // Not testing OracleAuth signatures here
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry,
@@ -255,13 +249,12 @@ contract BasicRelayTest is DSTest {
         join.setMaxMint(50 ether);
 
         uint256 sk = uint(keccak256(abi.encode(8)));
-        address signer = hevm.addr(sk);
-        address receiver = address(123);
+        address receiver = hevm.addr(sk);
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
-            receiver: addressToBytes32(address(relay)),
-            operator: addressToBytes32(signer),
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
             amount: 100 ether,
             nonce: 5,
             timestamp: uint48(block.timestamp)
@@ -272,7 +265,6 @@ contract BasicRelayTest is DSTest {
         uint256 expiry = block.timestamp;
         bytes32 signHash = keccak256(abi.encode(
             hashGUID,
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry
@@ -283,7 +275,6 @@ contract BasicRelayTest is DSTest {
         relay.relay(
             guid,
             "",     // Not testing OracleAuth signatures here
-            receiver,
             maxFeePercentage,
             gasFee,
             expiry,

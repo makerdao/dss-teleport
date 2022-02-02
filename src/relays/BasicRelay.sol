@@ -33,7 +33,8 @@ interface WormholeOracleAuthLike {
     function requestMint(
         WormholeGUID calldata wormholeGUID,
         bytes calldata signatures,
-        uint256 maxFeePercentage
+        uint256 maxFeePercentage,
+        uint256 operatorFee
     ) external returns (uint256 postFeeAmount);
     function wormholeJoin() external view returns (WormholeJoinLike);
 }
@@ -60,11 +61,10 @@ contract BasicRelay {
 
     /**
      * @notice Gasless relay for the Oracle fast path
-     * The final signature is ABI-encoded `hashGUID`, `receiver`, `maxFeePercentage`, `gasFee`, `expiry`
+     * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
      * @param wormholeGUID The wormhole GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
-     * @param receiver The end user to receive the DAI.
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      * @param gasFee DAI gas fee (in WAD)
      * @param expiry Maximum time for when the query is valid
@@ -72,7 +72,6 @@ contract BasicRelay {
     function relay(
         WormholeGUID calldata wormholeGUID,
         bytes calldata signatures,
-        address receiver,
         uint256 maxFeePercentage,
         uint256 gasFee,
         uint256 expiry,
@@ -82,20 +81,17 @@ contract BasicRelay {
     ) external {
         require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        bytes32 userHash = keccak256(abi.encode(hashGUID, receiver, maxFeePercentage, gasFee, expiry));
+        bytes32 userHash = keccak256(abi.encode(hashGUID, maxFeePercentage, gasFee, expiry));
         address recovered = ecrecover(userHash, v, r, s);
-        require(bytes32ToAddress(wormholeGUID.operator) == recovered, "BasicRelay/invalid-signature");
+        require(bytes32ToAddress(wormholeGUID.receiver) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint and mark the wormhole as done
-        uint256 postFeeAmount = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage);
+        uint256 postFeeAmount = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
         require(pending == 0, "BasicRelay/partial-mint-disallowed");
 
         // Send the gas fee to the relayer
         dai.transfer(msg.sender, gasFee);
-
-        // Send the rest to the end user
-        dai.transfer(receiver, postFeeAmount - gasFee);
     }
 
 }
