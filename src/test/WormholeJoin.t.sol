@@ -624,9 +624,9 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        assertEq(vat.dai(address(this)), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
         uint256 daiSent = join.requestMint(guid, 0, 250 ether);
-        assertEq(vat.dai(address(this)), 250 * RAD);
+        assertEq(dai.balanceOf(address(this)), 250 ether);
         assertEq(dai.balanceOf(address(123)), 249_750 ether);
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
@@ -661,7 +661,7 @@ contract WormholeJoinTest is DSTest {
         join.file("line", "l2network", 200_000 ether);
         join.requestMint(guid, 0, 200 ether);
 
-        assertEq(vat.dai(address(this)), 200 * RAD);
+        assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(dai.balanceOf(address(123)), 199_800 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
@@ -671,7 +671,7 @@ contract WormholeJoinTest is DSTest {
         join.file("line", "l2network", 250_000 ether);
         join.mintPending(guid, 0, 5 ether);
 
-        assertEq(vat.dai(address(this)), 205 * RAD);
+        assertEq(dai.balanceOf(address(this)), 205 ether);
         assertEq(dai.balanceOf(address(123)), 249_795 ether);
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
@@ -688,10 +688,10 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        assertEq(vat.dai(address(this)), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
         join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
         join.requestMint(guid, 40 ether / 10000, 249 ether);
-        assertEq(vat.dai(address(this)), 249 * RAD);
+        assertEq(dai.balanceOf(address(this)), 249 ether);
         assertEq(vat.dai(vow), 1000 * RAD);
         assertEq(dai.balanceOf(address(123)), 248_751 ether);
         assertEq(_pending(guid), 0);
@@ -709,7 +709,6 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        assertEq(vat.dai(address(this)), 0);
         join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
         join.requestMint(guid, 40 ether / 10000, 249_001 ether);    // Too many fees
     }
