@@ -9,7 +9,7 @@ methods {
     gateways(bytes32) returns (address) envfree
     hasDomain(bytes32) returns (bool) envfree
     numDomains() returns (uint256) envfree
-    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256) returns (uint256) => DISPATCHER(true)
+    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256, uint256) returns (uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
     dai.allowance(address, address) returns (uint256) envfree
@@ -173,7 +173,8 @@ rule requestMint_revert(
         uint128 amount,
         uint80  nonce,
         uint48  timestamp,
-        uint256 maxFeePercentage
+        uint256 maxFeePercentage,
+        uint256 operatorFee
     ) {
     env e;
 
@@ -183,7 +184,7 @@ rule requestMint_revert(
 
     address sourceGateway = gateways(sourceDomain);
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage);
+    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = sourceGateway != e.msg.sender;
