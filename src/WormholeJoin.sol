@@ -198,7 +198,7 @@ contract WormholeJoin {
             vat.move(address(this), vow, fee * RAY);
         }
         if (operatorFee > 0) {
-            vat.move(address(this), bytes32ToAddress(wormholeGUID.operator), operatorFee * RAY);
+            daiJoin.exit(bytes32ToAddress(wormholeGUID.operator), operatorFee);
         }
 
         emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);
