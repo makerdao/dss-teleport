@@ -244,6 +244,8 @@ contract WormholeRouterTest is DSTest {
 
     function testFailSettleFromNotGateway() public {
         router.file("gateway", "l2network", address(555));
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle(l1Domain, 100 ether);
     }
@@ -251,6 +253,8 @@ contract WormholeRouterTest is DSTest {
     function testSettleTargetingL1() public {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, wormholeJoin);
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle(l1Domain, 100 ether);
     }
@@ -258,6 +262,8 @@ contract WormholeRouterTest is DSTest {
     function testSettleTargetingL2() public {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle("another-l2network", 100 ether);
     }
