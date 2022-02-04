@@ -41,17 +41,20 @@ contract Auxiliar {
         signer = ecrecover(digest, uint8(v), r, s);
     }
 
-    function splitSignature(bytes memory signatures, uint256 index) public pure returns (uint8 v, bytes32 r, bytes32 s) {
+    function splitSignature(bytes calldata signatures, uint256 index) public pure returns (uint8 v, bytes32 r, bytes32 s) {
+        uint256 start;
+        // solhint-disable-next-line no-inline-assembly
         assembly {
-            r := mload(add(signatures, add(0x20, mul(0x41, index))))
-            s := mload(add(signatures, add(0x40, mul(0x41, index))))
-            v := and(mload(add(signatures, add(0x41, mul(0x41, index)))), 0xff)
+            start := mul(0x41, index)
+            r := calldataload(add(signatures.offset, start))
+            s := calldataload(add(signatures.offset, add(0x20, start)))
+            v := and(calldataload(add(signatures.offset, add(0x21, start))), 0xff)
         }
     }
 
     function processUpToIndex(
         bytes32 signHash,
-        bytes memory signatures,
+        bytes calldata signatures,
         uint256 index
     ) external view returns (
         uint256 numProcessed,

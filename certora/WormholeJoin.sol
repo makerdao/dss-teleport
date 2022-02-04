@@ -136,7 +136,7 @@ contract WormholeJoin {
     /**
     * @dev External view function to get the total debt used by this contract
     **/
-    function totalDebt() external view returns (uint256) {
+    function cure() external view returns (uint256) {
         (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
         return art * RAY;
     }
@@ -198,7 +198,7 @@ contract WormholeJoin {
             vat.move(address(this), vow, fee * RAY);
         }
         if (operatorFee > 0) {
-            vat.move(address(this), bytes32ToAddress(wormholeGUID.operator), operatorFee * RAY);
+            daiJoin.exit(bytes32ToAddress(wormholeGUID.operator), operatorFee);
         }
 
         emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);

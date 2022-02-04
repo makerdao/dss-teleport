@@ -263,6 +263,7 @@ rule requestMint(
     require(vow() != operatorAddr);
     require(operatorAddr != daiJoin());
     require(operatorAddr != currentContract);
+    require(operatorAddr != receiverAddr);
 
     bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
 
@@ -282,8 +283,8 @@ rule requestMint(
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
+    uint256 operatorDaiBalanceBefore = dai.balanceOf(operatorAddr);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
-    uint256 operatorVatDaiBalanceBefore = vat.dai(operatorAddr);
 
     uint256 inkBefore;
     uint256 artBefore;
@@ -298,8 +299,8 @@ rule requestMint(
     blessedAfter, pendingAfter = wormholes(hashGUID);
 
     uint256 receiverDaiBalanceAfter = dai.balanceOf(receiverAddr);
+    uint256 operatorDaiBalanceAfter = dai.balanceOf(operatorAddr);
     uint256 vowVatDaiBalanceAfter = vat.dai(vow());
-    uint256 operatorVatDaiBalanceAfter = vat.dai(operatorAddr);
 
     uint256 inkAfter;
     uint256 artAfter;
@@ -311,7 +312,7 @@ rule requestMint(
     assert(pendingAfter == amount - amtToTake, "pending has not acted as expected");
     assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt - operatorFeeAmt, "balance of receiver did not increase as expected");
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
-    assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore + operatorFeeAmt * RAY(), "balance of operator did not increase as expected");
+    assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
     assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the value expected");
@@ -345,6 +346,7 @@ rule requestMint_revert(
     require(vow() != operatorAddr);
     require(operatorAddr != daiJoin());
     require(operatorAddr != currentContract);
+    require(operatorAddr != receiverAddr);
 
     uint256 ward = wards(e.msg.sender);
 
@@ -370,12 +372,12 @@ rule requestMint_revert(
     uint256 ink;
     uint256 art;
     ink, art = vat.urns(ilk(), currentContract);
-    uint256 gemWormwholeJoin = vat.gem(ilk(), currentContract);
-    uint256 vatDaiWormwholeJoin = vat.dai(currentContract);
-    uint256 vatDaiDaiJoin = vat.dai(daiJoin());
-    uint256 vatDaiVow = vat.dai(vow());
-    uint256 vatDaiOperator = vat.dai(operatorAddr);
-    uint256 daiReceiver = dai.balanceOf(receiverAddr);
+    uint256 wormwholeJoinGemBalance = vat.gem(ilk(), currentContract);
+    uint256 wormwholeJoinVatDaiBalance = vat.dai(currentContract);
+    uint256 daiJoinVatDaiBalance = vat.dai(daiJoin());
+    uint256 vowVatDaiBalance = vat.dai(vow());
+    uint256 operatorDaiBalance = dai.balanceOf(operatorAddr);
+    uint256 receiverDaiBalance = dai.balanceOf(receiverAddr);
 
     uint256 can = vat.can(currentContract, daiJoin());
 
@@ -390,22 +392,22 @@ rule requestMint_revert(
     bool revert7  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();
     bool revert8  = canGenerate && debt < 0 && to_mathint(debt) == min_int256();
     bool revert9  = canGenerate && to_mathint(debt) + to_mathint(amtToTake) > max_int256();
-    bool revert10 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && gemWormwholeJoin + amtToGenerate > max_uint256;
+    bool revert10 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && wormwholeJoinGemBalance + amtToGenerate > max_uint256;
     bool revert11 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && ink + amtToGenerate > max_uint256;
     bool revert12 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && art + amtToGenerate > max_uint256;
     bool revert13 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && amtToGenerate * RAY() > max_int256();
-    bool revert14 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && vatDaiWormwholeJoin + amtToGenerate * RAY() > max_uint256;
+    bool revert14 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && wormwholeJoinVatDaiBalance + amtToGenerate * RAY() > max_uint256;
     bool revert15 = canGenerate && amtToTake < feeAmt;
     bool revert16 = canGenerate && (amtToTake - feeAmt) * RAY() > max_uint256;
     bool revert17 = canGenerate && can != 1;
-    bool revert18 = canGenerate && vatDaiWormwholeJoin + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
+    bool revert18 = canGenerate && wormwholeJoinVatDaiBalance + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
     bool revert19 = canGenerate && amtToTake - feeAmt < operatorFeeAmt;
-    bool revert20 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt - operatorFeeAmt) * RAY() > max_uint256;
-    bool revert21 = canGenerate && daiReceiver + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
+    bool revert20 = canGenerate && daiJoinVatDaiBalance + (amtToTake - feeAmt) * RAY() > max_uint256; // This includes the dai generated for the receiver and the operator
+    bool revert21 = canGenerate && receiverDaiBalance + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
     bool revert22 = canGenerate && feeAmt * RAY() > max_uint256;
-    bool revert23 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
+    bool revert23 = canGenerate && vowVatDaiBalance + feeAmt * RAY() > max_uint256;
     bool revert24 = canGenerate && operatorFeeAmt * RAY() > max_uint256;
-    bool revert25 = canGenerate && vatDaiOperator + operatorFeeAmt * RAY() > max_uint256;
+    bool revert25 = canGenerate && operatorDaiBalance + operatorFeeAmt > max_uint256;
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");
@@ -431,7 +433,7 @@ rule requestMint_revert(
     assert(revert22 => lastReverted, "revert22 failed");
     assert(revert23 => lastReverted, "revert23 failed");
     assert(revert24 => lastReverted, "revert24 failed");
-    assert(revert25 => lastReverted, "revert24 failed");
+    assert(revert25 => lastReverted, "revert25 failed");
 
     assert(lastReverted => revert1  || revert2  || revert3  ||
                            revert4  || revert5  || revert6  ||
@@ -467,6 +469,7 @@ rule mintPending(
     require(vow() != operatorAddr);
     require(operatorAddr != daiJoin());
     require(operatorAddr != currentContract);
+    require(operatorAddr != receiverAddr);
 
     bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
 
@@ -486,8 +489,8 @@ rule mintPending(
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
+    uint256 operatorDaiBalanceBefore = dai.balanceOf(operatorAddr);
     uint256 vowVatDaiBalanceBefore = vat.dai(vow());
-    uint256 operatorVatDaiBalanceBefore = vat.dai(operatorAddr);
 
     uint256 inkBefore;
     uint256 artBefore;
@@ -502,8 +505,8 @@ rule mintPending(
     blessedAfter, pendingAfter = wormholes(hashGUID);
 
     uint256 receiverDaiBalanceAfter = dai.balanceOf(receiverAddr);
+    uint256 operatorDaiBalanceAfter = dai.balanceOf(operatorAddr);
     uint256 vowVatDaiBalanceAfter = vat.dai(vow());
-    uint256 operatorVatDaiBalanceAfter = vat.dai(operatorAddr);
 
     uint256 inkAfter;
     uint256 artAfter;
@@ -514,7 +517,7 @@ rule mintPending(
     assert(pendingAfter == pendingBefore - amtToTake, "pending has not decreased as expected");
     assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt - operatorFeeAmt, "balance of receiver did not increase as expected");
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
-    assert(operatorVatDaiBalanceAfter == operatorVatDaiBalanceBefore + operatorFeeAmt * RAY(), "balance of operator did not increase as expected");
+    assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
     assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the value expected");
@@ -548,6 +551,7 @@ rule mintPending_revert(
     require(vow() != operatorAddr);
     require(operatorAddr != daiJoin());
     require(operatorAddr != currentContract);
+    require(operatorAddr != receiverAddr);
 
     bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
 
@@ -571,12 +575,12 @@ rule mintPending_revert(
     uint256 ink;
     uint256 art;
     ink, art = vat.urns(ilk(), currentContract);
-    uint256 gemWormwholeJoin = vat.gem(ilk(), currentContract);
-    uint256 vatDaiWormwholeJoin = vat.dai(currentContract);
-    uint256 vatDaiDaiJoin = vat.dai(daiJoin());
-    uint256 vatDaiVow = vat.dai(vow());
-    uint256 vatDaiOperator = vat.dai(operatorAddr);
-    uint256 daiReceiver = dai.balanceOf(receiverAddr);
+    uint256 wormwholeJoinGemBalance = vat.gem(ilk(), currentContract);
+    uint256 wormwholeJoinVatDaiBalance = vat.dai(currentContract);
+    uint256 daiJoinVatDaiBalance = vat.dai(daiJoin());
+    uint256 vowVatDaiBalance = vat.dai(vow());
+    uint256 operatorDaiBalance = dai.balanceOf(operatorAddr);
+    uint256 receiverDaiBalance = dai.balanceOf(receiverAddr);
 
     uint256 can = vat.can(currentContract, daiJoin());
 
@@ -590,22 +594,22 @@ rule mintPending_revert(
     bool revert6  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();
     bool revert7  = canGenerate && debt < 0 && to_mathint(debt) == min_int256();
     bool revert8  = canGenerate && to_mathint(debt) + to_mathint(amtToTake) > max_int256();
-    bool revert9  = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && gemWormwholeJoin + amtToGenerate > max_uint256;
+    bool revert9  = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && wormwholeJoinGemBalance + amtToGenerate > max_uint256;
     bool revert10 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && ink + amtToGenerate > max_uint256;
     bool revert11 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && art + amtToGenerate > max_uint256;
     bool revert12 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && amtToGenerate * RAY() > max_int256();
-    bool revert13 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && vatDaiWormwholeJoin + amtToGenerate * RAY() > max_uint256;
+    bool revert13 = canGenerate && (debt >= 0 || 0 - to_mathint(debt) < to_mathint(amtToTake)) && wormwholeJoinVatDaiBalance + amtToGenerate * RAY() > max_uint256;
     bool revert14 = canGenerate && amtToTake < feeAmt;
     bool revert15 = canGenerate && (amtToTake - feeAmt) * RAY() > max_uint256;
     bool revert16 = canGenerate && can != 1;
-    bool revert17 = canGenerate && vatDaiWormwholeJoin + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
+    bool revert17 = canGenerate && wormwholeJoinVatDaiBalance + amtToGenerate * RAY() < amtToTake * RAY(); // This covers both reverts when paying to the receiver and the fee
     bool revert18 = canGenerate && amtToTake - feeAmt < operatorFeeAmt;
-    bool revert19 = canGenerate && vatDaiDaiJoin + (amtToTake - feeAmt - operatorFeeAmt) * RAY() > max_uint256;
-    bool revert20 = canGenerate && daiReceiver + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
+    bool revert19 = canGenerate && daiJoinVatDaiBalance + (amtToTake - feeAmt) * RAY() > max_uint256; // This includes the dai generated for the receiver and the operator
+    bool revert20 = canGenerate && receiverDaiBalance + (amtToTake - feeAmt - operatorFeeAmt) > max_uint256;
     bool revert21 = canGenerate && feeAmt * RAY() > max_uint256;
-    bool revert22 = canGenerate && vatDaiVow + feeAmt * RAY() > max_uint256;
+    bool revert22 = canGenerate && vowVatDaiBalance + feeAmt * RAY() > max_uint256;
     bool revert23 = canGenerate && operatorFeeAmt * RAY() > max_uint256;
-    bool revert24 = canGenerate && vatDaiOperator + operatorFeeAmt * RAY() > max_uint256;
+    bool revert24 = canGenerate && operatorDaiBalance + operatorFeeAmt > max_uint256;
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");

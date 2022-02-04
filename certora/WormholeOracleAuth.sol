@@ -140,7 +140,7 @@ contract WormholeOracleAuth {
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param threshold_ The minimum number of valid signatures required for the method to return true
      */
-    function isValid(bytes32 signHash, bytes memory signatures, uint threshold_) public view returns (bool valid) {
+    function isValid(bytes32 signHash, bytes calldata signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
         require(count >= threshold_, "WormholeOracleAuth/not-enough-sig");
 
@@ -200,15 +200,17 @@ contract WormholeOracleAuth {
      * @param signatures concatenated signatures. Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param index which signature to read (0, 1, 2, ...)
      */
-    function splitSignature(bytes memory signatures, uint256 index) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
-        // we jump 32 (0x20) as the first slot of bytes contains the length
+    function splitSignature(bytes calldata signatures, uint256 index) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+        // we jump signatures.offset to get the first slot of signatures content
         // we jump 65 (0x41) per signature
         // for v we load 32 bytes ending with v (the first 31 come from s) then apply a mask
+        uint256 start;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            r := mload(add(signatures, add(0x20, mul(0x41, index))))
-            s := mload(add(signatures, add(0x40, mul(0x41, index))))
-            v := and(mload(add(signatures, add(0x41, mul(0x41, index)))), 0xff)
+            start := mul(0x41, index)
+            r := calldataload(add(signatures.offset, start))
+            s := calldataload(add(signatures.offset, add(0x20, start)))
+            v := and(calldataload(add(signatures.offset, add(0x21, start))), 0xff)
         }
         require(v == 27 || v == 28, "WormholeOracleAuth/bad-v");
     }
