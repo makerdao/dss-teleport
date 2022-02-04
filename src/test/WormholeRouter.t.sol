@@ -20,18 +20,11 @@ import "ds-test/test.sol";
 
 import "src/WormholeRouter.sol";
 
-contract GatewayMock {
-    function requestMint(WormholeGUID calldata, uint256, uint256) external pure returns (uint256 postFeeAmount) {
-        return 0;
-    }
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
-}
-
-contract DaiMock {
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {}
-}
+import "./mocks/GatewayMock.sol";
+import "./mocks/DaiMock.sol";
 
 contract WormholeRouterTest is DSTest {
+    
     WormholeRouter internal router;
     address internal dai;
     address internal wormholeJoin;
