@@ -86,7 +86,7 @@ contract BasicRelay {
         require(bytes32ToAddress(wormholeGUID.receiver) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint and mark the wormhole as done
-        uint256 postFeeAmount = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
+        oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
         (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
         require(pending == 0, "BasicRelay/partial-mint-disallowed");
 
