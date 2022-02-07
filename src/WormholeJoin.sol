@@ -232,7 +232,11 @@ contract WormholeJoin {
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     **/
-    function mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external returns (uint256 postFeeAmount, uint256 totalFee) {
+    function mintPending(
+        WormholeGUID calldata wormholeGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
         return _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
