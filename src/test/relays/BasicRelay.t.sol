@@ -55,7 +55,7 @@ contract WormholeJoinMock {
         WormholeGUID calldata wormholeGUID,
         uint256,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount) {
+    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
         bytes32 hashGUID = getGUIDHash(wormholeGUID);
 
         // Take 1%
@@ -71,7 +71,7 @@ contract WormholeJoinMock {
         dai.mint(bytes32ToAddress(wormholeGUID.receiver), remainder - operatorFee);
         dai.mint(bytes32ToAddress(wormholeGUID.operator), operatorFee);
 
-        return remainder;
+        return (remainder - operatorFee, fee + operatorFee);
     }
 }
 
@@ -88,7 +88,7 @@ contract WormholeOracleAuthMock {
         bytes calldata,
         uint256 maxFeePercentage,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount) {
+    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
         return join.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 

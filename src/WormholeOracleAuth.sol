@@ -23,7 +23,7 @@ interface WormholeJoinLike {
         WormholeGUID calldata wormholeGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount);
+    ) external returns (uint256 postFeeAmount, uint256 totalFee);
 }
 
 // WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
@@ -100,7 +100,7 @@ contract WormholeOracleAuth {
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount) {
+    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");

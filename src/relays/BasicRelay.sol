@@ -35,7 +35,7 @@ interface WormholeOracleAuthLike {
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount);
+    ) external returns (uint256 postFeeAmount, uint256 totalFee);
     function wormholeJoin() external view returns (WormholeJoinLike);
 }
 
@@ -86,9 +86,8 @@ contract BasicRelay {
         require(bytes32ToAddress(wormholeGUID.receiver) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint and mark the wormhole as done
-        oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
-        (,uint248 pending) = wormholeJoin.wormholes(hashGUID);
-        require(pending == 0, "BasicRelay/partial-mint-disallowed");
+        (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
+        require(postFeeAmount + totalFee == wormholeGUID.amount, "BasicRelay/partial-mint-disallowed");
 
         // Send the gas fee to the relayer
         dai.transfer(msg.sender, gasFee);
