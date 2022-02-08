@@ -26,9 +26,7 @@ interface Hevm {
 }
 
 contract GatewayMock {
-    function requestMint(WormholeGUID calldata, uint256, uint256) external pure returns (uint256 postFeeAmount) {
-        return 0;
-    }
+    function requestMint(WormholeGUID calldata, uint256, uint256) external pure returns (uint256 postFeeAmount, uint256 totalFee) {}
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
