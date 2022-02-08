@@ -249,10 +249,6 @@ rule requestMint(
     ) {
     env e;
 
-    require(guid.amount <= max_uint128);
-    require(guid.nonce <= 0xffffffffffffffffffff);
-    require(guid.timestamp <= 0xffffffffffff);
-
     address receiverAddr = aux.bytes32ToAddress(guid.receiver);
     address operatorAddr = aux.bytes32ToAddress(guid.operator);
 
@@ -450,10 +446,6 @@ rule mintPending(
         uint256 operatorFee
     ) {
     env e;
-
-    require(guid.amount <= max_uint128);
-    require(guid.nonce <= 0xffffffffffffffffffff);
-    require(guid.timestamp <= 0xffffffffffff);
 
     address receiverAddr = aux.bytes32ToAddress(guid.receiver);
     address operatorAddr = aux.bytes32ToAddress(guid.operator);
