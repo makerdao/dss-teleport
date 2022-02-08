@@ -21,7 +21,13 @@ contract Auxiliar {
         ));
     }
 
-    // solhint-disable-next-line func-visibility
+    function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
+        signHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            getGUIDHash(wormholeGUID)
+        ));
+    }
+
     function bytes32ToAddress(bytes32 addr) external pure returns (address) {
         return address(uint160(uint256(addr)));
     }

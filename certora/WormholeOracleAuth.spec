@@ -5,12 +5,12 @@ using Auxiliar as aux
 using WormholeJoinMock as join
 
 methods {
-    getSignHash(auth.WormholeGUID) returns (bytes32) envfree
     signers(address) returns (uint256) envfree
     threshold() returns (uint256) envfree
     wards(address) returns (uint256) envfree
     wormholeJoin() returns (address) envfree
     requestMint(auth.WormholeGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
+    aux.getSignHash(auth.WormholeGUID) returns (bytes32) envfree
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     aux.callEcrecover(bytes32, uint256, bytes32, bytes32) returns (address) envfree
     aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256, uint256) envfree
@@ -202,7 +202,7 @@ rule requestMint_revert(
     uint256 count = signatures.length / 65;
     uint256 i;
     require(i + 1 < count);
-    bytes32 hash = getSignHash(guid);
+    bytes32 hash = aux.getSignHash(guid);
     uint256 vI;
     bytes32 rI;
     bytes32 sI;
