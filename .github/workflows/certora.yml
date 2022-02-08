@@ -10,6 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         wormhole:
+          - fee
           - join
           - router
           - oracle
