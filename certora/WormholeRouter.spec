@@ -1,5 +1,6 @@
 // WormholeRouter.spec
 
+using WormholeRouter as router
 using DaiMock as dai
 using WormholeJoinMock as join
 
@@ -9,7 +10,7 @@ methods {
     gateways(bytes32) returns (address) envfree
     hasDomain(bytes32) returns (bool) envfree
     numDomains() returns (uint256) envfree
-    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256, uint256) returns (uint256) => DISPATCHER(true)
+    requestMint(join.WormholeGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
     dai.allowance(address, address) returns (uint256) envfree
@@ -166,25 +167,23 @@ rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
 
 // Verify revert rules on requestMint
 rule requestMint_revert(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80  nonce,
-        uint48  timestamp,
+        router.WormholeGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    address targetGateway = gateways(targetDomain);
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
+
+    address targetGateway = gateways(guid.targetDomain);
     require(targetGateway == join);
     require(currentContract != targetGateway);
 
-    address sourceGateway = gateways(sourceDomain);
+    address sourceGateway = gateways(guid.sourceDomain);
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    requestMint@withrevert(e, guid, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = sourceGateway != e.msg.sender;

@@ -1,15 +1,16 @@
 // WormholeOracleAuth.spec
 
+using WormholeOracleAuth as auth
 using Auxiliar as aux
 using WormholeJoinMock as join
 
 methods {
-    getSignHash( bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) returns (bytes32) envfree
+    getSignHash(auth.WormholeGUID) returns (bytes32) envfree
     signers(address) returns (uint256) envfree
     threshold() returns (uint256) envfree
     wards(address) returns (uint256) envfree
     wormholeJoin() returns (address) envfree
-    requestMint((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256, uint256) returns (uint256) => DISPATCHER(true)
+    requestMint(auth.WormholeGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     aux.callEcrecover(bytes32, uint256, bytes32, bytes32) returns (address) envfree
     aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256, uint256) envfree
@@ -181,29 +182,27 @@ rule removeSigners_revert(address[] signers_) {
 }
 
 rule requestMint_revert(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80 nonce,
-        uint48 timestamp,
+        auth.WormholeGUID guid,
         bytes signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
 ) {
     env e;
 
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
+
     require(wormholeJoin() == join);
     require(aux.oracle() == currentContract);
 
     uint256 ward = wards(e.msg.sender);
-    address operatorAddr = aux.bytes32ToAddress(operator);
+    address operatorAddr = aux.bytes32ToAddress(guid.operator);
     uint256 threshold = threshold();
     uint256 count = signatures.length / 65;
     uint256 i;
     require(i + 1 < count);
-    bytes32 hash = getSignHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
+    bytes32 hash = getSignHash(guid);
     uint256 vI;
     bytes32 rI;
     bytes32 sI;
@@ -226,7 +225,7 @@ rule requestMint_revert(
     uint256 numValid;
     a, numValid = aux.processUpToIndex(hash, signatures, count);
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, signatures, maxFeePercentage, operatorFee);
+    requestMint@withrevert(e, guid, signatures, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = ward != 1;

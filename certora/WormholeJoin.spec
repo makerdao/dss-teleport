@@ -1,5 +1,6 @@
 // WormholeJoin.spec
 
+using WormholeJoin as join
 using FeesMock as fees
 using Auxiliar as aux
 using VatMock as vat
@@ -17,8 +18,8 @@ methods {
     vow() returns (address) envfree
     wards(address) returns (uint256) envfree
     wormholes(bytes32) returns (bool, uint248) envfree
-    getFee((bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48), uint256, int256, uint256, uint256) => DISPATCHER(true)
-    aux.getGUIDHash(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) returns (bytes32) envfree
+    getFee(join.WormholeGUID, uint256, int256, uint256, uint256) => DISPATCHER(true)
+    aux.getGUIDHash(join.WormholeGUID) returns (bytes32) envfree
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     vat.can(address, address) returns (uint256) envfree
     vat.dai(address) returns (uint256) envfree
@@ -226,10 +227,10 @@ definition amtToGenerate(bool canGenerate, uint256 amtToTake, int256 debt)
                         :
                             0;
 
-definition feeAmt(env e, bool canGenerate, bool vatLive, bytes32 sourceDomain, bytes32 targetDomain, bytes32 receiver, bytes32 operator, uint128 amount, uint80 nonce, uint48 timestamp, uint256 line, int256 debt, uint256 pending, uint256 amtToTake)
+definition feeAmt(env e, bool canGenerate, bool vatLive, join.WormholeGUID guid, uint256 line, int256 debt, uint256 pending, uint256 amtToTake)
     returns uint256 = canGenerate && vatLive
                         ?
-                            fees.getFee(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake)
+                            fees.getFee(e, guid, line, debt, pending, amtToTake)
                         :
                             0;
 
@@ -242,22 +243,20 @@ definition operatorFeeAmt(bool canGenerate, uint256 operatorFee)
 
 // Verify that requestMint behaves correctly
 rule requestMint(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80  nonce,
-        uint48  timestamp,
+        join.WormholeGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    address receiverAddr = aux.bytes32ToAddress(receiver);
-    address operatorAddr = aux.bytes32ToAddress(operator);
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
 
-    require(fees(sourceDomain) == fees);
+    address receiverAddr = aux.bytes32ToAddress(guid.receiver);
+    address operatorAddr = aux.bytes32ToAddress(guid.operator);
+
+    require(fees(guid.sourceDomain) == fees);
     require(vow() != currentContract);
     require(vow() != daiJoin());
     require(vow() != operatorAddr);
@@ -265,21 +264,21 @@ rule requestMint(
     require(operatorAddr != currentContract);
     require(operatorAddr != receiverAddr);
 
-    bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
+    bytes32 hashGUID = aux.getGUIDHash(guid);
 
     bool vatLive = vat.live() == 1;
-    uint256 line = vatLive ? line(sourceDomain): 0;
-    int256 debtBefore = debt(sourceDomain);
+    uint256 line = vatLive ? line(guid.sourceDomain): 0;
+    int256 debtBefore = debt(guid.sourceDomain);
 
     bool    blessedBefore;
     uint248 pendingBefore;
     blessedBefore, pendingBefore = wormholes(hashGUID);
 
-    bool canGenerate = canGenerate(line, debtBefore, amount);
+    bool canGenerate = canGenerate(line, debtBefore, guid.amount);
     uint256 gap = gap(canGenerate, line, debtBefore);
-    uint256 amtToTake = amtToTake(canGenerate, gap, amount);
+    uint256 amtToTake = amtToTake(canGenerate, gap, guid.amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, guid, line, debtBefore, pendingBefore, amtToTake);
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
@@ -290,9 +289,9 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    uint256 postFeeAmount = requestMint(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    uint256 postFeeAmount = requestMint(e, guid, maxFeePercentage, operatorFee);
 
-    int256 debtAfter = debt(sourceDomain);
+    int256 debtAfter = debt(guid.sourceDomain);
 
     bool    blessedAfter;
     uint248 pendingAfter;
@@ -309,7 +308,7 @@ rule requestMint(
     assert(to_mathint(debtAfter) == to_mathint(debtBefore) + to_mathint(amtToTake), "debt has not increased as expected");
     assert(blessedBefore == false, "blessed before call should be false");
     assert(blessedAfter == true, "blessed after call should be true");
-    assert(pendingAfter == amount - amtToTake, "pending has not acted as expected");
+    assert(pendingAfter == guid.amount - amtToTake, "pending has not acted as expected");
     assert(receiverDaiBalanceAfter == receiverDaiBalanceBefore + amtToTake - feeAmt - operatorFeeAmt, "balance of receiver did not increase as expected");
     assert(vowVatDaiBalanceAfter == vowVatDaiBalanceBefore + feeAmt * RAY(), "balance of vow did not increase as expected");
     assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
@@ -320,27 +319,25 @@ rule requestMint(
 
 // Verify revert rules on requestMint
 rule requestMint_revert(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80  nonce,
-        uint48  timestamp,
+        join.WormholeGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    requireInvariant lineCantExceedMaxInt256(sourceDomain);
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
 
-    address receiverAddr = aux.bytes32ToAddress(receiver);
-    address operatorAddr = aux.bytes32ToAddress(operator);
+    requireInvariant lineCantExceedMaxInt256(guid.sourceDomain);
+
+    address receiverAddr = aux.bytes32ToAddress(guid.receiver);
+    address operatorAddr = aux.bytes32ToAddress(guid.operator);
 
     require(vat() == vat);
     require(daiJoin.vat() == vat);
     require(daiJoin.dai() == dai);
-    require(fees(sourceDomain) == fees);
+    require(fees(guid.sourceDomain) == fees);
     require(vow() != currentContract);
     require(vow() != daiJoin());
     require(vow() != operatorAddr);
@@ -350,23 +347,23 @@ rule requestMint_revert(
 
     uint256 ward = wards(e.msg.sender);
 
-    bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
+    bytes32 hashGUID = aux.getGUIDHash(guid);
 
     bytes32 domain = domain();
 
     bool vatLive = vat.live() == 1;
-    uint256 line = vatLive ? line(sourceDomain): 0;
-    int256 debt = debt(sourceDomain);
+    uint256 line = vatLive ? line(guid.sourceDomain): 0;
+    int256 debt = debt(guid.sourceDomain);
 
     bool    blessed;
     uint248 pending;
     blessed, pending = wormholes(hashGUID);
 
-    bool canGenerate = canGenerate(line, debt, amount);
+    bool canGenerate = canGenerate(line, debt, guid.amount);
     uint256 gap = gap(canGenerate, line, debt);
-    uint256 amtToTake = amtToTake(canGenerate, gap, amount);
+    uint256 amtToTake = amtToTake(canGenerate, gap, guid.amount);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, guid, line, debt, pending, amtToTake);
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 ink;
@@ -381,12 +378,12 @@ rule requestMint_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    requestMint@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    requestMint@withrevert(e, guid, maxFeePercentage, operatorFee);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = ward != 1;
     bool revert3  = blessed;
-    bool revert4  = targetDomain != domain;
+    bool revert4  = guid.targetDomain != domain;
     bool revert5  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
     bool revert6  = canGenerate && maxFeePercentage * amtToTake > max_uint256;
     bool revert7  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();
@@ -448,22 +445,20 @@ rule requestMint_revert(
 
 // Verify that mintPending behaves correctly
 rule mintPending(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80  nonce,
-        uint48  timestamp,
+        join.WormholeGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    address receiverAddr = aux.bytes32ToAddress(receiver);
-    address operatorAddr = aux.bytes32ToAddress(operator);
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
 
-    require(fees(sourceDomain) == fees);
+    address receiverAddr = aux.bytes32ToAddress(guid.receiver);
+    address operatorAddr = aux.bytes32ToAddress(guid.operator);
+
+    require(fees(guid.sourceDomain) == fees);
     require(vow() != currentContract);
     require(vow() != daiJoin());
     require(vow() != operatorAddr);
@@ -471,11 +466,11 @@ rule mintPending(
     require(operatorAddr != currentContract);
     require(operatorAddr != receiverAddr);
 
-    bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
+    bytes32 hashGUID = aux.getGUIDHash(guid);
 
     bool vatLive = vat.live() == 1;
-    uint256 line = vatLive ? line(sourceDomain): 0;
-    int256 debtBefore = debt(sourceDomain);
+    uint256 line = vatLive ? line(guid.sourceDomain): 0;
+    int256 debtBefore = debt(guid.sourceDomain);
 
     bool    blessedBefore;
     uint248 pendingBefore;
@@ -485,7 +480,7 @@ rule mintPending(
     uint256 gap = gap(canGenerate, line, debtBefore);
     uint256 amtToTake = amtToTake(canGenerate, gap, pendingBefore);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debtBefore);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debtBefore, pendingBefore, amtToTake);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, guid, line, debtBefore, pendingBefore, amtToTake);
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 receiverDaiBalanceBefore = dai.balanceOf(receiverAddr);
@@ -496,9 +491,9 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    uint256 postFeeAmount = mintPending(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    uint256 postFeeAmount = mintPending(e, guid, maxFeePercentage, operatorFee);
 
-    int256 debtAfter = debt(sourceDomain);
+    int256 debtAfter = debt(guid.sourceDomain);
 
     bool    blessedAfter;
     uint248 pendingAfter;
@@ -525,27 +520,25 @@ rule mintPending(
 
 // Verify revert rules on mintPending
 rule mintPending_revert(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80  nonce,
-        uint48  timestamp,
+        join.WormholeGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    requireInvariant lineCantExceedMaxInt256(sourceDomain);
+    require(guid.amount <= max_uint128);
+    require(guid.nonce <= 0xffffffffffffffffffff);
+    require(guid.timestamp <= 0xffffffffffff);
 
-    address receiverAddr = aux.bytes32ToAddress(receiver);
-    address operatorAddr = aux.bytes32ToAddress(operator);
+    requireInvariant lineCantExceedMaxInt256(guid.sourceDomain);
+
+    address receiverAddr = aux.bytes32ToAddress(guid.receiver);
+    address operatorAddr = aux.bytes32ToAddress(guid.operator);
 
     require(vat() == vat);
     require(daiJoin.vat() == vat);
     require(daiJoin.dai() == dai);
-    require(fees(sourceDomain) == fees);
+    require(fees(guid.sourceDomain) == fees);
     require(vow() != currentContract);
     require(vow() != daiJoin());
     require(vow() != operatorAddr);
@@ -553,13 +546,13 @@ rule mintPending_revert(
     require(operatorAddr != currentContract);
     require(operatorAddr != receiverAddr);
 
-    bytes32 hashGUID = aux.getGUIDHash(sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp);
+    bytes32 hashGUID = aux.getGUIDHash(guid);
 
     bytes32 domain = domain();
 
     bool vatLive = vat.live() == 1;
-    uint256 line = vatLive ? line(sourceDomain): 0;
-    int256 debt = debt(sourceDomain);
+    uint256 line = vatLive ? line(guid.sourceDomain): 0;
+    int256 debt = debt(guid.sourceDomain);
 
     bool    blessed;
     uint248 pending;
@@ -569,7 +562,7 @@ rule mintPending_revert(
     uint256 gap = gap(canGenerate, line, debt);
     uint256 amtToTake = amtToTake(canGenerate, gap, pending);
     uint256 amtToGenerate = amtToGenerate(canGenerate, amtToTake, debt);
-    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, line, debt, pending, amtToTake);
+    uint256 feeAmt = feeAmt(e, canGenerate, vatLive, guid, line, debt, pending, amtToTake);
     uint256 operatorFeeAmt = operatorFeeAmt(canGenerate, operatorFee);
 
     uint256 ink;
@@ -584,11 +577,11 @@ rule mintPending_revert(
 
     uint256 can = vat.can(currentContract, daiJoin());
 
-    mintPending@withrevert(e, sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp, maxFeePercentage, operatorFee);
+    mintPending@withrevert(e, guid, maxFeePercentage, operatorFee);
 
     bool revert1  = e.msg.value > 0;
     bool revert2  = e.msg.sender != receiverAddr && e.msg.sender != operatorAddr;
-    bool revert3  = targetDomain != domain;
+    bool revert3  = guid.targetDomain != domain;
     bool revert4  = canGenerate && (to_mathint(line) - to_mathint(debt)) > max_int256(); // As debt can be negative, (- - == +) can overflow
     bool revert5  = canGenerate && maxFeePercentage * amtToTake > max_uint256;
     bool revert6  = canGenerate && feeAmt > maxFeePercentage * amtToTake / WAD();

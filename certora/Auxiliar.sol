@@ -1,5 +1,7 @@
 pragma solidity 0.8.9;
 
+import "../src/WormholeGUID.sol";
+
 interface OracleLike {
     function signers(address) external view returns (uint256);
 }
@@ -7,23 +9,15 @@ interface OracleLike {
 contract Auxiliar {
     OracleLike public oracle;
 
-    function getGUIDHash(
-        bytes32 sourceDomain,
-        bytes32 targetDomain,
-        bytes32 receiver,
-        bytes32 operator,
-        uint128 amount,
-        uint80 nonce,
-        uint48 timestamp
-    ) external pure returns (bytes32 guidHash) {
+    function getGUIDHash(WormholeGUID memory wormholeGUID) external pure returns (bytes32 guidHash) {
         guidHash = keccak256(abi.encode(
-            sourceDomain,
-            targetDomain,
-            receiver,
-            operator,
-            amount,
-            nonce,
-            timestamp
+            wormholeGUID.sourceDomain,
+            wormholeGUID.targetDomain,
+            wormholeGUID.receiver,
+            wormholeGUID.operator,
+            wormholeGUID.amount,
+            wormholeGUID.nonce,
+            wormholeGUID.timestamp
         ));
     }
 
