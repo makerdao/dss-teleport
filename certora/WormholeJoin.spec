@@ -285,7 +285,9 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    uint256 postFeeAmount = requestMint(e, guid, maxFeePercentage, operatorFee);
+    uint256 postFeeAmount;
+    uint256 totalFee;
+    postFeeAmount, totalFee = requestMint(e, guid, maxFeePercentage, operatorFee);
 
     int256 debtAfter = debt(guid.sourceDomain);
 
@@ -310,7 +312,8 @@ rule requestMint(
     assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
-    assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the value expected");
+    assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the expected value");
+    assert(totalFee == feeAmt + operatorFeeAmt, "totalFee is not the expected value");
 }
 
 // Verify revert rules on requestMint
@@ -483,7 +486,9 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    uint256 postFeeAmount = mintPending(e, guid, maxFeePercentage, operatorFee);
+    uint256 postFeeAmount;
+    uint256 totalFee;
+    postFeeAmount, totalFee = mintPending(e, guid, maxFeePercentage, operatorFee);
 
     int256 debtAfter = debt(guid.sourceDomain);
 
@@ -507,7 +512,8 @@ rule mintPending(
     assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
-    assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the value expected");
+    assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the expected value");
+    assert(totalFee == feeAmt + operatorFeeAmt, "totalFee is not the expected value");
 }
 
 // Verify revert rules on mintPending
