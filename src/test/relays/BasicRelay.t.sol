@@ -110,6 +110,18 @@ contract BasicRelayTest is DSTest {
     WormholeJoinMock internal join;
     WormholeOracleAuthMock internal oracleAuth;
 
+    function getSignHash(
+        WormholeGUID memory wormholeGUID,
+        uint256 maxFeePercentage,
+        uint256 gasFee,
+        uint256 expiry
+    ) internal pure returns (bytes32 signHash) {
+        signHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32", 
+            keccak256(abi.encode(getGUIDHash(wormholeGUID), maxFeePercentage, gasFee, expiry))
+        ));
+    }
+
     function setUp() public {
         vat = new VatMock();
         dai = new DaiMock();
@@ -139,16 +151,15 @@ contract BasicRelayTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        bytes32 hashGUID = getGUIDHash(guid);
         uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
         uint256 gasFee = WAD;                       // 1 DAI of gas
         uint256 expiry = block.timestamp;
-        bytes32 signHash = keccak256(abi.encode(
-            hashGUID,
+        bytes32 signHash = getSignHash(
+            guid,
             maxFeePercentage,
             gasFee,
             expiry
-        ));
+        );
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
@@ -181,16 +192,15 @@ contract BasicRelayTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        bytes32 hashGUID = getGUIDHash(guid);
         uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
         uint256 gasFee = WAD;                       // 1 DAI of gas
         uint256 expiry = block.timestamp;
-        bytes32 signHash = keccak256(abi.encode(
-            hashGUID,
+        bytes32 signHash = getSignHash(
+            guid,
             maxFeePercentage,
             gasFee,
             expiry
-        ));
+        );
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
@@ -220,16 +230,15 @@ contract BasicRelayTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        bytes32 hashGUID = getGUIDHash(guid);
         uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
         uint256 gasFee = WAD;                       // 1 DAI of gas
         uint256 expiry = block.timestamp;
-        bytes32 signHash = keccak256(abi.encode(
-            hashGUID,
+        bytes32 signHash = getSignHash(
+            guid,
             maxFeePercentage + 1,
             gasFee,
             expiry
-        ));
+        );
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
@@ -259,16 +268,15 @@ contract BasicRelayTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        bytes32 hashGUID = getGUIDHash(guid);
         uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
         uint256 gasFee = WAD;                       // 1 DAI of gas
         uint256 expiry = block.timestamp;
-        bytes32 signHash = keccak256(abi.encode(
-            hashGUID,
+        bytes32 signHash = getSignHash(
+            guid,
             maxFeePercentage,
             gasFee,
             expiry
-        ));
+        );
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 

@@ -80,9 +80,11 @@ contract BasicRelay {
         bytes32 s
     ) external {
         require(block.timestamp <= expiry, "BasicRelay/expired");
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        bytes32 userHash = keccak256(abi.encode(hashGUID, maxFeePercentage, gasFee, expiry));
-        address recovered = ecrecover(userHash, v, r, s);
+        bytes32 signHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32", 
+            keccak256(abi.encode(getGUIDHash(wormholeGUID), maxFeePercentage, gasFee, expiry))
+        ));
+        address recovered = ecrecover(signHash, v, r, s);
         require(bytes32ToAddress(wormholeGUID.receiver) == recovered, "BasicRelay/invalid-signature");
 
         // Initiate mint and mark the wormhole as done
