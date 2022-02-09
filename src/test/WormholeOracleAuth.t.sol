@@ -20,14 +20,11 @@ import "ds-test/test.sol";
 
 import "src/WormholeOracleAuth.sol";
 
+import "./mocks/GatewayMock.sol";
+
 interface Hevm {
     function addr(uint) external returns (address);
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
-}
-
-contract GatewayMock {
-    function requestMint(WormholeGUID calldata, uint256, uint256) external pure returns (uint256 postFeeAmount, uint256 totalFee) {}
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
 }
 
 contract WormholeOracleAuthTest is DSTest {
