@@ -160,7 +160,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_ink(), 0);
         assertEq(_art(), 0);
 
-        uint256 daiSent = join.requestMint(guid, 0, 0);
+        (uint256 daiSent, uint256 totalFee) = join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertTrue(_blessed(guid));
@@ -169,6 +169,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 250_000 ether);
         assertEq(join.cure(), 250_000 * RAD);
         assertEq(daiSent, 250_000 * WAD);
+        assertEq(totalFee, 0);
     }
 
     function testRegisterAndWithdrawPartial() public {
@@ -183,7 +184,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        uint256 daiSent = join.requestMint(guid, 0, 0);
+        (uint256 daiSent, uint256 totalFee) = join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
@@ -192,6 +193,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 200_000 ether);
         assertEq(join.cure(), 200_000 * RAD);
         assertEq(daiSent, 200_000 * WAD);
+        assertEq(totalFee, 0);
     }
 
     function testRegisterAndWithdrawNothing() public {
@@ -206,7 +208,7 @@ contract WormholeJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 0);
-        uint256 daiSent = join.requestMint(guid, 0, 0);
+        (uint256 daiSent, uint256 totalFee) = join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 0);
         assertTrue(_blessed(guid));
@@ -215,6 +217,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 0);
         assertEq(join.cure(), 0);
         assertEq(daiSent, 0);
+        assertEq(totalFee, 0);
     }
 
 
@@ -260,7 +263,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(fees.fee(), 100 ether);
 
         join.file("fees", "l2network", address(fees));
-        uint256 daiSent = join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 250K = 100 (just enough)
+        (uint256 daiSent, uint256 totalFee) = join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 250K = 100 (just enough)
 
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
@@ -269,6 +272,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(_art(), 250_000 ether);
         assertEq(join.cure(), 250_000 * RAD);
         assertEq(daiSent, 249_900 * WAD);
+        assertEq(totalFee, 100 ether);
     }
 
     function testFailRegisterAndWithdrawPayingFee() public {
@@ -625,13 +629,15 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(dai.balanceOf(address(this)), 0);
-        uint256 daiSent = join.requestMint(guid, 0, 250 ether);
+        (uint256 daiSent, uint256 totalFee) = join.requestMint(guid, 0, 250 ether);
+
         assertEq(dai.balanceOf(address(this)), 250 ether);
         assertEq(dai.balanceOf(address(123)), 249_750 ether);
         assertEq(_pending(guid), 0);
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
         assertEq(daiSent, 249_750 * WAD);
+        assertEq(totalFee, 250 ether);
     }
 
     function testFailOperatorFeeTooHigh() public {

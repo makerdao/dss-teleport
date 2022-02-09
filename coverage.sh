@@ -4,7 +4,7 @@ set -e
 MAX_UNCOVERED=0 # Maximum number of uncovered lines allowed
 
 echo "Running coverage..."
-uncovered=$(dapp test -v --rpc --coverage | grep "\[31m" | wc -l)
+uncovered=$(dapp --use solc:0.8.9 test -v --coverage --cov-match "src\/Wormhole" | grep "\[31m" | wc -l)
 echo "Uncovered lines: $uncovered"
 
 if [[ $uncovered -gt $MAX_UNCOVERED ]]; then

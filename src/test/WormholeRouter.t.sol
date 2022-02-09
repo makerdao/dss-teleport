@@ -20,18 +20,11 @@ import "ds-test/test.sol";
 
 import "src/WormholeRouter.sol";
 
-contract GatewayMock {
-    function requestMint(WormholeGUID calldata, uint256, uint256) external pure returns (uint256 postFeeAmount) {
-        return 0;
-    }
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {}
-}
-
-contract DaiMock {
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success) {}
-}
+import "./mocks/GatewayMock.sol";
+import "./mocks/DaiMock.sol";
 
 contract WormholeRouterTest is DSTest {
+    
     WormholeRouter internal router;
     address internal dai;
     address internal wormholeJoin;
@@ -251,6 +244,8 @@ contract WormholeRouterTest is DSTest {
 
     function testFailSettleFromNotGateway() public {
         router.file("gateway", "l2network", address(555));
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle(l1Domain, 100 ether);
     }
@@ -258,6 +253,8 @@ contract WormholeRouterTest is DSTest {
     function testSettleTargetingL1() public {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, wormholeJoin);
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle(l1Domain, 100 ether);
     }
@@ -265,6 +262,8 @@ contract WormholeRouterTest is DSTest {
     function testSettleTargetingL2() public {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
+        DaiMock(dai).mint(address(this), 100 ether);
+        DaiMock(dai).approve(address(router), 100 ether);
 
         router.settle("another-l2network", 100 ether);
     }
