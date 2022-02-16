@@ -119,16 +119,20 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
     );
     assert(
         gatewayWasEmpty && !dataIsEmpty && !hasDomainBefore && numDomainsBefore < max_uint256
-        => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected");
+        => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected"
+    );
     assert(
         gatewayWasEmpty && !dataIsEmpty
-        => domainAt(numDomainsBefore) == domain, "file did not set allDomains as expected");
+        => domainAt(numDomainsBefore) == domain, "file did not set allDomains as expected"
+    );
     assert(
         !gatewayWasEmpty
-        => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2");
+        => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2"
+    );
     assert(
         !gatewayWasEmpty && dataIsEmpty
-        => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected");
+        => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected"
+    );
 }
 
 // Verify revert rules on file
