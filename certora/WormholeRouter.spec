@@ -10,11 +10,18 @@ methods {
     gateways(bytes32) returns (address) envfree
     hasDomain(bytes32) returns (bool) envfree
     numDomains() returns (uint256) envfree
-    requestMint(join.WormholeGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
+    requestMint(join.WormholeGUID, uint256, uint256) returns (uint256, uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
     dai.allowance(address, address) returns (uint256) envfree
     dai.balanceOf(address) returns (uint256) envfree
+    join.wormholeGUID() returns(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) envfree
+    join.batchedDaiToFlush() returns (uint256) envfree
+    join.maxFeePercentage() returns (uint256) envfree
+    join.operatorFee() returns (uint256) envfree
+    join.postFeeAmount() returns (uint256) envfree
+    join.sourceDomain() returns (bytes32) envfree
+    join.totalFee() returns (uint256) envfree
 }
 
 definition RAY() returns uint256 = 10^27;
@@ -169,6 +176,41 @@ rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
                            revert4 || revert5, "Revert rules are not covering all the cases");
 }
 
+// Verify that requestMint behaves correctly
+rule requestMint(
+        router.WormholeGUID guid,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) {
+    env e;
+
+    require(gateways(guid.targetDomain) == join);
+
+    uint256 postFeeAmount;
+    uint256 totalFee;
+    postFeeAmount, totalFee = requestMint(e, guid, maxFeePercentage, operatorFee);
+
+    bytes32 sourceDomain;
+    bytes32 targetDomain;
+    bytes32 receiver;
+    bytes32 operator;
+    uint128 amount;
+    uint80 nonce;
+    uint48 timestamp;
+    sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp = join.wormholeGUID();
+    assert(sourceDomain == guid.sourceDomain, "guid.sourceDomain was not preserved");
+    assert(targetDomain == guid.targetDomain, "guid.targetDomain was not preserved");
+    assert(receiver == guid.receiver, "guid.receiver was not preserved");
+    assert(operator == guid.operator, "guid.operator was not preserved");
+    assert(amount == guid.amount, "guid.amount was not preserved");
+    assert(nonce == guid.nonce, "guid.nonce was not preserved");
+    assert(timestamp == guid.timestamp, "guid.timestamp was not preserved");
+    assert(join.maxFeePercentage() == maxFeePercentage, "maxFeePercentage was not preserved");
+    assert(join.operatorFee() == operatorFee, "operatorFee was not preserved");
+    assert(join.postFeeAmount() == postFeeAmount, "postFeeAmount was not preserved");
+    assert(join.totalFee() == totalFee, "totalFee was not preserved");
+}
+
 // Verify revert rules on requestMint
 rule requestMint_revert(
         router.WormholeGUID guid,
@@ -217,8 +259,10 @@ rule settle(bytes32 targetDomain, uint256 batchedDaiToFlush) {
     uint256 daiSenderAfter = dai.balanceOf(e.msg.sender);
     uint256 daiGatewayAfter = dai.balanceOf(targetGateway);
 
-    assert(e.msg.sender != targetGateway => daiSenderAfter == daiSenderBefore - batchedDaiToFlush);
-    assert(e.msg.sender != targetGateway => daiGatewayAfter == daiGatewayBefore + batchedDaiToFlush);
+    assert(join.sourceDomain() == domains(e.msg.sender), "sourceDomain was not preserved");
+    assert(join.batchedDaiToFlush() == batchedDaiToFlush, "batchedDaiToFlush was not preserved");
+    assert(e.msg.sender != targetGateway => daiSenderAfter == daiSenderBefore - batchedDaiToFlush, "Sender's DAI balance did not decrease as expected");
+    assert(e.msg.sender != targetGateway => daiGatewayAfter == daiGatewayBefore + batchedDaiToFlush, "Gateway's DAI balance did not increase as expected");
 }
 
 // Verify revert rules on settle

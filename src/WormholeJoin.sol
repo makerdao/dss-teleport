@@ -211,6 +211,7 @@ contract WormholeJoin {
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
+    * @return totalFee The total amount of DAI charged as fees
     **/
     function requestMint(
         WormholeGUID calldata wormholeGUID,
@@ -231,6 +232,7 @@ contract WormholeJoin {
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
+    * @return totalFee The total amount of DAI charged as fees
     **/
     function mintPending(
         WormholeGUID calldata wormholeGUID,
