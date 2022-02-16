@@ -100,7 +100,6 @@ rule deny_revert(address usr) {
 rule file_domain_address(bytes32 what, bytes32 domain, address data) {
     env e;
 
-    bool whatIsGateway = what == 0x6761746577617900000000000000000000000000000000000000000000000000;
     bool dataIsEmpty = data == 0x0000000000000000000000000000000000000000;
     address gatewayBefore = gateways(domain);
     bool gatewayWasEmpty = gatewayBefore == 0x0000000000000000000000000000000000000000;
@@ -112,23 +111,23 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
     uint256 numDomainsAfter = numDomains();
 
     assert(
-        whatIsGateway => gateways(domain) == data, "file did not set gateways(domain) as expected"
+        gateways(domain) == data, "file did not set gateways(domain) as expected"
     );
     assert(
-        whatIsGateway && !dataIsEmpty
+        !dataIsEmpty
         => domains(data) == domain, "file did not set domains(gateway) as expected"
     );
     assert(
-        whatIsGateway && gatewayWasEmpty && !dataIsEmpty && !hasDomainBefore && numDomainsBefore < max_uint256
+        gatewayWasEmpty && !dataIsEmpty && !hasDomainBefore && numDomainsBefore < max_uint256
         => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected");
     assert(
-        whatIsGateway && gatewayWasEmpty && !dataIsEmpty
+        gatewayWasEmpty && !dataIsEmpty
         => domainAt(numDomainsBefore) == domain, "file did not set allDomains as expected");
     assert(
-        whatIsGateway && !gatewayWasEmpty
+        !gatewayWasEmpty
         => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2");
     assert(
-        whatIsGateway && !gatewayWasEmpty && dataIsEmpty
+        !gatewayWasEmpty && dataIsEmpty
         => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected");
 }
 
