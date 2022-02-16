@@ -28,7 +28,7 @@ interface GatewayLike {
         WormholeGUID calldata wormholeGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
-    ) external returns (uint256 postFeeAmount);
+    ) external returns (uint256 postFeeAmount, uint256 totalFee);
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
@@ -125,12 +125,17 @@ contract WormholeRouter {
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      * @param operatorFee The amount of DAI to pay to the operator
      * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
+     * @return totalFee The total amount of DAI charged as fees
      */
-    function requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee) external returns (uint256 postFeeAmount) {
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
         require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
         address gateway = gateways[wormholeGUID.targetDomain];
         require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
-        return GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 
     /**
