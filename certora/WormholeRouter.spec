@@ -124,7 +124,7 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
     bytes32 domainAt = domainAt@withrevert(numDomainsBefore);
     assert(
         !lastReverted && gatewayWasEmpty && !dataIsEmpty
-        => domainAt == domain, "file did not set allDomains as expected"
+        => domainAt == domain, "file did not modify allDomains as expected"
     );
     assert(
         !gatewayWasEmpty && gatewayBefore != data
