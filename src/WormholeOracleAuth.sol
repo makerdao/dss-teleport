@@ -105,7 +105,7 @@ contract WormholeOracleAuth {
         require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
             bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
         require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        return wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        (postFeeAmount, totalFee) = wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 
     /**

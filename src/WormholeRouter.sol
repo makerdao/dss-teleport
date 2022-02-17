@@ -135,7 +135,7 @@ contract WormholeRouter {
         require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
         address gateway = gateways[wormholeGUID.targetDomain];
         require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
-        return GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage, operatorFee);
     }
 
     /**
