@@ -37,7 +37,7 @@ jobs:
         run: solc-select install 0.8.9
 
       - name: Install Certora
-        run: pip3 install certora-cli-maker-structs
+        run: pip3 install certora-cli-maker-structs-staging
 
       - name: Verify ${{ matrix.wormhole }}
         run: make certora-${{ matrix.wormhole }}
