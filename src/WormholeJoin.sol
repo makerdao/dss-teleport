@@ -53,6 +53,8 @@ contract WormholeJoin {
 
     address public vow;
 
+    uint256 public art; // We need to preserve the last art value before the position being skimmed (End)
+
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
     bytes32     immutable public ilk;
@@ -137,7 +139,6 @@ contract WormholeJoin {
     * @dev External view function to get the total debt used by this contract
     **/
     function cure() external view returns (uint256) {
-        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
         return art * RAY;
     }
 
@@ -191,6 +192,8 @@ contract WormholeJoin {
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
+            (, uint256 art_) = vat.urns(ilk, address(this)); // Query the actual value as someone might have repaid debt without going through settle
+            art = art_;
         }
         totalFee = fee + operatorFee;
         postFeeAmount = amtToTake - totalFee;
@@ -254,10 +257,13 @@ contract WormholeJoin {
         require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
-            (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(batchedDaiToFlush, art);
+            (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+            uint256 amtToPayBack = _min(batchedDaiToFlush, art_);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
+            unchecked {
+                art = art_ - amtToPayBack; // Always safe operation
+            }
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
         emit Settle(sourceDomain, batchedDaiToFlush);
