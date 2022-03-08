@@ -67,7 +67,9 @@ contract WormholeJoin {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
-    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator);
+    event Withdraw(
+        bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
+    );
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
