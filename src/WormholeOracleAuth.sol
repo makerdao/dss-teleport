@@ -87,7 +87,8 @@ contract WormholeOracleAuth {
     }
 
     /**
-     * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid (only callable by wormhole's operator or receiver)
+     * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid 
+     * (only callable by wormhole's operator or receiver)
      * @param wormholeGUID The wormhole GUID to register
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
