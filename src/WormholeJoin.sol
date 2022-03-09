@@ -192,7 +192,8 @@ contract WormholeJoin {
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
-            (, art) = vat.urns(ilk, address(this)); // Query the actual value as someone might have repaid debt without going through settle
+            // Query the actual value as someone might have repaid debt without going through settle (if vat.live == 0 prev frob will revert)
+            (, art) = vat.urns(ilk, address(this));
         }
         totalFee = fee + operatorFee;
         postFeeAmount = amtToTake - totalFee;
