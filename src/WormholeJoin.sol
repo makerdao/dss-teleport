@@ -67,7 +67,9 @@ contract WormholeJoin {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
-    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee);
+    event Withdraw(
+        bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
+    );
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
@@ -167,7 +169,7 @@ contract WormholeJoin {
         // Stop execution if there isn't anything available to withdraw
         uint248 pending = wormholes[hashGUID].pending;
         if (int256(line_) <= debt_ || pending == 0) {
-            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee);
+            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee, msg.sender);
             return (0, 0);
         }
 
@@ -203,7 +205,7 @@ contract WormholeJoin {
             daiJoin.exit(bytes32ToAddress(wormholeGUID.operator), operatorFee);
         }
 
-        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);
+        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee, msg.sender);
     }
 
     /**
