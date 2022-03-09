@@ -28,6 +28,7 @@ interface WormholeFees {
     * @param debt Current debt
     * @param pending Amount left to withdraw
     * @param amtToTake Amount to take. Can be less or equal to wormholeGUID.amount b/c of debt ceiling or because it is pending
+    * @return fees Fee amount [WAD]
     **/
     function getFee(
         WormholeGUID calldata wormholeGUID, uint256 line, int256 debt, uint256 pending, uint256 amtToTake

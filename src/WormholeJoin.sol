@@ -136,7 +136,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External view function to get the total debt used by this contract
+    * @dev External view function to get the total debt used by this contract [RAY]
     **/
     function cure() external view returns (uint256) {
         (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
@@ -230,7 +230,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External function that executes the mint of any pending and available amount (only callable by operator)
+    * @dev External function that executes the mint of any pending and available amount (only callable by operator or receiver)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
