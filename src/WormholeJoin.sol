@@ -136,7 +136,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External view function to get the total debt used by this contract [RAY]
+    * @dev External view function to get the total debt used by this contract [RAD]
     **/
     function cure() external view returns (uint256) {
         (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
