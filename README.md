@@ -105,11 +105,11 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `WormholeJoin` or target domain `L1 bridge` to settle DAI
 
 **`WormholeOracleAuth`**
-* `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by the wormhole operator, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
+* `requestMint(WormholeGUID calldata wormholeGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by the wormhole operator or receiver, requests `WormholeJoin` to mint DAI for the receiver of the wormhole provided required number of Oracle attestations are given
 
 **`WormholeJoin`**
 * `requestMint(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable either by `WormholeOracleAuth` (fast path) or by `WormholeRouter` (slow path), mints and withdraws DAI from the wormhole. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
-* `mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable by wormhole operator, withdraws any pending DAI from a wormhole
+* `mintPending(WormholeGUID calldata wormholeGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable by wormhole operator or receiver, withdraws any pending DAI from a wormhole
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `WormholeRouter`, settles DAI debt
 
 **`WormholeFees`**

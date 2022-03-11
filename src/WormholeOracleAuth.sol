@@ -87,7 +87,8 @@ contract WormholeOracleAuth {
     }
 
     /**
-     * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid
+     * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid 
+     * (only callable by wormhole's operator or receiver)
      * @param wormholeGUID The wormhole GUID to register
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
@@ -114,6 +115,7 @@ contract WormholeOracleAuth {
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param threshold_ The minimum number of valid signatures required for the method to return true
+     * @return valid Signature verification result
      */
     function isValid(bytes32 signHash, bytes calldata signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
