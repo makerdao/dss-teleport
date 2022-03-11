@@ -41,6 +41,33 @@ hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n 
     havoc indexesGhost assuming indexesGhost@new(a) == n;
 }
 
+ghost valuesGhost(uint256) returns bytes32 {
+    init_state axiom forall uint256 index. valuesGhost(index) == 0x0000000000000000000000000000000000000000;
+}
+
+hook Sload bytes32 domain currentContract.allDomains._inner._values[INDEX uint256 index] STORAGE {
+    require valuesGhost(index) == domain;
+}
+
+hook Sstore currentContract.allDomains._inner._values[INDEX uint256 index] bytes32 newVal (bytes32 oldVal) STORAGE {
+    havoc valuesGhost assuming valuesGhost@new(index) == newVal;
+}
+
+//invariant index_out_of_range_consistency(uint256 zIndex)
+//    zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000
+
+invariant index_out_of_range_consistency()
+    forall uint256 zIndex. (zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000)
+
+invariant indexes_bounded(bytes32 value)
+    indexesGhost(value) <= numDomains()
+
+invariant values_indexes_consistency(uint256 zIndex, bytes32 value)
+    zIndex < numDomains() => (indexesGhost(value) == zIndex + 1 <=> valuesGhost(zIndex) == value)
+
+invariant empty_gateway_implies_not_having_domain(bytes32 domain)
+    gateways(domain) == 0 => !hasDomain(domain)
+
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
     env e;
@@ -125,22 +152,23 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
         => domains(data) == domain, "file did not set domains(gateway) as expected"
     );
     assert(
-        gatewayWasEmpty && !hasDomainBefore && !dataIsEmpty && numDomainsBefore < max_uint256
+//        gatewayWasEmpty && !hasDomainBefore && !dataIsEmpty && numDomainsBefore < max_uint256
+        gatewayWasEmpty && !dataIsEmpty && numDomainsBefore < max_uint256
         => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected"
     );
-    bytes32 domainAt = domainAt@withrevert(numDomainsBefore);
-    assert(
-        !lastReverted && gatewayWasEmpty && !dataIsEmpty
-        => domainAt == domain, "file did not modify allDomains as expected"
-    );
-    assert(
-        !gatewayWasEmpty && gatewayBefore != data
-        => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2"
-    );
-    assert(
-        !gatewayWasEmpty && hasDomainBefore && dataIsEmpty
-        => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected"
-    );
+//    bytes32 domainAt = domainAt@withrevert(numDomainsBefore);
+//    assert(
+//        !lastReverted && gatewayWasEmpty && !dataIsEmpty
+//        => domainAt == domain, "file did not modify allDomains as expected"
+//    );
+//    assert(
+//        !gatewayWasEmpty && gatewayBefore != data
+//        => domains(gatewayBefore) == 0x0000000000000000000000000000000000000000000000000000000000000000, "file did not set domains(gateway) as expected 2"
+//    );
+//    assert(
+//        !gatewayWasEmpty && hasDomainBefore && dataIsEmpty
+//        => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected"
+//    );
 }
 
 // Verify revert rules on file
