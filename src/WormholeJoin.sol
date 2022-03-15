@@ -53,7 +53,7 @@ contract WormholeJoin {
 
     address public vow;
 
-    uint256 public art; // We need to preserve the last art value before the position being skimmed (End)
+    uint256 internal art; // We need to preserve the last art value before the position being skimmed (End)
 
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
@@ -140,8 +140,8 @@ contract WormholeJoin {
     /**
     * @dev External view function to get the total debt used by this contract [RAD]
     **/
-    function cure() external view returns (uint256) {
-        return art * RAY;
+    function cure() external view returns (uint256 cure_) {
+        cure_ = art * RAY;
     }
 
     /**
