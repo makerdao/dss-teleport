@@ -64,6 +64,8 @@ contract VatMock {
     }
 
     function frob(bytes32 i, address u, address v, address w, int256 dink, int256 dart) external {
+        require(live == 1, "Vat/not-live");
+
         Urn memory urn = urns[i][u];
 
         urn.ink = add(urn.ink, dink);

@@ -43,6 +43,22 @@ invariant lineCantExceedMaxInt256(bytes32 domain)
 to_mathint(line(domain)) <= max_int256()
 filtered { f -> !f.isFallback }
 
+// Verify cure value is frozen after the general system is caged
+rule cureCantChangeIfVatCaged(method f) filtered { f -> !f.isFallback } {
+    env e;
+
+    require(vat.live() == 0);
+
+    uint256 cureBefore = cure();
+
+    calldataarg arg;
+    f@withrevert(e, arg);
+
+    uint256 cureAfter = cure();
+
+    assert(cureAfter == cureBefore);
+}
+
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
     env e;
