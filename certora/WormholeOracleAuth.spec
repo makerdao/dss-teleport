@@ -24,6 +24,16 @@ methods {
     join.totalFee() returns (uint256) envfree
 }
 
+// Verify fallback always reverts
+rule fallback_revert(method f) filtered { f -> f.isFallback } {
+    env e;
+
+    calldataarg arg;
+    f@withrevert(e, arg);
+
+    assert(lastReverted, "Fallback did not revert");
+}
+
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
     env e;

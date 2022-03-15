@@ -59,6 +59,17 @@ rule cureCantChangeIfVatCaged(method f) filtered { f -> !f.isFallback } {
     assert(cureAfter == cureBefore);
 }
 
+// Verify fallback always reverts
+// In this case is pretty important as we are filtering it out from some invariants/rules
+rule fallback_revert(method f) filtered { f -> f.isFallback } {
+    env e;
+
+    calldataarg arg;
+    f@withrevert(e, arg);
+
+    assert(lastReverted, "Fallback did not revert");
+}
+
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
     env e;

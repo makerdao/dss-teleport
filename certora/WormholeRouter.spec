@@ -41,6 +41,16 @@ hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n 
     havoc indexesGhost assuming indexesGhost@new(a) == n;
 }
 
+// Verify fallback always reverts
+rule fallback_revert(method f) filtered { f -> f.isFallback } {
+    env e;
+
+    calldataarg arg;
+    f@withrevert(e, arg);
+
+    assert(lastReverted, "Fallback did not revert");
+}
+
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
     env e;
