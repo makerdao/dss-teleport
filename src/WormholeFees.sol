@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.11;
 
 import "./WormholeGUID.sol";
 
@@ -28,6 +28,7 @@ interface WormholeFees {
     * @param debt Current debt
     * @param pending Amount left to withdraw
     * @param amtToTake Amount to take. Can be less or equal to wormholeGUID.amount b/c of debt ceiling or because it is pending
+    * @return fees Fee amount [WAD]
     **/
     function getFee(
         WormholeGUID calldata wormholeGUID, uint256 line, int256 debt, uint256 pending, uint256 amtToTake

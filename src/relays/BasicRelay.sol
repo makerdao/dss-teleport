@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.11;
 
 import "../WormholeGUID.sol";
 
@@ -68,6 +68,9 @@ contract BasicRelay {
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      * @param gasFee DAI gas fee (in WAD)
      * @param expiry Maximum time for when the query is valid
+     * @param v Part of ECDSA signature
+     * @param r Part of ECDSA signature
+     * @param s Part of ECDSA signature
      */
     function relay(
         WormholeGUID calldata wormholeGUID,

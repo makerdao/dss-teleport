@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.11;
 
 import "./WormholeGUID.sol";
 
@@ -53,6 +53,8 @@ contract WormholeJoin {
 
     address public vow;
 
+    uint256 public art; // We need to preserve the last art value before the position being skimmed (End)
+
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
     bytes32     immutable public ilk;
@@ -67,7 +69,9 @@ contract WormholeJoin {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
-    event Withdraw(bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee);
+    event Mint(
+        bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
+    );
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
     struct WormholeStatus {
@@ -134,10 +138,9 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External view function to get the total debt used by this contract
+    * @dev External view function to get the total debt used by this contract [RAD]
     **/
     function cure() external view returns (uint256) {
-        (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
         return art * RAY;
     }
 
@@ -167,7 +170,7 @@ contract WormholeJoin {
         // Stop execution if there isn't anything available to withdraw
         uint248 pending = wormholes[hashGUID].pending;
         if (int256(line_) <= debt_ || pending == 0) {
-            emit Withdraw(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee);
+            emit Mint(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee, msg.sender);
             return (0, 0);
         }
 
@@ -191,6 +194,8 @@ contract WormholeJoin {
             // amtToGenerate doesn't need overflow check as it is bounded by amtToTake
             vat.slip(ilk, address(this), int256(amtToGenerate));
             vat.frob(ilk, address(this), address(this), address(this), int256(amtToGenerate), int256(amtToGenerate));
+            // Query the actual value as someone might have repaid debt without going through settle (if vat.live == 0 prev frob will revert)
+            (, art) = vat.urns(ilk, address(this));
         }
         totalFee = fee + operatorFee;
         postFeeAmount = amtToTake - totalFee;
@@ -203,7 +208,7 @@ contract WormholeJoin {
             daiJoin.exit(bytes32ToAddress(wormholeGUID.operator), operatorFee);
         }
 
-        emit Withdraw(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee);
+        emit Mint(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee, msg.sender);
     }
 
     /**
@@ -228,7 +233,7 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev External function that executes the mint of any pending and available amount (only callable by operator)
+    * @dev External function that executes the mint of any pending and available amount (only callable by operator or receiver)
     * @param wormholeGUID Struct which contains the whole wormhole data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
@@ -254,10 +259,13 @@ contract WormholeJoin {
         require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
-            (, uint256 art) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(batchedDaiToFlush, art);
+            (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+            uint256 amtToPayBack = _min(batchedDaiToFlush, art_);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
+            unchecked {
+                art = art_ - amtToPayBack; // Always safe operation
+            }
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
         emit Settle(sourceDomain, batchedDaiToFlush);

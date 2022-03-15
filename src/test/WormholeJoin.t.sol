@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.11;
 
 import "ds-test/test.sol";
 
@@ -29,6 +29,7 @@ interface Hevm {
     function warp(uint) external;
     function addr(uint) external returns (address);
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
+    function store(address, bytes32, bytes32) external;
 }
 
 contract WormholeJoinTest is DSTest {
@@ -780,5 +781,49 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network_2"), 150_000 ether);
         assertEq(join.debt("l2network_3"), 40_000 ether);
         assertEq(join.cure(), 190_000 * RAD);
+    }
+
+    function testCureAfterPositionBeingManipulated() public {
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 250_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.requestMint(guid, 0, 0);
+
+        assertEq(_ink(), 250_000 ether);
+        assertEq(_art(), 250_000 ether);
+        assertEq(join.cure(), 250_000 * RAD);
+
+        // Emulate removal of position debt (third party repayment or position being skimmed)
+        hevm.store(
+            address(vat),
+            bytes32(uint256(keccak256(abi.encode(address(join), keccak256(abi.encode(bytes32(ilk), uint256(2)))))) + 1),
+            bytes32(0)
+        );
+        assertEq(_art(), 0);
+        assertEq(join.cure(), 250_000 * RAD);
+
+        // In case of not caged, then debt can keep changing which will reload cure to the new value
+        guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 100_000 ether,
+            nonce: 6,
+            timestamp: uint48(block.timestamp)
+        });
+
+        join.requestMint(guid, 0, 0);
+
+        assertEq(_ink(), 350_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
     }
 }
