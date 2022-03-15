@@ -38,7 +38,8 @@ hook Sload uint256 v currentContract.allDomains._inner._indexes[KEY bytes32 doma
 }
 
 hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
-    havoc indexesGhost assuming indexesGhost@new(a) == n;
+    havoc indexesGhost assuming indexesGhost@new(a) == n
+        && (forall bytes32 b. indexesGhost@new(b) == indexesGhost@new(a) || b == a);
 }
 
 ghost valuesGhost(uint256) returns bytes32 {
@@ -50,17 +51,30 @@ hook Sload bytes32 domain currentContract.allDomains._inner._values[INDEX uint25
 }
 
 hook Sstore currentContract.allDomains._inner._values[INDEX uint256 index] bytes32 newVal (bytes32 oldVal) STORAGE {
-    havoc valuesGhost assuming valuesGhost@new(index) == newVal;
+    havoc valuesGhost assuming valuesGhost@new(index) == newVal
+        && (forall uint256 idx. valuesGhost@new(idx) == valuesGhost@old(idx) || idx == index);
 }
-
-//invariant index_out_of_range_consistency(uint256 zIndex)
-//    zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000
-
-invariant index_out_of_range_consistency()
-    forall uint256 zIndex. (zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000)
 
 invariant indexes_bounded(bytes32 value)
     indexesGhost(value) <= numDomains()
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+// syntax error
+//        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+//            require(gateways(guid.targetDomain) != router);
+//        }
+
+// also syntax error
+//        preserved requestMint((bytes32 srcDom, bytes32 tgtDom, bytes32 rec, bytes32 op, uint128 amt, uint80 nonce, uint48 ts), uint256 x, uint256 y) with (env e) {
+//            require(gateways(tgtDom) != router);
+//        }
+    }
+
+invariant index_out_of_range_consistency(uint256 zIndex)
+    zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000
 
 invariant values_indexes_consistency(uint256 zIndex, bytes32 value)
     zIndex < numDomains() => (indexesGhost(value) == zIndex + 1 <=> valuesGhost(zIndex) == value)
