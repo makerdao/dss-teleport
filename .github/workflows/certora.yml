@@ -33,8 +33,8 @@ jobs:
       - name: Install solc-select
         run: pip3 install solc-select
 
-      - name: Solc Select 0.8.9
-        run: solc-select install 0.8.9
+      - name: Solc Select 0.8.11
+        run: solc-select install 0.8.11
 
       - name: Install Certora
         run: pip3 install certora-cli-maker-structs-staging
