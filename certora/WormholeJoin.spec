@@ -8,6 +8,7 @@ using DaiMock as dai
 using DaiJoinMock as daiJoin
 
 methods {
+    cure() returns (uint256) envfree
     daiJoin() returns (address) envfree
     debt(bytes32) returns (int256) envfree
     domain() returns (bytes32) envfree
@@ -213,17 +214,13 @@ definition amtToTake(bool canGenerate, uint256 gap, uint248 pending)
                             0;
 
 definition amtToGenerate(bool canGenerate, uint256 amtToTake, int256 debt)
-    returns uint256 = canGenerate
+    returns uint256 = canGenerate && (debt >= 0 || to_uint256(0 - debt) < amtToTake)
                         ?
-                            debt >= 0 || to_uint256(0 - debt) < amtToTake
+                            debt < 0
                             ?
-                                debt < 0
-                                ?
-                                    amtToTake - to_uint256(0 - debt)
-                                :
-                                    amtToTake
+                                amtToTake - to_uint256(0 - debt)
                             :
-                                0
+                                amtToTake
                         :
                             0;
 
@@ -285,6 +282,8 @@ rule requestMint(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
+    uint256 cureBefore = cure();
+
     uint256 postFeeAmount;
     uint256 totalFee;
     postFeeAmount, totalFee = requestMint(e, guid, maxFeePercentage, operatorFee);
@@ -303,6 +302,8 @@ rule requestMint(
     uint256 artAfter;
     inkAfter, artAfter = vat.urns(ilk(), currentContract);
 
+    uint256 cureAfter = cure();
+
     assert(to_mathint(debtAfter) == to_mathint(debtBefore) + to_mathint(amtToTake), "debt has not increased as expected");
     assert(blessedBefore == false, "blessed before call should be false");
     assert(blessedAfter == true, "blessed after call should be true");
@@ -312,6 +313,8 @@ rule requestMint(
     assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
+    assert(canGenerate && amtToGenerate > 0 => cureAfter == artAfter * RAY(), "cure has not been updated as expected");
+    assert(!canGenerate || amtToGenerate == 0 => cureAfter == cureBefore, "cure has not stayed the same as expected");
     assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the expected value");
     assert(totalFee == feeAmt + operatorFeeAmt, "totalFee is not the expected value");
 }
@@ -486,6 +489,8 @@ rule mintPending(
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
+    uint256 cureBefore = cure();
+
     uint256 postFeeAmount;
     uint256 totalFee;
     postFeeAmount, totalFee = mintPending(e, guid, maxFeePercentage, operatorFee);
@@ -504,6 +509,8 @@ rule mintPending(
     uint256 artAfter;
     inkAfter, artAfter = vat.urns(ilk(), currentContract);
 
+    uint256 cureAfter = cure();
+
     assert(to_mathint(debtAfter) == to_mathint(debtBefore) + to_mathint(amtToTake), "debt has not increased as expected");
     assert(blessedAfter == blessedBefore, "blessed has changed when it should not happen");
     assert(pendingAfter == pendingBefore - amtToTake, "pending has not decreased as expected");
@@ -512,6 +519,8 @@ rule mintPending(
     assert(operatorDaiBalanceAfter == operatorDaiBalanceBefore + operatorFeeAmt, "balance of operator did not increase as expected");
     assert(inkAfter == inkBefore + amtToGenerate, "ink has not increased as expected");
     assert(artAfter == artBefore + amtToGenerate, "art has not increased as expected");
+    assert(canGenerate && amtToGenerate > 0 => cureAfter == artAfter * RAY(), "cure has not been updated as expected");
+    assert(!canGenerate || amtToGenerate == 0 => cureAfter == cureBefore, "cure has not stayed the same as expected");
     assert(postFeeAmount == amtToTake - feeAmt - operatorFeeAmt, "postFeeAmount is not the expected value");
     assert(totalFee == feeAmt + operatorFeeAmt, "totalFee is not the expected value");
 }
@@ -647,6 +656,8 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
+    uint256 cureBefore = cure();
+
     uint256 vatDaiJoinBefore = vat.dai(currentContract);
 
     uint256 amtToPayBack = batchedDaiToFlush <= artBefore ? batchedDaiToFlush : artBefore;
@@ -659,6 +670,8 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     uint256 artAfter;
     inkAfter, artAfter = vat.urns(ilk(), currentContract);
 
+    uint256 cureAfter = cure();
+
     uint256 vatDaiJoinAfter = vat.dai(currentContract);
 
     assert(to_mathint(debtAfter) == to_mathint(debtBefore) - to_mathint(batchedDaiToFlush), "debt has not decreased as expected");
@@ -666,6 +679,8 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     assert(vatLive => artAfter == artBefore - amtToPayBack, "art has not decreased as expected");
     assert(!vatLive => inkAfter == inkBefore, "ink has not stayed the same as expected");
     assert(!vatLive => artAfter == artBefore, "art has not stayed the same as expected");
+    assert(vatLive => cureAfter == (artBefore - amtToPayBack) * RAY(), "cure has not been updated as expected");
+    assert(!vatLive => cureAfter == cureBefore, "cure has not stayed the same as expected");
     assert(vatLive && batchedDaiToFlush > artBefore => vatDaiJoinAfter == vatDaiJoinBefore + (batchedDaiToFlush - artBefore) * RAY(), "join vat dai has not increased as expected 1");
     assert(!vatLive => vatDaiJoinAfter == vatDaiJoinBefore + batchedDaiToFlush * RAY(), "join vat dai has not increased as expected 2");
 }
