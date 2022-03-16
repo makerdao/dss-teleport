@@ -55,6 +55,39 @@ hook Sstore currentContract.allDomains._inner._values[INDEX uint256 index] bytes
         && (forall uint256 idx. valuesGhost@new(idx) == valuesGhost@old(idx) || idx == index);
 }
 
+ghost numDomainsHasOverflowed() returns bool {
+    init_state axiom numDomainsHasOverflowed() == false;
+}
+
+// This ghost is used to prove that the storage slot read to update numDomainsHasOverflowed corresponds to the
+// value of numDomains().
+ghost numDomainsGhost() returns uint256 {
+    init_state axiom numDomainsGhost() == 0;
+}
+
+hook Sload uint256 domArrLen currentContract.allDomains.(offset 0) STORAGE {
+    require numDomainsGhost() == domArrLen;
+}
+
+hook Sstore currentContract.allDomains.(offset 0) uint256 newLen (uint256 oldLen) STORAGE {
+    // This is justified by the fact that the only possible effects of an SSTORE to the length of the
+    // array are +1 or -1. TODO: prove said fact.
+    havoc numDomainsHasOverflowed assuming (oldLen == max_uint256 && newLen == 0 && numDomainsHasOverflowed@new() == true)
+        && (oldLen != max_uint256 && newLen != 0 && numDomainsHasOverflowed@new() == numDomainsHasOverflowed@old());
+
+    havoc numDomainsGhost assuming numDomainsGhost@new() == newLen;
+}
+
+
+invariant numDomains_equals_numDomainsGhost()
+    numDomains() == numDomainsGhost()
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+    }
+
 invariant indexes_bounded(bytes32 value)
     indexesGhost(value) <= numDomains()
     filtered { f -> !f.isFallback }
@@ -62,6 +95,7 @@ invariant indexes_bounded(bytes32 value)
         preserved settle(bytes32 a,uint256 b) with (env e) {
             require(gateways(a) != router);
         }
+
 // syntax error
 //        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
 //            require(gateways(guid.targetDomain) != router);
@@ -74,7 +108,13 @@ invariant indexes_bounded(bytes32 value)
     }
 
 invariant index_out_of_range_consistency(uint256 zIndex)
-    zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000
+    !numDomainsHasOverflowed() => (zIndex >= numDomains() => valuesGhost(zIndex) == 0x0000000000000000000000000000000000000000)
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+    }
 
 invariant values_indexes_consistency(uint256 zIndex, bytes32 value)
     zIndex < numDomains() => (indexesGhost(value) == zIndex + 1 <=> valuesGhost(zIndex) == value)
