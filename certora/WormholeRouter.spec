@@ -71,9 +71,9 @@ hook Sload uint256 domArrLen currentContract.allDomains.(offset 0) STORAGE {
 
 hook Sstore currentContract.allDomains.(offset 0) uint256 newLen (uint256 oldLen) STORAGE {
     // This is justified by the fact that the only possible effects of an SSTORE to the length of the
-    // array are +1 or -1. TODO: prove said fact.
+    // array are +1 or -1. See rule numDomains_changes_by_at_most_one.
     havoc numDomainsHasOverflowed assuming (oldLen == max_uint256 && newLen == 0 && numDomainsHasOverflowed@new() == true)
-        && (oldLen != max_uint256 && newLen != 0 && numDomainsHasOverflowed@new() == numDomainsHasOverflowed@old());
+        || (oldLen != max_uint256 && newLen != 0 && numDomainsHasOverflowed@new() == numDomainsHasOverflowed@old());
 
     havoc numDomainsGhost assuming numDomainsGhost@new() == newLen;
 }
@@ -121,6 +121,18 @@ invariant values_indexes_consistency(uint256 zIndex, bytes32 value)
 
 invariant empty_gateway_implies_not_having_domain(bytes32 domain)
     gateways(domain) == 0 => !hasDomain(domain)
+
+rule numDomains_changes_by_at_most_one(method f) {
+    uint256 numDomainsBefore = numDomains();
+    require(forall bytes32 domain. gateways(domain) != router);
+    env e;
+    calldataarg arg;
+    f@withrevert(e, arg);
+    uint256 numDomainsAfter = numDomains();
+    assert(numDomainsAfter == numDomainsBefore
+        || numDomainsAfter == numDomainsBefore + 1
+        || numDomainsAfter == numDomainsBefore - 1);  // conditions structure this way to gracefully handle overflow
+}
 
 // Verify that wards behaves correctly on rely
 rule rely(address usr) {
