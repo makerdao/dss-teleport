@@ -41,6 +41,23 @@ hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n 
     havoc indexesGhost assuming indexesGhost@new(a) == n;
 }
 
+// If we can show this, can remove an assumption in the file_domain_address spec.
+invariant empty_gateway_implies_not_having_domain(bytes32 domain)
+    // Original attempt, fails b/c prover doesn't know that !hasDomain(d) should also imply that
+    // d is not anywhere in the underlying array storing the values. 
+    // gateways(domain) == 0 => !hasDomain(domain)
+
+    gateways(domain) == 0 => (forall uint256 idx. idx < numDomains() => domainAt(idx) != domain) && !hasDomain(domain)
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
+    }
+
 // Verify fallback always reverts
 rule fallback_revert(method f) filtered { f -> f.isFallback } {
     env e;
