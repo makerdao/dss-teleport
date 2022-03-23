@@ -39,7 +39,7 @@ hook Sload uint256 v currentContract.allDomains._inner._indexes[KEY bytes32 doma
 
 hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
     havoc indexesGhost assuming indexesGhost@new(a) == n
-        && (forall bytes32 b. indexesGhost@new(b) == indexesGhost@new(a) || b == a);
+        && (forall bytes32 b. indexesGhost@new(b) == indexesGhost@old(b) || b == a);
 }
 
 ghost valuesGhost(uint256) returns bytes32 {
@@ -86,6 +86,9 @@ invariant numDomains_equals_numDomainsGhost()
         preserved settle(bytes32 a,uint256 b) with (env e) {
             require(gateways(a) != router);
         }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
     }
 
 invariant indexes_bounded(bytes32 value)
@@ -95,16 +98,9 @@ invariant indexes_bounded(bytes32 value)
         preserved settle(bytes32 a,uint256 b) with (env e) {
             require(gateways(a) != router);
         }
-
-// syntax error
-//        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
-//            require(gateways(guid.targetDomain) != router);
-//        }
-
-// also syntax error
-//        preserved requestMint((bytes32 srcDom, bytes32 tgtDom, bytes32 rec, bytes32 op, uint128 amt, uint80 nonce, uint48 ts), uint256 x, uint256 y) with (env e) {
-//            require(gateways(tgtDom) != router);
-//        }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
     }
 
 invariant index_out_of_range_consistency(uint256 zIndex)
@@ -114,13 +110,46 @@ invariant index_out_of_range_consistency(uint256 zIndex)
         preserved settle(bytes32 a,uint256 b) with (env e) {
             require(gateways(a) != router);
         }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
     }
+
+//invariant indexes_are_not_reused()
+//    forall bytes32 v1. forall bytes32 v2. indexesGhost(v1) == indexesGhost(v2) => indexesGhost(v1) == 0 || v1 == v2
+//    filtered { f -> !f.isFallback }
+//    {
+//        preserved settle(bytes32 a,uint256 b) with (env e) {
+//            require(gateways(a) != router);
+//        }
+//        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+//            require(gateways(guid.targetDomain) != router);
+//        }
+//    }
 
 invariant values_indexes_consistency(uint256 zIndex, bytes32 value)
     zIndex < numDomains() => (indexesGhost(value) == zIndex + 1 <=> valuesGhost(zIndex) == value)
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
+    }
 
 invariant empty_gateway_implies_not_having_domain(bytes32 domain)
     gateways(domain) == 0 => !hasDomain(domain)
+    filtered { f -> !f.isFallback }
+    {
+        preserved settle(bytes32 a,uint256 b) with (env e) {
+            require(gateways(a) != router);
+        }
+        preserved requestMint(router.WormholeGUID guid, uint256 x, uint256 y) with (env e) {
+            require(gateways(guid.targetDomain) != router);
+        }
+    }
 
 rule numDomains_changes_by_at_most_one(method f) {
     uint256 numDomainsBefore = numDomains();
@@ -131,7 +160,7 @@ rule numDomains_changes_by_at_most_one(method f) {
     uint256 numDomainsAfter = numDomains();
     assert(numDomainsAfter == numDomainsBefore
         || numDomainsAfter == numDomainsBefore + 1
-        || numDomainsAfter == numDomainsBefore - 1);  // conditions structure this way to gracefully handle overflow
+        || numDomainsAfter == numDomainsBefore - 1);  // conditions structured this way to gracefully handle overflow
 }
 
 // Verify that wards behaves correctly on rely
@@ -218,8 +247,8 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
         => domains(data) == domain, "file did not set domains(gateway) as expected"
     );
     assert(
-//        gatewayWasEmpty && !hasDomainBefore && !dataIsEmpty && numDomainsBefore < max_uint256
-        gatewayWasEmpty && !dataIsEmpty && numDomainsBefore < max_uint256
+        gatewayWasEmpty && !hasDomainBefore && !dataIsEmpty && numDomainsBefore < max_uint256
+//        gatewayWasEmpty && !dataIsEmpty && numDomainsBefore < max_uint256
         => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected"
     );
 //    bytes32 domainAt = domainAt@withrevert(numDomainsBefore);
