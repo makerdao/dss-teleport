@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - uses: actions/setup-java@v2
         with:
@@ -26,18 +26,18 @@ jobs:
           java-package: jre
 
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.8
 
       - name: Install solc-select
         run: pip3 install solc-select
 
-      - name: Solc Select 0.8.11
-        run: solc-select install 0.8.11
+      - name: Solc Select 0.8.13
+        run: solc-select install 0.8.13
 
       - name: Install Certora
-        run: pip3 install certora-cli-maker-structs-staging
+        run: pip3 install certora-cli
 
       - name: Verify ${{ matrix.wormhole }}
         run: make certora-${{ matrix.wormhole }}
