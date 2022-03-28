@@ -6,6 +6,10 @@ interface OracleLike {
     function signers(address) external view returns (uint256);
 }
 
+// This contract has different support functions that are needed to run the proofs
+// and compare to the results from the tested contracts.
+// Ideally this contract should be compiled without optimizations
+// to try to reduce its own possible bugs (still not available in certora-cli)
 contract Auxiliar {
     OracleLike public oracle;
 
