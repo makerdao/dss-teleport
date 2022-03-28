@@ -37,8 +37,8 @@ hook Sload uint256 v currentContract.allDomains._inner._indexes[KEY bytes32 doma
     require indexesGhost(domain) == v;
 }
 
-hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 a] uint256 n (uint256 o) STORAGE {
-    havoc indexesGhost assuming indexesGhost@new(a) == n;
+hook Sstore currentContract.allDomains._inner._indexes[KEY bytes32 domain] uint256 n (uint256 o) STORAGE {
+    havoc indexesGhost assuming indexesGhost@new(domain) == n;
 }
 
 // If we can show this, can remove an assumption in the file_domain_address spec.
