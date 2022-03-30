@@ -26,6 +26,16 @@ Wormhole Router keeps track of each Domain's Gateway and routes `requestMint()` 
 
 ![FastWithdrawal](./docs/fw.png?raw=true)
 
+## Governance controlled parameters:
+
+* `vat.ilk[wormholeJoinIlk].line`- *Wormhole Debt Ceiling*. Usually should be a sum of all debt ceilings available for each domain.
+* `wormholeJoin.line[domain]` - *Domain Debt Ceiling*. How much DAI can be drawn by a particular domain.
+* `wormholeJoin.fees[domain]` - *Domain Fee Structure*. Given details (WormholeGUID, current utilization etc) calculates how much charge for a mint.
+* `wormholeJoin.vow` - *Fees Receiver*.
+* `WormholeOracleAuth.threshold` - *Feeds Threshold*. How many feeds (oracles) need to attest to be able to mint.
+* `WormholeOracleAuth.signers` - *Feeds List*. 
+* `WormholeRouter.gateway[domain]` - *Gateways Supported*. 
+
 
 ### Normal (fast) path
 
