@@ -708,7 +708,7 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     assert(!vatLive => artAfter == artBefore, "art has not stayed the same as expected");
     assert(vatLive => cureAfter == (artBefore - amtToPayBack) * RAY(), "cure has not been updated as expected");
     assert(!vatLive => cureAfter == cureBefore, "cure has not stayed the same as expected");
-    assert(vatLive && batchedDaiToFlush > artBefore => vatDaiJoinAfter == vatDaiJoinBefore + (batchedDaiToFlush - artBefore) * RAY(), "join vat dai has not increased as expected 1");
+    assert(vatLive => vatDaiJoinAfter == vatDaiJoinBefore + (batchedDaiToFlush - amtToPayBack) * RAY(), "join vat dai has not increased as expected 1");
     assert(!vatLive => vatDaiJoinAfter == vatDaiJoinBefore + batchedDaiToFlush * RAY(), "join vat dai has not increased as expected 2");
 }
 
