@@ -34,10 +34,6 @@ rule getFee(fee.WormholeGUID guid, uint256 a, int256 b, uint256 c, uint256 amtTo
 rule getFee_revert(fee.WormholeGUID guid, uint256 a, int256 b, uint256 c, uint256 amtToTake) {
     env e;
 
-    require(guid.amount <= max_uint128);
-    require(guid.nonce <= 0xffffffffffffffffffff);
-    require(guid.timestamp <= 0xffffffffffff);
-
     uint256 fee = fee();
     uint256 ttl = ttl();
 

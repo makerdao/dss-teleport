@@ -241,10 +241,6 @@ rule requestMint_revert(
 ) {
     env e;
 
-    require(guid.amount <= max_uint128);
-    require(guid.nonce <= 0xffffffffffffffffffff);
-    require(guid.timestamp <= 0xffffffffffff);
-
     require(wormholeJoin() == join);
     require(aux.oracle() == currentContract);
 

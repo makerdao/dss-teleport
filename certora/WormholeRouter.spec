@@ -229,10 +229,6 @@ rule requestMint_revert(
     ) {
     env e;
 
-    require(guid.amount <= max_uint128);
-    require(guid.nonce <= 0xffffffffffffffffffff);
-    require(guid.timestamp <= 0xffffffffffff);
-
     address targetGateway = gateways(guid.targetDomain);
     require(targetGateway == join);
     require(currentContract != targetGateway);
