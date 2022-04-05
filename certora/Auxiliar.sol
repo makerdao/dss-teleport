@@ -69,13 +69,14 @@ contract Auxiliar {
         bytes32 s;
         address lastSigner;
         for (uint256 i; i < index;) {
+            unchecked { numProcessed++; }
             (v, r, s) = splitSignature(signatures, i);
             if (v != 27 && v != 28) break;
             address recovered = ecrecover(signHash, v, r, s);
             if (recovered <= lastSigner) break;
             lastSigner = recovered;
             if (oracle.signers(recovered) == 1) {
-                unchecked { numValid += 1; }
+                unchecked { numValid++; }
             }
             unchecked { i++; }
         }

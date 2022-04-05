@@ -244,10 +244,11 @@ rule requestMint_revert(
     require(wormholeJoin() == join);
     require(aux.oracle() == currentContract);
 
-    uint256 ward = wards(e.msg.sender);
+    address receiverAddr = aux.bytes32ToAddress(guid.receiver);
     address operatorAddr = aux.bytes32ToAddress(guid.operator);
     uint256 threshold = threshold();
     uint256 count = signatures.length / 65;
+    require(count <= 100);
     uint256 i;
     require(i + 1 < count);
     bytes32 hash = aux.getSignHash(guid);
@@ -276,22 +277,20 @@ rule requestMint_revert(
     requestMint@withrevert(e, guid, signatures, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
-    bool revert2 = ward != 1;
-    bool revert3 = e.msg.sender != operatorAddr;
-    bool revert4 = count < threshold;
-    bool revert5 = numValid == 0 && threshold == 0;
-    bool revert6 = numProcessedBeforeI < i || numValidBeforeI < threshold && vI != 27 && vI != 28;
-    bool revert7 = numProcessedBeforeIPlus1 == i && numValidBeforeIPlus1 < threshold && numValidBeforeIPlus1 <= recoveredI;
+    bool revert2 = e.msg.sender != receiverAddr && e.msg.sender != operatorAddr;
+    bool revert3 = count < threshold;
+    bool revert4 = numValid == 0 && threshold == 0;
+    bool revert5 = numProcessedBeforeI < i || numValidBeforeI < threshold && vI != 27 && vI != 28;
+    bool revert6 = numProcessedBeforeIPlus1 == i && numValidBeforeIPlus1 < threshold && numValidBeforeIPlus1 <= recoveredI;
 
+    // assert(lastReverted, "it works!");
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
     assert(revert3 => lastReverted, "revert3 failed");
     assert(revert4 => lastReverted, "revert4 failed");
     assert(revert5 => lastReverted, "revert5 failed");
     assert(revert6 => lastReverted, "revert6 failed");
-    assert(revert7 => lastReverted, "revert7 failed");
 
     assert(lastReverted => revert1 || revert2 || revert3 ||
-                           revert4 || revert5 || revert6 ||
-                           revert7, "Revert rules are not covering all the cases");
+                           revert4 || revert5 || revert6, "Revert rules are not covering all the cases");
 }
