@@ -127,6 +127,24 @@ contract WormholeOracleAuthTest is DSTest {
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
+    // Since ecrecover silently returns 0 on failure, it's a good idea to make sure
+    // the logic can't be fooled by a zero signer address + invalid signature.
+    function testFail_isValid_failed_ecrecover() public {
+        bytes32 signHash = keccak256("msg");
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+
+        // corrupt first signature
+        unchecked {  // don't care about overflow, just want to change the first byte
+            signatures[0] = bytes1(uint8(signatures[0]) + uint8(1));
+        }
+
+        // first signer to zero
+        signers[0] = address(0);
+
+        auth.addSigners(signers);
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
+    }
+
     function testFail_isValid_notEnoughSig() public {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
