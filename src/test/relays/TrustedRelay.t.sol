@@ -159,12 +159,53 @@ contract TrustedRelayTest is DSTest {
         }
     }
 
-    function test_relay() public {
+    function test_relay_with_trusted_signer() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
         address[] memory signers = new address[](1);
         signers[0] = hevm.addr(sk);
         relay.addSigners(signers);
         address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        assertEq(dai.balanceOf(receiver), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+        // Should get 100 DAI - 1% wormhole fee - 1 DAI gas fee
+        assertEq(dai.balanceOf(receiver), 98 ether);
+        assertEq(dai.balanceOf(address(this)), 1 ether);
+    }
+
+    function test_relay_when_receiver_is_signer() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address receiver = hevm.addr(sk);
         WormholeGUID memory guid = WormholeGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",

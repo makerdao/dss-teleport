@@ -86,14 +86,14 @@ contract TrustedRelay {
     }
 
     function addSigners(address[] calldata signers_) external auth {
-        for(uint i; i < signers_.length; i++) {
+        for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 1;
         }
         emit SignersAdded(signers_);
     }
 
     function removeSigners(address[] calldata signers_) external auth {
-        for(uint i; i < signers_.length; i++) {
+        for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 0;
         }
         emit SignersRemoved(signers_);
@@ -128,7 +128,7 @@ contract TrustedRelay {
             keccak256(abi.encode(getGUIDHash(wormholeGUID), maxFeePercentage, gasFee, expiry))
         ));
         address recovered = ecrecover(signHash, v, r, s);
-        require(signers[recovered] == 1, "TrustedRelay/invalid-signature");
+        require(signers[recovered] == 1 || bytes32ToAddress(wormholeGUID.receiver) == recovered, "TrustedRelay/invalid-signature");
 
         // Initiate mint and mark the wormhole as done
         (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
