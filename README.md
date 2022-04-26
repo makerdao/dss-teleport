@@ -6,6 +6,10 @@ If DAI is teleported from L2 -> L1, this is equivalent to "fast withdrawal". Fir
 
 If DAI is teleported from L2 -> L2, on the source domain it will be burned and on the destination domain it will be minted, while settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
 
+## Security
+
+Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerability please refer to the
+[bug bounty page](https://immunefi.com/bounty/makerdao/).
 
 ## Domains, Gateways and Wormhole Router
 
