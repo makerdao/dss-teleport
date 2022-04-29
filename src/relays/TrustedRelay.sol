@@ -43,6 +43,10 @@ interface WormholeJoinLike {
     function wormholes(bytes32 hashGUID) external view returns (bool, uint248);
 }
 
+interface DsValueLike {
+    function peek() external view returns (bytes32, bool);
+}
+
 // Relay messages automatically on the target domain
 // User provides gasFee which is paid to the msg.sender
 // Relay requests are signed by a trusted third-party (typically a backend orchestrating the withdrawal on behalf of the user)
@@ -55,6 +59,10 @@ contract TrustedRelay {
     TokenLike              public immutable dai;
     WormholeOracleAuthLike public immutable oracleAuth;
     WormholeJoinLike       public immutable wormholeJoin;
+    DsValueLike            public immutable ethPriceOracle;
+    uint256                public immutable gasMargin; // in RAY (e.g 150% = 1.5 * RAY)
+
+    uint256 constant public RAD = 10 ** 45;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
@@ -66,13 +74,15 @@ contract TrustedRelay {
         _;
     }
 
-    constructor(address _oracleAuth, address _daiJoin) {
+    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle, uint256 _gasMargin) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
         oracleAuth = WormholeOracleAuthLike(_oracleAuth);
         daiJoin = DaiJoinLike(_daiJoin);
         dai = daiJoin.dai();
         wormholeJoin = oracleAuth.wormholeJoin();
+        ethPriceOracle = DsValueLike(_ethPriceOracle);
+        gasMargin = _gasMargin;
     }
 
     function rely(address usr) external auth {
@@ -111,6 +121,8 @@ contract TrustedRelay {
      * @param v Part of ECDSA signature
      * @param r Part of ECDSA signature
      * @param s Part of ECDSA signature
+     * @param to (optional) The address of an external contract to call after requesting the L1 DAI (address(0) if unused)
+     * @param data (optional) The calldata to use for the call to the aforementionned external contract
      */
     function relay(
         WormholeGUID calldata wormholeGUID,
@@ -120,8 +132,45 @@ contract TrustedRelay {
         uint256 expiry,
         uint8 v,
         bytes32 r,
-        bytes32 s
+        bytes32 s,
+        address to,
+        bytes calldata data
     ) external {
+        uint256 startGas = gasleft();
+
+        // Withdraw the L1 DAI to the receiver
+        requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
+
+        // Send the gas fee to the relayer
+        dai.transfer(msg.sender, gasFee);
+
+        // Optionally execute an external call
+        if(to != address(0)) {
+            (bool success,) = to.call(data);
+            if (!success) {
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    returndatacopy(0, 0, returndatasize())
+                    revert(0, returndatasize())
+                }
+            }
+        }
+
+        // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
+        (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
+        require(!ok || gasFee * RAD <= uint256(ethPrice) * gasMargin * gasprice() * (startGas - gasleft()), "TrustedRelay/excessive-gas-fee");
+    }
+
+    function requestMint(
+        WormholeGUID calldata wormholeGUID,
+        bytes calldata signatures,
+        uint256 maxFeePercentage,
+        uint256 gasFee,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal {
         require(block.timestamp <= expiry, "TrustedRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
@@ -133,9 +182,10 @@ contract TrustedRelay {
         // Initiate mint and mark the wormhole as done
         (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
         require(postFeeAmount + totalFee == wormholeGUID.amount, "TrustedRelay/partial-mint-disallowed");
+    }
 
-        // Send the gas fee to the relayer
-        dai.transfer(msg.sender, gasFee);
+    function gasprice() internal virtual view returns (uint256) {
+        return tx.gasprice;
     }
 
 }

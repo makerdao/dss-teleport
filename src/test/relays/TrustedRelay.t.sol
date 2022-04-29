@@ -97,18 +97,53 @@ contract WormholeOracleAuthMock {
     }
 }
 
+contract DSValueMock {
+    bool    has;
+    bytes32 val;
+    function peek() public view returns (bytes32, bool) {
+        return (val,has);
+    }
+    function poke(bytes32 wut) public {
+        val = wut;
+        has = true;
+    }
+    function void() public {
+        has = false;
+    }
+}
+
+contract TrustedRelayMock is TrustedRelay {
+    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle, uint256 _gasMargin) 
+        TrustedRelay(_oracleAuth, _daiJoin, _ethPriceOracle, _gasMargin) {}
+
+    function gasprice() internal override pure returns (uint256) {
+        return 10 * 10**9; // 10 gwei
+    }
+}
+
+contract ExampleContract {
+    uint256 public state;
+    function inc() external {
+        state++;
+    }
+}
+
 contract TrustedRelayTest is DSTest {
 
     uint256 internal constant WAD = 10**18;
+    uint256 internal constant RAY = 10**27;
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
 
-    TrustedRelay internal relay;
+    TrustedRelayMock internal relay;
     VatMock internal vat;
     DaiMock internal dai;
     DaiJoinMock internal daiJoin;
     WormholeJoinMock internal join;
     WormholeOracleAuthMock internal oracleAuth;
+    DSValueMock internal ethPriceOracle;
+    ExampleContract internal ext;
+
 
     function getSignHash(
         WormholeGUID memory wormholeGUID,
@@ -128,7 +163,10 @@ contract TrustedRelayTest is DSTest {
         daiJoin = new DaiJoinMock(address(vat), address(dai));
         join = new WormholeJoinMock(dai);
         oracleAuth = new WormholeOracleAuthMock(join);
-        relay = new TrustedRelay(address(oracleAuth), address(daiJoin));
+        ext = new ExampleContract();
+        ethPriceOracle = new DSValueMock();
+        ethPriceOracle.poke(bytes32(3000 * WAD));
+        relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle), 150 * RAY / 100);
         join.setMaxMint(100 ether);
     }
 
@@ -196,7 +234,9 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
         );
         // Should get 100 DAI - 1% wormhole fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
@@ -237,11 +277,119 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
         );
         // Should get 100 DAI - 1% wormhole fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
         assertEq(dai.balanceOf(address(this)), 1 ether);
+    }
+
+    function test_relay_with_ext_call() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address[] memory signers = new address[](1);
+        signers[0] = hevm.addr(sk);
+        relay.addSigners(signers);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+
+
+        assertEq(dai.balanceOf(receiver), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
+        uint256 prevState = ext.state();
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s,
+            address(ext),
+            abi.encodeWithSelector(ExampleContract.inc.selector)
+        );
+
+        // Should get 100 DAI - 1% wormhole fee - 1 DAI gas fee
+        assertEq(dai.balanceOf(receiver), 98 ether);
+        assertEq(dai.balanceOf(address(this)), 1 ether);
+        assertEq(ext.state(), prevState + 1);
+    }
+
+    function test_relay_with_disabled_oracle() public {
+        (bytes32 prevPrice,) = ethPriceOracle.peek();
+        ethPriceOracle.void();
+
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address[] memory signers = new address[](1);
+        signers[0] = hevm.addr(sk);
+        relay.addSigners(signers);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = 80 ether;                 // 80 DAI of gas refund (would be excessive if oracle was enabled)
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+
+        assertEq(dai.balanceOf(receiver), 0);
+        assertEq(dai.balanceOf(address(this)), 0);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s,
+            address(0),
+            ""
+        );
+
+        // Should get 100 DAI - 1% wormhole fee - 80 DAI gas fee
+        assertEq(dai.balanceOf(receiver), 19 ether);
+        assertEq(dai.balanceOf(address(this)), 80 ether);
+
+        ethPriceOracle.poke(prevPrice);
     }
 
     function testFail_relay_expired() public {
@@ -281,7 +429,9 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
         );
     }
 
@@ -312,6 +462,7 @@ contract TrustedRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
+
         relay.relay(
             guid,
             "",     // Not testing OracleAuth signatures here
@@ -320,7 +471,9 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
         );
     }
 
@@ -356,7 +509,9 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
         );
     }
 
@@ -397,7 +552,91 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s
+            s,
+            address(0),
+            ""
+        );
+    }
+
+    function testFail_relay_excessive_fee() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address[] memory signers = new address[](1);
+        signers[0] = hevm.addr(sk);
+        relay.addSigners(signers);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = 80 * WAD;                  // 80 DAI of gas refund
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s,
+            address(0),
+            ""
+        );
+    }
+
+    function testFail_relay_with_reverting_ext_call() public {
+        uint256 sk = uint(keccak256(abi.encode(8)));
+        address[] memory signers = new address[](1);
+        signers[0] = hevm.addr(sk);
+        relay.addSigners(signers);
+        address receiver = address(123);
+        WormholeGUID memory guid = WormholeGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee =  WAD;                      // 1 DAI of gas refund
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        relay.relay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s,
+            address(ext),
+            ""
         );
     }
 }
