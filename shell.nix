@@ -12,6 +12,8 @@ mkShell {
 
   shellHook = ''
     export NIX_SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
+    export DAPP_BUILD_OPTIMIZE=1
+    export DAPP_BUILD_OPTIMIZE_RUNS=200
     unset SSL_CERT_FILE
   '';
 }
