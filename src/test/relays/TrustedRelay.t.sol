@@ -130,8 +130,8 @@ contract ExampleContract {
 
 contract TrustedRelayTest is DSTest {
 
+    uint256 internal constant BPS = 10**4;
     uint256 internal constant WAD = 10**18;
-    uint256 internal constant RAY = 10**27;
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
 
@@ -166,7 +166,7 @@ contract TrustedRelayTest is DSTest {
         ext = new ExampleContract();
         ethPriceOracle = new DSValueMock();
         ethPriceOracle.poke(bytes32(3000 * WAD));
-        relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle), 150 * RAY / 100);
+        relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle), 150 * BPS / 100);
         join.setMaxMint(100 ether);
     }
 
