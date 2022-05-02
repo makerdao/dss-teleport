@@ -113,8 +113,8 @@ contract DSValueMock {
 }
 
 contract TrustedRelayMock is TrustedRelay {
-    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle, uint256 _gasMargin) 
-        TrustedRelay(_oracleAuth, _daiJoin, _ethPriceOracle, _gasMargin) {}
+    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle) 
+        TrustedRelay(_oracleAuth, _daiJoin, _ethPriceOracle) {}
 
     function gasprice() internal override pure returns (uint256) {
         return 10 * 10**9; // 10 gwei
@@ -132,6 +132,7 @@ contract TrustedRelayTest is DSTest {
 
     uint256 internal constant BPS = 10**4;
     uint256 internal constant WAD = 10**18;
+    uint256 internal constant GAS_MARGIN = 150 * BPS / 100;
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
 
@@ -143,7 +144,6 @@ contract TrustedRelayTest is DSTest {
     WormholeOracleAuthMock internal oracleAuth;
     DSValueMock internal ethPriceOracle;
     ExampleContract internal ext;
-
 
     function getSignHash(
         WormholeGUID memory wormholeGUID,
@@ -166,7 +166,8 @@ contract TrustedRelayTest is DSTest {
         ext = new ExampleContract();
         ethPriceOracle = new DSValueMock();
         ethPriceOracle.poke(bytes32(3000 * WAD));
-        relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle), 150 * BPS / 100);
+        relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle));
+        relay.file("margin", GAS_MARGIN);
         relay.kiss(address(this));
         join.setMaxMint(100 ether);
     }
@@ -185,6 +186,10 @@ contract TrustedRelayTest is DSTest {
 
     function _tryDiss(address usr) internal returns (bool ok) {
         (ok,) = address(relay).call(abi.encodeWithSignature("diss(address)", usr));
+    }
+
+    function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
     }
 
     function _tryAddSigners(address[] memory signers) internal returns (bool ok) {
@@ -214,6 +219,24 @@ contract TrustedRelayTest is DSTest {
 
         assertTrue(!_tryRely(address(456)));
         assertTrue(!_tryDeny(address(456)));
+    }
+
+        function testFileFailsWhenNotAuthed() public {
+        assertTrue(_tryFile("margin", 888));
+        relay.deny(address(this));
+        assertTrue(!_tryFile("margin", 888));
+    }
+
+    function testFileNewMargin() public {
+        assertEq(relay.gasMargin(), GAS_MARGIN);
+
+        assertTrue(_tryFile("margin", 3));
+
+        assertEq(relay.gasMargin(), 3);
+    }
+
+    function testFailFileInvalidWhat() public {
+        relay.file("meh", 888);
     }
 
     function testKissDiss() public {

@@ -56,19 +56,21 @@ contract TrustedRelay {
     mapping (address => uint256) public buds;    // Admin accounts managing trusted signers
     mapping (address => uint256) public signers; // Trusted signers
     
+    uint256                public gasMargin; // in BPS (e.g 150% = 15000)
+
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
     WormholeOracleAuthLike public immutable oracleAuth;
     WormholeJoinLike       public immutable wormholeJoin;
     DsValueLike            public immutable ethPriceOracle;
-    uint256                public immutable gasMargin; // in BPS (e.g 150% = 15000)
 
     uint256 constant public WAD_BPS = 10 ** 22; // WAD * BPS = 10^18 * 10^4
-
+    
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event Kissed(address indexed usr);
     event Dissed(address indexed usr);
+    event File(bytes32 indexed what, uint256 data);
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
 
@@ -82,7 +84,7 @@ contract TrustedRelay {
         _;
     }
 
-    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle, uint256 _gasMargin) {
+    constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
         oracleAuth = WormholeOracleAuthLike(_oracleAuth);
@@ -90,7 +92,6 @@ contract TrustedRelay {
         dai = daiJoin.dai();
         wormholeJoin = oracleAuth.wormholeJoin();
         ethPriceOracle = DsValueLike(_ethPriceOracle);
-        gasMargin = _gasMargin;
     }
 
     function rely(address usr) external auth {
@@ -111,6 +112,15 @@ contract TrustedRelay {
     function diss(address usr) external auth {
         buds[usr] = 0;
         emit Dissed(usr);
+    }
+
+    function file(bytes32 what, uint256 data) external auth {
+        if (what == "margin") {
+            gasMargin = data;
+        } else {
+            revert("TrustedRelay/file-unrecognized-param");
+        }
+        emit File(what, data);
     }
 
     function addSigners(address[] calldata signers_) external toll {
