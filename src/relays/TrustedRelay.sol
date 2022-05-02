@@ -62,8 +62,7 @@ contract TrustedRelay {
     DsValueLike            public immutable ethPriceOracle;
     uint256                public immutable gasMargin; // in BPS (e.g 150% = 15000)
 
-    uint256 constant public BPS = 10 ** 4;
-    uint256 constant public WAD = 10 ** 18;
+    uint256 constant public WAD_BPS = 10 ** 22; // WAD * BPS = 10^18 * 10^4
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
@@ -159,7 +158,7 @@ contract TrustedRelay {
 
         // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
         (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
-        require(!ok || gasFee * WAD <= uint256(ethPrice) * gasMargin * gasprice() * (startGas - gasleft()) / BPS, "TrustedRelay/excessive-gas-fee");
+        require(!ok || gasFee * WAD_BPS <= uint256(ethPrice) * gasMargin * gasprice() * (startGas - gasleft()), "TrustedRelay/excessive-gas-fee");
     }
 
     function requestMint(
