@@ -52,7 +52,8 @@ interface DsValueLike {
 // Relay requests are signed by a trusted third-party (typically a backend orchestrating the withdrawal on behalf of the user)
 contract TrustedRelay {
 
-    mapping (address => uint256) public wards;   // Auth
+    mapping (address => uint256) public wards;   // Auth (Maker governance)
+    mapping (address => uint256) public buds;    // Admin accounts managing trusted signers
     mapping (address => uint256) public signers; // Trusted signers
     
     DaiJoinLike            public immutable daiJoin;
@@ -66,11 +67,18 @@ contract TrustedRelay {
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
+    event Kissed(address indexed usr);
+    event Dissed(address indexed usr);
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
 
     modifier auth {
         require(wards[msg.sender] == 1, "TrustedRelay/non-authed");
+        _;
+    }
+    
+    modifier toll { 
+        require(buds[msg.sender] == 1, "TrustedRelay/non-manager"); 
         _;
     }
 
@@ -95,14 +103,24 @@ contract TrustedRelay {
         emit Deny(usr);
     }
 
-    function addSigners(address[] calldata signers_) external auth {
+    function kiss(address usr) external auth {
+        buds[usr] = 1;
+        emit Kissed(usr);
+    }
+
+    function diss(address usr) external auth {
+        buds[usr] = 0;
+        emit Dissed(usr);
+    }
+
+    function addSigners(address[] calldata signers_) external toll {
         for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 1;
         }
         emit SignersAdded(signers_);
     }
 
-    function removeSigners(address[] calldata signers_) external auth {
+    function removeSigners(address[] calldata signers_) external toll {
         for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 0;
         }

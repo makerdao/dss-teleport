@@ -167,14 +167,70 @@ contract TrustedRelayTest is DSTest {
         ethPriceOracle = new DSValueMock();
         ethPriceOracle.poke(bytes32(3000 * WAD));
         relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle), 150 * BPS / 100);
+        relay.kiss(address(this));
         join.setMaxMint(100 ether);
     }
 
+    function _tryRely(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("rely(address)", usr));
+    }
+
+    function _tryDeny(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("deny(address)", usr));
+    }
+
+    function _tryKiss(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("kiss(address)", usr));
+    }
+
+    function _tryDiss(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("diss(address)", usr));
+    }
+
+    function _tryAddSigners(address[] memory signers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("addSigners(address[])", signers));
+    }
+
+    function _tryRemoveSigners(address[] memory signers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("removeSigners(address[])", signers));
+    }
+    
     function test_constructor_args() public {
         assertEq(address(relay.daiJoin()), address(daiJoin));
         assertEq(address(relay.dai()), address(dai));
         assertEq(address(relay.oracleAuth()), address(oracleAuth));
         assertEq(address(relay.wormholeJoin()), address(join));
+        assertEq(relay.wards(address(this)), 1);
+    }
+
+    function testRelyDeny() public {
+        assertEq(relay.wards(address(456)), 0);
+        assertTrue(_tryRely(address(456)));
+        assertEq(relay.wards(address(456)), 1);
+        assertTrue(_tryDeny(address(456)));
+        assertEq(relay.wards(address(456)), 0);
+
+        relay.deny(address(this));
+
+        assertTrue(!_tryRely(address(456)));
+        assertTrue(!_tryDeny(address(456)));
+    }
+
+    function testKissDiss() public {
+        assertEq(relay.buds(address(333)), 0);
+        assertTrue(_tryKiss(address(333)));
+        assertEq(relay.buds(address(333)), 1);
+        assertTrue(_tryDiss(address(333)));
+        assertEq(relay.buds(address(333)), 0);
+
+        assertEq(relay.buds(address(444)), 0);
+        assertTrue(_tryKiss(address(444)));
+        assertEq(relay.buds(address(444)), 1);
+
+        relay.deny(address(this));
+
+        assertTrue(!_tryDiss(address(444)));
+        assertTrue(!_tryKiss(address(555)));
     }
 
     function testAddRemoveSigners() public {
@@ -183,18 +239,26 @@ contract TrustedRelayTest is DSTest {
             signers[i] = address(uint160(i));
             assertEq(relay.signers(address(uint160(i))), 0);
         }
+        assertEq(relay.buds(address(this)), 1);
 
-        relay.addSigners(signers);
+        assertTrue(_tryAddSigners(signers));
 
         for(uint i; i < signers.length; i++) {
             assertEq(relay.signers(address(uint160(i))), 1);
         }
 
-        relay.removeSigners(signers);
+        assertTrue(_tryRemoveSigners(signers));
 
         for(uint i; i < signers.length; i++) {
             assertEq(relay.signers(address(uint160(i))), 0);
         }
+
+        assertTrue(_tryDiss(address(this)));
+
+        assertEq(relay.buds(address(this)), 0);
+
+        assertTrue(!_tryAddSigners(signers));
+        assertTrue(!_tryRemoveSigners(signers));
     }
 
     function test_relay_with_trusted_signer() public {
