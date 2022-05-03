@@ -221,7 +221,7 @@ contract TrustedRelayTest is DSTest {
         assertTrue(!_tryDeny(address(456)));
     }
 
-        function testFileFailsWhenNotAuthed() public {
+    function testFileFailsWhenNotAuthed() public {
         assertTrue(_tryFile("margin", 888));
         relay.deny(address(this));
         assertTrue(!_tryFile("margin", 888));
