@@ -61,7 +61,6 @@ contract Auxiliar {
         bytes calldata signatures,
         uint256 index
     ) external view returns (
-        uint256 numProcessed,
         uint256 numValid
     ) {
         uint8 v;
@@ -69,7 +68,6 @@ contract Auxiliar {
         bytes32 s;
         address lastSigner;
         for (uint256 i; i < index;) {
-            unchecked { numProcessed++; }
             (v, r, s) = splitSignature(signatures, i);
             if (v != 27 && v != 28) break;
             address recovered = ecrecover(signHash, v, r, s);

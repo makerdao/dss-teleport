@@ -13,7 +13,7 @@ methods {
     aux.getSignHash(oracle.WormholeGUID) returns (bytes32) envfree
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     aux.callEcrecover(bytes32, uint256, bytes32, bytes32) returns (address) envfree
-    aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256, uint256) envfree
+    aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256) envfree
     aux.splitSignature(bytes, uint256) returns (uint8, bytes32, bytes32) envfree
     aux.oracle() returns (address) envfree
     aux.checkMalformedArray(address[]) envfree
@@ -248,7 +248,7 @@ rule requestMint_revert(
     address operatorAddr = aux.bytes32ToAddress(guid.operator);
     uint256 threshold = threshold();
     uint256 count = signatures.length / 65;
-    require(count <= 100);
+    require(count <= 10);
     uint256 i;
     require(i + 1 < count);
     bytes32 hash = aux.getSignHash(guid);
@@ -263,34 +263,36 @@ rule requestMint_revert(
     vIPlus1, rIPlus1, sIPlus1 = aux.splitSignature(signatures, i + 1);
     address recoveredIPlus1 = aux.callEcrecover(hash, vIPlus1, rIPlus1, sIPlus1);
 
-    uint256 numProcessedBeforeI;
-    uint256 numValidBeforeI;
-    numProcessedBeforeI, numValidBeforeI = aux.processUpToIndex(hash, signatures, i);
-    uint256 numProcessedBeforeIPlus1;
-    uint256 numValidBeforeIPlus1;
-    numProcessedBeforeIPlus1, numValidBeforeIPlus1 = aux.processUpToIndex(hash, signatures, i + 1);
+    uint256 numValidI;
+    numValidI = aux.processUpToIndex(hash, signatures, i);
+    uint256 numValidIPlus1;
+    numValidIPlus1 = aux.processUpToIndex(hash, signatures, i + 1);
 
-    uint256 a;
     uint256 numValid;
-    a, numValid = aux.processUpToIndex(hash, signatures, count);
+    numValid = aux.processUpToIndex(hash, signatures, count);
 
     requestMint@withrevert(e, guid, signatures, maxFeePercentage, operatorFee);
 
     bool revert1 = e.msg.value > 0;
     bool revert2 = e.msg.sender != receiverAddr && e.msg.sender != operatorAddr;
     bool revert3 = count < threshold;
-    bool revert4 = numValid == 0 && threshold == 0;
-    bool revert5 = numProcessedBeforeI < i || numValidBeforeI < threshold && vI != 27 && vI != 28;
-    bool revert6 = numProcessedBeforeIPlus1 == i && numValidBeforeIPlus1 < threshold && numValidBeforeIPlus1 <= recoveredI;
+    bool revert4 = numValid == 0 || numValid < threshold;
+    // revert4 actually covers the following revert cases and is needed to prove that
+    // all revert cases are covered.
+    // However it is also nice to prove that these specific cases are provoking reverts.
+    bool revert5 = numValidI < threshold && vI != 27 && vI != 28;
+    bool revert6 = !revert5 && numValidIPlus1 < threshold && vIPlus1 != 27 && vIPlus1 != 28;
+    bool revert7 = !revert6 && numValidIPlus1 < threshold && recoveredIPlus1 <= recoveredI;
 
-    // assert(lastReverted, "it works!");
     assert(revert1 => lastReverted, "revert1 failed");
     assert(revert2 => lastReverted, "revert2 failed");
     assert(revert3 => lastReverted, "revert3 failed");
     assert(revert4 => lastReverted, "revert4 failed");
     assert(revert5 => lastReverted, "revert5 failed");
     assert(revert6 => lastReverted, "revert6 failed");
+    assert(revert7 => lastReverted, "revert7 failed");
 
     assert(lastReverted => revert1 || revert2 || revert3 ||
-                           revert4 || revert5 || revert6, "Revert rules are not covering all the cases");
+                           revert4/* || revert5 || revert6 ||
+                           revert7*/, "Revert rules are not covering all the cases");
 }
