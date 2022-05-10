@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.13;
 
-import "./WormholeGUID.sol";
+import "./TeleportGUID.sol";
 
 interface VatLike {
     function dai(address) external view returns (uint256);
@@ -40,16 +40,16 @@ interface TokenLike {
 }
 
 interface FeesLike {
-    function getFee(WormholeGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256);
+    function getFee(TeleportGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256);
 }
 
-// Primary control for extending Wormhole credit
-contract WormholeJoin {
+// Primary control for extending Teleport credit
+contract TeleportJoin {
     mapping (address =>        uint256) public wards;     // Auth
     mapping (bytes32 =>        address) public fees;      // Fees contract per source domain
     mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
     mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
-    mapping (bytes32 => WormholeStatus) public wormholes; // Approved wormholes and pending unpaid
+    mapping (bytes32 => TeleportStatus) public teleports; // Approved teleports and pending unpaid
 
     address public vow;
 
@@ -68,13 +68,13 @@ contract WormholeJoin {
     event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
-    event Register(bytes32 indexed hashGUID, WormholeGUID wormholeGUID);
+    event Register(bytes32 indexed hashGUID, TeleportGUID teleportGUID);
     event Mint(
-        bytes32 indexed hashGUID, WormholeGUID wormholeGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
+        bytes32 indexed hashGUID, TeleportGUID teleportGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
     );
     event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
 
-    struct WormholeStatus {
+    struct TeleportStatus {
         bool    blessed;
         uint248 pending;
     }
@@ -95,7 +95,7 @@ contract WormholeJoin {
     }
 
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeJoin/non-authed");
+        require(wards[msg.sender] == 1, "TeleportJoin/non-authed");
         _;
     }
 
@@ -113,7 +113,7 @@ contract WormholeJoin {
         if (what == "vow") {
             vow = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert("TeleportJoin/file-unrecognized-param");
         }
         emit File(what, data);
     }
@@ -122,17 +122,17 @@ contract WormholeJoin {
         if (what == "fees") {
             fees[domain_] = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert("TeleportJoin/file-unrecognized-param");
         }
         emit File(what, domain_, data);
     }
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
-            require(data <= 2 ** 255 - 1, "WormholeJoin/not-allowed-bigger-int256");
+            require(data <= 2 ** 255 - 1, "TeleportJoin/not-allowed-bigger-int256");
             line[domain_] = data;
         } else {
-            revert("WormholeJoin/file-unrecognized-param");
+            revert("TeleportJoin/file-unrecognized-param");
         }
         emit File(what, domain_, data);
     }
@@ -145,8 +145,8 @@ contract WormholeJoin {
     }
 
     /**
-    * @dev Internal function that executes the mint after a wormhole is registered
-    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @dev Internal function that executes the mint after a teleport is registered
+    * @param teleportGUID Struct which contains the whole teleport data
     * @param hashGUID Hash of the prev struct
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
@@ -154,23 +154,23 @@ contract WormholeJoin {
     * @return totalFee The total amount of DAI charged as fees
     **/
     function _mint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes32 hashGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) internal returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(wormholeGUID.targetDomain == domain, "WormholeJoin/incorrect-domain");
+        require(teleportGUID.targetDomain == domain, "TeleportJoin/incorrect-domain");
 
         bool vatLive = vat.live() == 1;
 
-        uint256 line_ = vatLive ? line[wormholeGUID.sourceDomain] : 0;
+        uint256 line_ = vatLive ? line[teleportGUID.sourceDomain] : 0;
 
-        int256 debt_ = debt[wormholeGUID.sourceDomain];
+        int256 debt_ = debt[teleportGUID.sourceDomain];
 
         // Stop execution if there isn't anything available to withdraw
-        uint248 pending = wormholes[hashGUID].pending;
+        uint248 pending = teleports[hashGUID].pending;
         if (int256(line_) <= debt_ || pending == 0) {
-            emit Mint(hashGUID, wormholeGUID, 0, maxFeePercentage, operatorFee, msg.sender);
+            emit Mint(hashGUID, teleportGUID, 0, maxFeePercentage, operatorFee, msg.sender);
             return (0, 0);
         }
 
@@ -179,13 +179,13 @@ contract WormholeJoin {
                                 uint256(int256(line_) - debt_)
                             );
 
-        uint256 fee = vatLive ? FeesLike(fees[wormholeGUID.sourceDomain]).getFee(wormholeGUID, line_, debt_, pending, amtToTake) : 0;
-        require(fee <= maxFeePercentage * amtToTake / WAD, "WormholeJoin/max-fee-exceed");
+        uint256 fee = vatLive ? FeesLike(fees[teleportGUID.sourceDomain]).getFee(teleportGUID, line_, debt_, pending, amtToTake) : 0;
+        require(fee <= maxFeePercentage * amtToTake / WAD, "TeleportJoin/max-fee-exceed");
 
-        // No need of overflow check here as amtToTake is bounded by wormholes[hashGUID].pending
+        // No need of overflow check here as amtToTake is bounded by teleports[hashGUID].pending
         // which is already a uint248. Also int256 >> uint248. Then both castings are safe.
-        debt[wormholeGUID.sourceDomain] +=  int256(amtToTake);
-        wormholes[hashGUID].pending     -= uint248(amtToTake);
+        debt[teleportGUID.sourceDomain] +=  int256(amtToTake);
+        teleports[hashGUID].pending     -= uint248(amtToTake);
 
         if (debt_ >= 0 || uint256(-debt_) < amtToTake) {
             uint256 amtToGenerate = debt_ < 0
@@ -199,55 +199,55 @@ contract WormholeJoin {
         }
         totalFee = fee + operatorFee;
         postFeeAmount = amtToTake - totalFee;
-        daiJoin.exit(bytes32ToAddress(wormholeGUID.receiver), postFeeAmount);
+        daiJoin.exit(bytes32ToAddress(teleportGUID.receiver), postFeeAmount);
 
         if (fee > 0) {
             vat.move(address(this), vow, fee * RAY);
         }
         if (operatorFee > 0) {
-            daiJoin.exit(bytes32ToAddress(wormholeGUID.operator), operatorFee);
+            daiJoin.exit(bytes32ToAddress(teleportGUID.operator), operatorFee);
         }
 
-        emit Mint(hashGUID, wormholeGUID, amtToTake, maxFeePercentage, operatorFee, msg.sender);
+        emit Mint(hashGUID, teleportGUID, amtToTake, maxFeePercentage, operatorFee, msg.sender);
     }
 
     /**
     * @dev External authed function that registers the wormwhole and executes the mint after
-    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param teleportGUID Struct which contains the whole teleport data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     * @return totalFee The total amount of DAI charged as fees
     **/
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external auth returns (uint256 postFeeAmount, uint256 totalFee) {
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
-        require(!wormholes[hashGUID].blessed, "WormholeJoin/already-blessed");
-        wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = wormholeGUID.amount;
-        emit Register(hashGUID, wormholeGUID);
-        (postFeeAmount, totalFee) = _mint(wormholeGUID, hashGUID, maxFeePercentage, operatorFee);
+        bytes32 hashGUID = getGUIDHash(teleportGUID);
+        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
+        teleports[hashGUID].blessed = true;
+        teleports[hashGUID].pending = teleportGUID.amount;
+        emit Register(hashGUID, teleportGUID);
+        (postFeeAmount, totalFee) = _mint(teleportGUID, hashGUID, maxFeePercentage, operatorFee);
     }
 
     /**
     * @dev External function that executes the mint of any pending and available amount (only callable by operator or receiver)
-    * @param wormholeGUID Struct which contains the whole wormhole data
+    * @param teleportGUID Struct which contains the whole teleport data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
     * @return totalFee The total amount of DAI charged as fees
     **/
     function mintPending(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
-            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeJoin/not-receiver-nor-operator");
-        (postFeeAmount, totalFee) = _mint(wormholeGUID, getGUIDHash(wormholeGUID), maxFeePercentage, operatorFee);
+        require(bytes32ToAddress(teleportGUID.receiver) == msg.sender || 
+            bytes32ToAddress(teleportGUID.operator) == msg.sender, "TeleportJoin/not-receiver-nor-operator");
+        (postFeeAmount, totalFee) = _mint(teleportGUID, getGUIDHash(teleportGUID), maxFeePercentage, operatorFee);
     }
 
     /**
@@ -256,7 +256,7 @@ contract WormholeJoin {
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
-        require(batchedDaiToFlush <= 2 ** 255, "WormholeJoin/overflow");
+        require(batchedDaiToFlush <= 2 ** 255, "TeleportJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt

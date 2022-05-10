@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.13;
 
-import "../WormholeGUID.sol";
+import "../TeleportGUID.sol";
 
 interface DaiJoinLike {
     function dai() external view returns (TokenLike);
@@ -29,18 +29,18 @@ interface TokenLike {
     function transfer(address, uint256) external returns (bool);
 }
 
-interface WormholeOracleAuthLike {
+interface TeleportOracleAuthLike {
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee);
-    function wormholeJoin() external view returns (WormholeJoinLike);
+    function teleportJoin() external view returns (TeleportJoinLike);
 }
 
-interface WormholeJoinLike {
-    function wormholes(bytes32 hashGUID) external view returns (bool, uint248);
+interface TeleportJoinLike {
+    function teleports(bytes32 hashGUID) external view returns (bool, uint248);
 }
 
 interface DsValueLike {
@@ -60,8 +60,8 @@ contract TrustedRelay {
 
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
-    WormholeOracleAuthLike public immutable oracleAuth;
-    WormholeJoinLike       public immutable wormholeJoin;
+    TeleportOracleAuthLike public immutable oracleAuth;
+    TeleportJoinLike       public immutable teleportJoin;
     DsValueLike            public immutable ethPriceOracle;
 
     uint256 constant public WAD_BPS = 10 ** 22; // WAD * BPS = 10^18 * 10^4
@@ -87,10 +87,10 @@ contract TrustedRelay {
     constructor(address _oracleAuth, address _daiJoin, address _ethPriceOracle) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
-        oracleAuth = WormholeOracleAuthLike(_oracleAuth);
+        oracleAuth = TeleportOracleAuthLike(_oracleAuth);
         daiJoin = DaiJoinLike(_daiJoin);
         dai = daiJoin.dai();
-        wormholeJoin = oracleAuth.wormholeJoin();
+        teleportJoin = oracleAuth.teleportJoin();
         ethPriceOracle = DsValueLike(_ethPriceOracle);
     }
 
@@ -140,7 +140,7 @@ contract TrustedRelay {
     /**
      * @notice Gasless relay for the Oracle fast path
      * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
-     * @param wormholeGUID The wormhole GUID
+     * @param teleportGUID The teleport GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
@@ -153,7 +153,7 @@ contract TrustedRelay {
      * @param data (optional) The calldata to use for the call to the aforementionned external contract
      */
     function relay(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 gasFee,
@@ -167,7 +167,7 @@ contract TrustedRelay {
         uint256 startGas = gasleft();
 
         // Withdraw the L1 DAI to the receiver
-        requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
+        requestMint(teleportGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
 
         // Send the gas fee to the relayer
         dai.transfer(msg.sender, gasFee);
@@ -190,7 +190,7 @@ contract TrustedRelay {
     }
 
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 gasFee,
@@ -202,14 +202,14 @@ contract TrustedRelay {
         require(block.timestamp <= expiry, "TrustedRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
-            keccak256(abi.encode(getGUIDHash(wormholeGUID), maxFeePercentage, gasFee, expiry))
+            keccak256(abi.encode(getGUIDHash(teleportGUID), maxFeePercentage, gasFee, expiry))
         ));
         address recovered = ecrecover(signHash, v, r, s);
-        require(signers[recovered] == 1 || bytes32ToAddress(wormholeGUID.receiver) == recovered, "TrustedRelay/invalid-signature");
+        require(signers[recovered] == 1 || bytes32ToAddress(teleportGUID.receiver) == recovered, "TrustedRelay/invalid-signature");
 
-        // Initiate mint and mark the wormhole as done
-        (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(wormholeGUID, signatures, maxFeePercentage, gasFee);
-        require(postFeeAmount + totalFee == wormholeGUID.amount, "TrustedRelay/partial-mint-disallowed");
+        // Initiate mint and mark the teleport as done
+        (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(teleportGUID, signatures, maxFeePercentage, gasFee);
+        require(postFeeAmount + totalFee == teleportGUID.amount, "TrustedRelay/partial-mint-disallowed");
     }
 
     function gasprice() internal virtual view returns (uint256) {

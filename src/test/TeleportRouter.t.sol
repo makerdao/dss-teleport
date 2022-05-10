@@ -18,24 +18,24 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
-import "src/WormholeRouter.sol";
+import "src/TeleportRouter.sol";
 
 import "./mocks/GatewayMock.sol";
 import "./mocks/DaiMock.sol";
 
-contract WormholeRouterTest is DSTest {
+contract TeleportRouterTest is DSTest {
     
-    WormholeRouter internal router;
+    TeleportRouter internal router;
     address internal dai;
-    address internal wormholeJoin;
+    address internal teleportJoin;
     bytes32 constant internal l1Domain = "ethereum";
 
     uint256 internal constant WAD = 10**18;
 
     function setUp() public {
         dai = address(new DaiMock());
-        wormholeJoin = address(new GatewayMock());
-        router = new WormholeRouter(dai);
+        teleportJoin = address(new GatewayMock());
+        router = new TeleportRouter(dai);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -181,7 +181,7 @@ contract WormholeRouterTest is DSTest {
     }
 
     function testFailRequestMintFromNotGateway() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
             receiver: addressToBytes32(address(123)),
@@ -196,7 +196,7 @@ contract WormholeRouterTest is DSTest {
     }
 
     function testRequestMintTargetingL1() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
             receiver: addressToBytes32(address(123)),
@@ -206,13 +206,13 @@ contract WormholeRouterTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", l1Domain, wormholeJoin);
+        router.file("gateway", l1Domain, teleportJoin);
 
         router.requestMint(guid, 4 * WAD / 10000, 0);
     }
 
     function testRequestMintTargetingL2() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
             receiver: addressToBytes32(address(123)),
@@ -228,7 +228,7 @@ contract WormholeRouterTest is DSTest {
     }
 
     function testFailRequestMintTargetingInvalidDomain() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "invalid-network",
             receiver: addressToBytes32(address(123)),
@@ -252,7 +252,7 @@ contract WormholeRouterTest is DSTest {
 
     function testSettleTargetingL1() public {
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", l1Domain, wormholeJoin);
+        router.file("gateway", l1Domain, teleportJoin);
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 

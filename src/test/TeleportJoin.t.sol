@@ -18,8 +18,8 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
-import "src/WormholeJoin.sol";
-import "src/WormholeConstantFee.sol";
+import "src/TeleportJoin.sol";
+import "src/TeleportConstantFee.sol";
 
 import "./mocks/VatMock.sol";
 import "./mocks/DaiMock.sol";
@@ -32,12 +32,12 @@ interface Hevm {
     function store(address, bytes32, bytes32) external;
 }
 
-contract WormholeJoinTest is DSTest {
+contract TeleportJoinTest is DSTest {
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
     bytes32 constant internal ilk = "L2DAI";
     bytes32 constant internal domain = "ethereum";
-    WormholeJoin internal join;
+    TeleportJoin internal join;
     VatMock internal vat;
     DaiMock internal dai;
     DaiJoinMock internal daiJoin;
@@ -51,10 +51,10 @@ contract WormholeJoinTest is DSTest {
         vat = new VatMock();
         dai = new DaiMock();
         daiJoin = new DaiJoinMock(address(vat), address(dai));
-        join = new WormholeJoin(address(vat), address(daiJoin), ilk, domain);
+        join = new TeleportJoin(address(vat), address(daiJoin), ilk, domain);
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
-        join.file("fees", "l2network", address(new WormholeConstantFee(0, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(0, TTL)));
         vat.hope(address(daiJoin));
     }
 
@@ -66,12 +66,12 @@ contract WormholeJoinTest is DSTest {
         (, art_) = vat.urns(join.ilk(), address(join));
     }
 
-    function _blessed(WormholeGUID memory guid) internal view returns (bool blessed_) {
-        (blessed_, ) = join.wormholes(getGUIDHash(guid));
+    function _blessed(TeleportGUID memory guid) internal view returns (bool blessed_) {
+        (blessed_, ) = join.teleports(getGUIDHash(guid));
     }
 
-    function _pending(WormholeGUID memory guid) internal view returns (uint248 pending_) {
-        (, pending_) = join.wormholes(getGUIDHash(guid));
+    function _pending(TeleportGUID memory guid) internal view returns (uint248 pending_) {
+        (, pending_) = join.teleports(getGUIDHash(guid));
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -145,7 +145,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawAll() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -174,7 +174,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPartial() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -198,7 +198,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawNothing() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -223,7 +223,7 @@ contract WormholeJoinTest is DSTest {
 
 
     function testFailRegisterAlreadyRegistered() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -237,7 +237,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailRegisterWrongDomain() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "etherium",
             receiver: addressToBytes32(address(123)),
@@ -250,7 +250,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPayingFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -260,7 +260,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(vat.dai(vow), 0);
-        WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
+        TeleportConstantFee fees = new TeleportConstantFee(100 ether, TTL);
         assertEq(fees.fee(), 100 ether);
 
         join.file("fees", "l2network", address(fees));
@@ -277,7 +277,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailRegisterAndWithdrawPayingFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -287,12 +287,12 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
         join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 250K < 100 (not enough)
     }
 
     function testRegisterAndWithdrawFeeTTLExpires() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -302,7 +302,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(vat.dai(vow), 0);
-        WormholeConstantFee fees = new WormholeConstantFee(100 ether, TTL);
+        TeleportConstantFee fees = new TeleportConstantFee(100 ether, TTL);
         assertEq(fees.fee(), 100 ether);
 
         join.file("fees", "l2network", address(fees));
@@ -318,7 +318,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPartialPayingFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -331,7 +331,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
         join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 200K = 80 (just enough as fee is also proportional)
 
         assertEq(vat.dai(vow), 80 * RAD);
@@ -355,7 +355,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailRegisterAndWithdrawPartialPayingFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -368,12 +368,12 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
         join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 200K < 80 (not enough)
     }
 
     function testFailRegisterAndWithdrawPartialPayingFee2() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -386,7 +386,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(vat.dai(vow), 0);
 
         join.file("line", "l2network", 200_000 ether);
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
         join.requestMint(guid, 4 * WAD / 10000, 0);
 
         join.file("line", "l2network", 250_000 ether);
@@ -395,7 +395,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testMintPendingByOperator() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(this)),
@@ -420,7 +420,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testMintPendingByOperatorNotReceiver() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -445,7 +445,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testMintPendingByReceiver() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(this)),
@@ -470,7 +470,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailMintPendingWrongOperator() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -508,7 +508,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
 
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -535,7 +535,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
 
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -564,7 +564,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
 
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -577,7 +577,7 @@ contract WormholeJoinTest is DSTest {
         vat.cage();
         assertEq(vat.live(), 0);
 
-        join.file("fees", "l2network", address(new WormholeConstantFee(100 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
         join.requestMint(guid, 0, 0);
 
         assertEq(dai.balanceOf(address(123)), 100_000 ether); // Can't pay more than DAI is already in the join
@@ -589,7 +589,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testSettleVatCaged() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -620,7 +620,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPayingOperatorFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -642,7 +642,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailOperatorFeeTooHigh() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -655,7 +655,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPartialPayingOperatorFee() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -686,7 +686,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testRegisterAndWithdrawPayingTwoFees() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -696,7 +696,7 @@ contract WormholeJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         assertEq(dai.balanceOf(address(this)), 0);
-        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(1000 ether, TTL)));
         join.requestMint(guid, 40 ether / 10000, 249 ether);
         assertEq(dai.balanceOf(address(this)), 249 ether);
         assertEq(vat.dai(vow), 1000 * RAD);
@@ -707,7 +707,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testFailRegisterAndWithdrawOperatorFeeTooHigh() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -716,21 +716,21 @@ contract WormholeJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.file("fees", "l2network", address(new WormholeConstantFee(1000 ether, TTL)));
+        join.file("fees", "l2network", address(new TeleportConstantFee(1000 ether, TTL)));
         join.requestMint(guid, 40 ether / 10000, 249_001 ether);    // Too many fees
     }
 
     function testTotalDebtSeveralDomains() public {
         join.file("line", "l2network_2", 1_000_000 ether);
-        join.file("fees", "l2network_2", address(new WormholeConstantFee(0, TTL)));
+        join.file("fees", "l2network_2", address(new TeleportConstantFee(0, TTL)));
         join.file("line", "l2network_3", 1_000_000 ether);
-        join.file("fees", "l2network_3", address(new WormholeConstantFee(0, TTL)));
+        join.file("fees", "l2network_3", address(new TeleportConstantFee(0, TTL)));
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(join), 100_000 ether);
         join.settle("l2network", 100_000 ether);
 
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network_2",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -741,7 +741,7 @@ contract WormholeJoinTest is DSTest {
         });
         join.requestMint(guid, 0, 0);
 
-        guid = WormholeGUID({
+        guid = TeleportGUID({
             sourceDomain: "l2network_3",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -757,7 +757,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.debt("l2network_3"), 50_000 ether);
         assertEq(join.cure(), 200_000 * RAD);
 
-        guid = WormholeGUID({
+        guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -784,7 +784,7 @@ contract WormholeJoinTest is DSTest {
     }
 
     function testCureAfterPositionBeingManipulated() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -810,7 +810,7 @@ contract WormholeJoinTest is DSTest {
         assertEq(join.cure(), 250_000 * RAD);
 
         // In case of not caged, then debt can keep changing which will reload cure to the new value
-        guid = WormholeGUID({
+        guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),

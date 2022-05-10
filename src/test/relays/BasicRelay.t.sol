@@ -18,7 +18,7 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
-import "src/WormholeGUID.sol";
+import "src/TeleportGUID.sol";
 import "src/relays/BasicRelay.sol";
 
 import "../mocks/VatMock.sol";
@@ -31,14 +31,14 @@ interface Hevm {
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
-contract WormholeJoinMock {
+contract TeleportJoinMock {
 
-    mapping (bytes32 => WormholeStatus) public wormholes;
+    mapping (bytes32 => TeleportStatus) public teleports;
 
     DaiMock public dai;
     uint256 public maxMint;
 
-    struct WormholeStatus {
+    struct TeleportStatus {
         bool    blessed;
         uint248 pending;
     }
@@ -52,47 +52,47 @@ contract WormholeJoinMock {
     }
 
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        bytes32 hashGUID = getGUIDHash(wormholeGUID);
+        bytes32 hashGUID = getGUIDHash(teleportGUID);
 
         // Take 1%
-        uint256 amount = wormholeGUID.amount;
+        uint256 amount = teleportGUID.amount;
         if (amount > maxMint) amount = maxMint;
         uint256 fee = amount * 1 / 100;
         uint256 remainder = amount - fee;
 
-        wormholes[hashGUID].blessed = true;
-        wormholes[hashGUID].pending = uint248(wormholeGUID.amount - amount);
+        teleports[hashGUID].blessed = true;
+        teleports[hashGUID].pending = uint248(teleportGUID.amount - amount);
 
         // Mint the DAI and send it to receiver/operator
-        dai.mint(bytes32ToAddress(wormholeGUID.receiver), remainder - operatorFee);
-        dai.mint(bytes32ToAddress(wormholeGUID.operator), operatorFee);
+        dai.mint(bytes32ToAddress(teleportGUID.receiver), remainder - operatorFee);
+        dai.mint(bytes32ToAddress(teleportGUID.operator), operatorFee);
 
         return (remainder - operatorFee, fee + operatorFee);
     }
 }
 
-contract WormholeOracleAuthMock {
+contract TeleportOracleAuthMock {
 
-    WormholeJoinMock public join;
+    TeleportJoinMock public join;
 
-    constructor(WormholeJoinMock _join) {
+    constructor(TeleportJoinMock _join) {
         join = _join;
     }
 
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes calldata,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        return join.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        return join.requestMint(teleportGUID, maxFeePercentage, operatorFee);
     }
 
-    function wormholeJoin() external view returns (address) {
+    function teleportJoin() external view returns (address) {
         return address(join);
     }
 }
@@ -107,18 +107,18 @@ contract BasicRelayTest is DSTest {
     VatMock internal vat;
     DaiMock internal dai;
     DaiJoinMock internal daiJoin;
-    WormholeJoinMock internal join;
-    WormholeOracleAuthMock internal oracleAuth;
+    TeleportJoinMock internal join;
+    TeleportOracleAuthMock internal oracleAuth;
 
     function getSignHash(
-        WormholeGUID memory wormholeGUID,
+        TeleportGUID memory teleportGUID,
         uint256 maxFeePercentage,
         uint256 gasFee,
         uint256 expiry
     ) internal pure returns (bytes32 signHash) {
         signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
-            keccak256(abi.encode(getGUIDHash(wormholeGUID), maxFeePercentage, gasFee, expiry))
+            keccak256(abi.encode(getGUIDHash(teleportGUID), maxFeePercentage, gasFee, expiry))
         ));
     }
 
@@ -126,8 +126,8 @@ contract BasicRelayTest is DSTest {
         vat = new VatMock();
         dai = new DaiMock();
         daiJoin = new DaiJoinMock(address(vat), address(dai));
-        join = new WormholeJoinMock(dai);
-        oracleAuth = new WormholeOracleAuthMock(join);
+        join = new TeleportJoinMock(dai);
+        oracleAuth = new TeleportOracleAuthMock(join);
         relay = new BasicRelay(address(oracleAuth), address(daiJoin));
         join.setMaxMint(100 ether);
     }
@@ -136,13 +136,13 @@ contract BasicRelayTest is DSTest {
         assertEq(address(relay.daiJoin()), address(daiJoin));
         assertEq(address(relay.dai()), address(dai));
         assertEq(address(relay.oracleAuth()), address(oracleAuth));
-        assertEq(address(relay.wormholeJoin()), address(join));
+        assertEq(address(relay.teleportJoin()), address(join));
     }
 
     function test_relay() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(receiver),
@@ -175,7 +175,7 @@ contract BasicRelayTest is DSTest {
             r,
             s
         );
-        // Should get 100 DAI - 1% wormhole fee - 1 DAI gas fee
+        // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
         assertEq(dai.balanceOf(address(this)), 1 ether);
     }
@@ -183,7 +183,7 @@ contract BasicRelayTest is DSTest {
     function testFail_relay_expired() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(receiver),
@@ -221,7 +221,7 @@ contract BasicRelayTest is DSTest {
     function testFail_relay_bad_signature() public {
         uint256 sk = uint(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(receiver),
@@ -259,7 +259,7 @@ contract BasicRelayTest is DSTest {
 
         uint256 sk = uint(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(receiver),
