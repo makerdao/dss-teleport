@@ -83,7 +83,7 @@ If attestations cannot be obtained (Oracles down or censoring), user needs to wa
 
 ### Normal (fast) path
 
-Wormholing DAI to another L2 domain is very similar, the only difference is that DAI is minted on a target Domain rather then on L1. For this scheme to work MakerDAO `MCD` sytem needs to be deployed on a target domain. 
+Teleporting DAI to another L2 domain is very similar, the only difference is that DAI is minted on a target Domain rather then on L1. For this scheme to work MakerDAO `MCD` sytem needs to be deployed on a target domain.
 
 ### Settlement
 
