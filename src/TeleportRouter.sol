@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.13;
 
-import "./WormholeGUID.sol";
+import "./TeleportGUID.sol";
 import "./utils/EnumerableSet.sol";
 
 interface TokenLike {
@@ -25,14 +25,14 @@ interface TokenLike {
 
 interface GatewayLike {
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee);
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
 }
 
-contract WormholeRouter {
+contract TeleportRouter {
 
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -49,7 +49,7 @@ contract WormholeRouter {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeRouter/non-authed");
+        require(wards[msg.sender] == 1, "TeleportRouter/non-authed");
         _;
     }
 
@@ -73,7 +73,7 @@ contract WormholeRouter {
      * @notice Allows auth to configure the router. The only supported operation is "gateway",
      * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
      * and `requestMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
-     * conform to the GatewayLike interface. Examples of valid gateways include WormholeJoin (for the L1 domain)
+     * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the L1 domain)
      * and L1 bridge contracts (for L2 domains).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
      * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
@@ -104,7 +104,7 @@ contract WormholeRouter {
                 domains[data] = domain;
             }
         } else {
-            revert("WormholeRouter/file-unrecognized-param");
+            revert("TeleportRouter/file-unrecognized-param");
         }
         emit File(what, domain, data);
     }
@@ -121,21 +121,21 @@ contract WormholeRouter {
 
     /**
      * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
-     * @param wormholeGUID The wormhole GUID to register
+     * @param teleportGUID The teleport GUID to register
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
      * @param operatorFee The amount of DAI to pay to the operator
      * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
      * @return totalFee The total amount of DAI charged as fees
      */
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(msg.sender == gateways[wormholeGUID.sourceDomain], "WormholeRouter/sender-not-gateway");
-        address gateway = gateways[wormholeGUID.targetDomain];
-        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
-        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        require(msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
+        address gateway = gateways[teleportGUID.targetDomain];
+        require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
+        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(teleportGUID, maxFeePercentage, operatorFee);
     }
 
     /**
@@ -146,9 +146,9 @@ contract WormholeRouter {
      */
     function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
         bytes32 sourceDomain = domains[msg.sender];
-        require(sourceDomain != bytes32(0), "WormholeRouter/sender-not-gateway");
+        require(sourceDomain != bytes32(0), "TeleportRouter/sender-not-gateway");
         address gateway = gateways[targetDomain];
-        require(gateway != address(0), "WormholeRouter/unsupported-target-domain");
+        require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
          // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
         GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);

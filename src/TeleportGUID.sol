@@ -16,8 +16,8 @@
 
 pragma solidity 0.8.13;
 
-// Standard Maker Wormhole GUID
-struct WormholeGUID {
+// Standard Maker Teleport GUID
+struct TeleportGUID {
     bytes32 sourceDomain;
     bytes32 targetDomain;
     bytes32 receiver;
@@ -38,14 +38,14 @@ function addressToBytes32(address addr) pure returns (bytes32) {
 }
 
 // solhint-disable-next-line func-visibility
-function getGUIDHash(WormholeGUID memory wormholeGUID) pure returns (bytes32 guidHash) {
+function getGUIDHash(TeleportGUID memory teleportGUID) pure returns (bytes32 guidHash) {
     guidHash = keccak256(abi.encode(
-        wormholeGUID.sourceDomain,
-        wormholeGUID.targetDomain,
-        wormholeGUID.receiver,
-        wormholeGUID.operator,
-        wormholeGUID.amount,
-        wormholeGUID.nonce,
-        wormholeGUID.timestamp
+        teleportGUID.sourceDomain,
+        teleportGUID.targetDomain,
+        teleportGUID.receiver,
+        teleportGUID.operator,
+        teleportGUID.amount,
+        teleportGUID.nonce,
+        teleportGUID.timestamp
     ));
 }
