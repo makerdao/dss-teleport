@@ -212,7 +212,7 @@ contract TeleportJoin {
     }
 
     /**
-    * @dev External authed function that registers the wormwhole and executes the mint after
+    * @dev External authed function that registers the teleport and executes the mint after
     * @param teleportGUID Struct which contains the whole teleport data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
     * @param operatorFee The amount of DAI to pay to the operator
