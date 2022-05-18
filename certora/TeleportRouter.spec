@@ -1,8 +1,8 @@
-// WormholeRouter.spec
+// TeleportRouter.spec
 
-using WormholeRouter as router
+using TeleportRouter as router
 using DaiMock as dai
-using WormholeJoinMock as join
+using TeleportJoinMock as join
 
 methods {
     domainAt(uint256) returns (bytes32) envfree
@@ -10,12 +10,12 @@ methods {
     gateways(bytes32) returns (address) envfree
     hasDomain(bytes32) returns (bool) envfree
     numDomains() returns (uint256) envfree
-    requestMint(join.WormholeGUID, uint256, uint256) returns (uint256, uint256) => DISPATCHER(true)
+    requestMint(join.TeleportGUID, uint256, uint256) returns (uint256, uint256) => DISPATCHER(true)
     settle(bytes32, uint256) => DISPATCHER(true)
     wards(address) returns (uint256) envfree
     dai.allowance(address, address) returns (uint256) envfree
     dai.balanceOf(address) returns (uint256) envfree
-    join.wormholeGUID() returns(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) envfree
+    join.teleportGUID() returns(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) envfree
     join.batchedDaiToFlush() returns (uint256) envfree
     join.maxFeePercentage() returns (uint256) envfree
     join.operatorFee() returns (uint256) envfree
@@ -188,7 +188,7 @@ rule file_domain_address_revert(bytes32 what, bytes32 domain, address data) {
 
 // Verify that requestMint behaves correctly
 rule requestMint(
-        router.WormholeGUID guid,
+        router.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
@@ -207,7 +207,7 @@ rule requestMint(
     uint128 amount;
     uint80 nonce;
     uint48 timestamp;
-    sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp = join.wormholeGUID();
+    sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp = join.teleportGUID();
     assert(sourceDomain == guid.sourceDomain, "guid.sourceDomain was not preserved");
     assert(targetDomain == guid.targetDomain, "guid.targetDomain was not preserved");
     assert(receiver == guid.receiver, "guid.receiver was not preserved");
@@ -223,7 +223,7 @@ rule requestMint(
 
 // Verify revert rules on requestMint
 rule requestMint_revert(
-        router.WormholeGUID guid,
+        router.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {

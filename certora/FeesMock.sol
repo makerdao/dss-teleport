@@ -16,12 +16,12 @@
 
 pragma solidity 0.8.13;
 
-import "../src/WormholeGUID.sol";
+import "../src/TeleportGUID.sol";
 
 contract FeesMock {
     uint256 public fee;
 
-    function getFee(WormholeGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256) {
+    function getFee(TeleportGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256) {
         return fee;
     }
 }

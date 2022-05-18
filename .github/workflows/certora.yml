@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        wormhole:
+        teleport:
           - fee
           - join
           - router
@@ -39,7 +39,7 @@ jobs:
       - name: Install Certora
         run: pip3 install certora-cli
 
-      - name: Verify ${{ matrix.wormhole }}
-        run: make certora-${{ matrix.wormhole }}
+      - name: Verify ${{ matrix.teleport }}
+        run: make certora-${{ matrix.teleport }}
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}

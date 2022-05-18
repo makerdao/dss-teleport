@@ -1,6 +1,6 @@
 pragma solidity 0.8.13;
 
-import "../src/WormholeGUID.sol";
+import "../src/TeleportGUID.sol";
 
 interface OracleLike {
     function signers(address) external view returns (uint256);
@@ -13,22 +13,22 @@ interface OracleLike {
 contract Auxiliar {
     OracleLike public oracle;
 
-    function getGUIDHash(WormholeGUID memory wormholeGUID) external pure returns (bytes32 guidHash) {
+    function getGUIDHash(TeleportGUID memory teleportGUID) external pure returns (bytes32 guidHash) {
         guidHash = keccak256(abi.encode(
-            wormholeGUID.sourceDomain,
-            wormholeGUID.targetDomain,
-            wormholeGUID.receiver,
-            wormholeGUID.operator,
-            wormholeGUID.amount,
-            wormholeGUID.nonce,
-            wormholeGUID.timestamp
+            teleportGUID.sourceDomain,
+            teleportGUID.targetDomain,
+            teleportGUID.receiver,
+            teleportGUID.operator,
+            teleportGUID.amount,
+            teleportGUID.nonce,
+            teleportGUID.timestamp
         ));
     }
 
-    function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
+    function getSignHash(TeleportGUID memory teleportGUID) public pure returns (bytes32 signHash) {
         signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32",
-            getGUIDHash(wormholeGUID)
+            getGUIDHash(teleportGUID)
         ));
     }
 

@@ -1,6 +1,6 @@
-// WormholeJoin.spec
+// TeleportJoin.spec
 
-using WormholeJoin as join
+using TeleportJoin as join
 using FeesMock as fees
 using Auxiliar as aux
 using VatMock as vat
@@ -18,9 +18,9 @@ methods {
     vat() returns (address) envfree
     vow() returns (address) envfree
     wards(address) returns (uint256) envfree
-    wormholes(bytes32) returns (bool, uint248) envfree
-    getFee(join.WormholeGUID, uint256, int256, uint256, uint256) => DISPATCHER(true)
-    aux.getGUIDHash(join.WormholeGUID) returns (bytes32) envfree
+    teleports(bytes32) returns (bool, uint248) envfree
+    getFee(join.TeleportGUID, uint256, int256, uint256, uint256) => DISPATCHER(true)
+    aux.getGUIDHash(join.TeleportGUID) returns (bytes32) envfree
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     vat.can(address, address) returns (uint256) envfree
     vat.dai(address) returns (uint256) envfree
@@ -251,7 +251,7 @@ definition amtToGenerate(bool canGenerate, uint256 amtToTake, int256 debt)
                         :
                             0;
 
-definition feeAmt(env e, bool canGenerate, bool vatLive, join.WormholeGUID guid, uint256 line, int256 debt, uint256 pending, uint256 amtToTake)
+definition feeAmt(env e, bool canGenerate, bool vatLive, join.TeleportGUID guid, uint256 line, int256 debt, uint256 pending, uint256 amtToTake)
     returns uint256 = canGenerate && vatLive
                         ?
                             fees.getFee(e, guid, line, debt, pending, amtToTake)
@@ -267,7 +267,7 @@ definition operatorFeeAmt(bool canGenerate, uint256 operatorFee)
 
 // Verify that requestMint behaves correctly
 rule requestMint(
-        join.WormholeGUID guid,
+        join.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
@@ -292,7 +292,7 @@ rule requestMint(
 
     bool    blessedBefore;
     uint248 pendingBefore;
-    blessedBefore, pendingBefore = wormholes(hashGUID);
+    blessedBefore, pendingBefore = teleports(hashGUID);
 
     bool canGenerate = canGenerate(line, debtBefore, guid.amount);
     uint256 gap = gap(canGenerate, line, debtBefore);
@@ -319,7 +319,7 @@ rule requestMint(
 
     bool    blessedAfter;
     uint248 pendingAfter;
-    blessedAfter, pendingAfter = wormholes(hashGUID);
+    blessedAfter, pendingAfter = teleports(hashGUID);
 
     uint256 receiverDaiBalanceAfter = dai.balanceOf(receiverAddr);
     uint256 operatorDaiBalanceAfter = dai.balanceOf(operatorAddr);
@@ -348,7 +348,7 @@ rule requestMint(
 
 // Verify revert rules on requestMint
 rule requestMint_revert(
-        join.WormholeGUID guid,
+        join.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
@@ -382,7 +382,7 @@ rule requestMint_revert(
 
     bool    blessed;
     uint248 pending;
-    blessed, pending = wormholes(hashGUID);
+    blessed, pending = teleports(hashGUID);
 
     bool canGenerate = canGenerate(line, debt, guid.amount);
     uint256 gap = gap(canGenerate, line, debt);
@@ -470,7 +470,7 @@ rule requestMint_revert(
 
 // Verify that mintPending behaves correctly
 rule mintPending(
-        join.WormholeGUID guid,
+        join.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
@@ -495,7 +495,7 @@ rule mintPending(
 
     bool    blessedBefore;
     uint248 pendingBefore;
-    blessedBefore, pendingBefore = wormholes(hashGUID);
+    blessedBefore, pendingBefore = teleports(hashGUID);
 
     bool canGenerate = canGenerate(line, debtBefore, pendingBefore);
     uint256 gap = gap(canGenerate, line, debtBefore);
@@ -522,7 +522,7 @@ rule mintPending(
 
     bool    blessedAfter;
     uint248 pendingAfter;
-    blessedAfter, pendingAfter = wormholes(hashGUID);
+    blessedAfter, pendingAfter = teleports(hashGUID);
 
     uint256 receiverDaiBalanceAfter = dai.balanceOf(receiverAddr);
     uint256 operatorDaiBalanceAfter = dai.balanceOf(operatorAddr);
@@ -550,7 +550,7 @@ rule mintPending(
 
 // Verify revert rules on mintPending
 rule mintPending_revert(
-        join.WormholeGUID guid,
+        join.TeleportGUID guid,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
@@ -582,7 +582,7 @@ rule mintPending_revert(
 
     bool    blessed;
     uint248 pending;
-    blessed, pending = wormholes(hashGUID);
+    blessed, pending = teleports(hashGUID);
 
     bool canGenerate = canGenerate(line, debt, pending);
     uint256 gap = gap(canGenerate, line, debt);

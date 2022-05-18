@@ -18,7 +18,7 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
-import "src/WormholeOracleAuth.sol";
+import "src/TeleportOracleAuth.sol";
 
 import "./mocks/GatewayMock.sol";
 
@@ -27,15 +27,15 @@ interface Hevm {
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
-contract WormholeOracleAuthTest is DSTest {
+contract TeleportOracleAuthTest is DSTest {
 
     Hevm hevm = Hevm(HEVM_ADDRESS);
-    WormholeOracleAuth internal auth;
-    address internal wormholeJoin;
+    TeleportOracleAuth internal auth;
+    address internal teleportJoin;
 
     function setUp() public {
-        wormholeJoin = address(new GatewayMock());
-        auth = new WormholeOracleAuth(wormholeJoin);
+        teleportJoin = address(new GatewayMock());
+        auth = new TeleportOracleAuth(teleportJoin);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -65,7 +65,7 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function testConstructor() public {
-        assertEq(address(auth.wormholeJoin()), wormholeJoin);
+        assertEq(address(auth.teleportJoin()), teleportJoin);
         assertEq(auth.wards(address(this)), 1);
     }
 
@@ -127,6 +127,24 @@ contract WormholeOracleAuthTest is DSTest {
         assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
+    // Since ecrecover silently returns 0 on failure, it's a good idea to make sure
+    // the logic can't be fooled by a zero signer address + invalid signature.
+    function testFail_isValid_failed_ecrecover() public {
+        bytes32 signHash = keccak256("msg");
+        (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
+
+        // corrupt first signature
+        unchecked {  // don't care about overflow, just want to change the first byte
+            signatures[0] = bytes1(uint8(signatures[0]) + uint8(1));
+        }
+
+        // first signer to zero
+        signers[0] = address(0);
+
+        auth.addSigners(signers);
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
+    }
+
     function testFail_isValid_notEnoughSig() public {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
@@ -143,7 +161,7 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function test_mintByOperator() public {
-        WormholeGUID memory guid;
+        TeleportGUID memory guid;
         guid.operator = addressToBytes32(address(this));
         guid.sourceDomain = bytes32("l2network");
         guid.targetDomain = bytes32("ethereum");
@@ -160,7 +178,7 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function test_mintByOperatorNotReceiver() public {
-        WormholeGUID memory guid;
+        TeleportGUID memory guid;
         guid.operator = addressToBytes32(address(this));
         guid.sourceDomain = bytes32("l2network");
         guid.targetDomain = bytes32("ethereum");
@@ -177,7 +195,7 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function test_mintByReceiver() public {
-        WormholeGUID memory guid;
+        TeleportGUID memory guid;
         guid.operator = addressToBytes32(address(0x000));
         guid.sourceDomain = bytes32("l2network");
         guid.targetDomain = bytes32("ethereum");
@@ -194,7 +212,7 @@ contract WormholeOracleAuthTest is DSTest {
     }
 
     function testFail_mint_notOperatorNorReceiver() public {
-        WormholeGUID memory guid;
+        TeleportGUID memory guid;
         guid.operator = addressToBytes32(address(0x123));
         guid.sourceDomain = bytes32("l2network");
         guid.targetDomain = bytes32("ethereum");

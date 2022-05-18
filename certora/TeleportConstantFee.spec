@@ -1,6 +1,6 @@
-// WormholeConstantFee.spec
+// TeleportConstantFee.spec
 
-using WormholeConstantFee as fee
+using TeleportConstantFee as fee
 
 methods {
     fee() returns (uint256) envfree
@@ -18,7 +18,7 @@ rule fallback_revert(method f) filtered { f -> f.isFallback } {
 }
 
 // Verify that fee value behaves correctly on getFee
-rule getFee(fee.WormholeGUID guid, uint256 a, int256 b, uint256 c, uint256 amtToTake) {
+rule getFee(fee.TeleportGUID guid, uint256 a, int256 b, uint256 c, uint256 amtToTake) {
     env e;
 
     uint256 feeCalculated = e.block.timestamp >= guid.timestamp + ttl() || guid.amount == 0
@@ -31,7 +31,7 @@ rule getFee(fee.WormholeGUID guid, uint256 a, int256 b, uint256 c, uint256 amtTo
 }
 
 // Verify revert rules on getFee
-rule getFee_revert(fee.WormholeGUID guid, uint256 a, int256 b, uint256 c, uint256 amtToTake) {
+rule getFee_revert(fee.TeleportGUID guid, uint256 a, int256 b, uint256 c, uint256 amtToTake) {
     env e;
 
     uint256 fee = fee();

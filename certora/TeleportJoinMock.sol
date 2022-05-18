@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.13;
 
-import "../src/WormholeGUID.sol";
+import "../src/TeleportGUID.sol";
 
-contract WormholeJoinMock {
-    WormholeGUID public wormholeGUID;
+contract TeleportJoinMock {
+    TeleportGUID public teleportGUID;
     uint256 public maxFeePercentage;
     uint256 public operatorFee;
     uint256 public postFeeAmount;
@@ -13,11 +13,11 @@ contract WormholeJoinMock {
     uint256 public batchedDaiToFlush;
 
     function requestMint(
-        WormholeGUID memory wormholeGUID_,
+        TeleportGUID memory teleportGUID_,
         uint256 maxFeePercentage_,
         uint256 operatorFee_
     ) external returns (uint256 postFeeAmount_, uint256 totalFee_) {
-        wormholeGUID = wormholeGUID_;
+        teleportGUID = teleportGUID_;
         maxFeePercentage = maxFeePercentage_;
         operatorFee = operatorFee_;
         postFeeAmount_ = postFeeAmount;

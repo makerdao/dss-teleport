@@ -16,23 +16,23 @@
 
 pragma solidity 0.8.13;
 
-import "./WormholeGUID.sol";
+import "./TeleportGUID.sol";
 
-interface WormholeJoinLike {
+interface TeleportJoinLike {
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee);
 }
 
-// WormholeOracleAuth provides user authentication for WormholeJoin, by means of Maker Oracle Attestations
-contract WormholeOracleAuth {
+// TeleportOracleAuth provides user authentication for TeleportJoin, by means of Maker Oracle Attestations
+contract TeleportOracleAuth {
 
     mapping (address => uint256) public wards;   // Auth
     mapping (address => uint256) public signers; // Oracle feeds
 
-    WormholeJoinLike immutable public wormholeJoin;
+    TeleportJoinLike immutable public teleportJoin;
 
     uint256 public threshold;
 
@@ -43,14 +43,14 @@ contract WormholeOracleAuth {
     event SignersRemoved(address[] signers);
 
     modifier auth {
-        require(wards[msg.sender] == 1, "WormholeOracleAuth/non-authed");
+        require(wards[msg.sender] == 1, "TeleportOracleAuth/non-authed");
         _;
     }
 
-    constructor(address wormholeJoin_) {
+    constructor(address teleportJoin_) {
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
-        wormholeJoin = WormholeJoinLike(wormholeJoin_);
+        teleportJoin = TeleportJoinLike(teleportJoin_);
     }
 
     function rely(address usr) external auth {
@@ -67,7 +67,7 @@ contract WormholeOracleAuth {
         if (what == "threshold") {
             threshold = data;
         } else {
-            revert("WormholeOracleAuth/file-unrecognized-param");
+            revert("TeleportOracleAuth/file-unrecognized-param");
         }
         emit File(what, data);
     }
@@ -87,9 +87,9 @@ contract WormholeOracleAuth {
     }
 
     /**
-     * @notice Verify oracle signatures and call WormholeJoin to mint DAI if the signatures are valid 
-     * (only callable by wormhole's operator or receiver)
-     * @param wormholeGUID The wormhole GUID to register
+     * @notice Verify oracle signatures and call TeleportJoin to mint DAI if the signatures are valid 
+     * (only callable by teleport's operator or receiver)
+     * @param teleportGUID The teleport GUID to register
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
      * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
@@ -98,15 +98,15 @@ contract WormholeOracleAuth {
      * @return totalFee The total amount of DAI charged as fees
      */
     function requestMint(
-        WormholeGUID calldata wormholeGUID,
+        TeleportGUID calldata teleportGUID,
         bytes calldata signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(bytes32ToAddress(wormholeGUID.receiver) == msg.sender || 
-            bytes32ToAddress(wormholeGUID.operator) == msg.sender, "WormholeOracleAuth/not-receiver-nor-operator");
-        require(isValid(getSignHash(wormholeGUID), signatures, threshold), "WormholeOracleAuth/not-enough-valid-sig");
-        (postFeeAmount, totalFee) = wormholeJoin.requestMint(wormholeGUID, maxFeePercentage, operatorFee);
+        require(bytes32ToAddress(teleportGUID.receiver) == msg.sender || 
+            bytes32ToAddress(teleportGUID.operator) == msg.sender, "TeleportOracleAuth/not-receiver-nor-operator");
+        require(isValid(getSignHash(teleportGUID), signatures, threshold), "TeleportOracleAuth/not-enough-valid-sig");
+        (postFeeAmount, totalFee) = teleportJoin.requestMint(teleportGUID, maxFeePercentage, operatorFee);
     }
 
     /**
@@ -119,7 +119,7 @@ contract WormholeOracleAuth {
      */
     function isValid(bytes32 signHash, bytes calldata signatures, uint threshold_) public view returns (bool valid) {
         uint256 count = signatures.length / 65;
-        require(count >= threshold_, "WormholeOracleAuth/not-enough-sig");
+        require(count >= threshold_, "TeleportOracleAuth/not-enough-sig");
 
         uint8 v;
         bytes32 r;
@@ -129,7 +129,7 @@ contract WormholeOracleAuth {
         for (uint256 i; i < count;) {
             (v,r,s) = splitSignature(signatures, i);
             address recovered = ecrecover(signHash, v, r, s);
-            require(recovered > lastSigner, "WormholeOracleAuth/bad-sig-order"); // make sure signers are different
+            require(recovered > lastSigner, "TeleportOracleAuth/bad-sig-order"); // make sure signers are different
             lastSigner = recovered;
             if (signers[recovered] == 1) {
                 unchecked { numValid += 1; }
@@ -143,12 +143,12 @@ contract WormholeOracleAuth {
     
     /**
      * @notice This has to match what oracles are signing
-     * @param wormholeGUID The wormhole GUID to calculate hash
+     * @param teleportGUID The teleport GUID to calculate hash
      */
-    function getSignHash(WormholeGUID memory wormholeGUID) public pure returns (bytes32 signHash) {
+    function getSignHash(TeleportGUID memory teleportGUID) public pure returns (bytes32 signHash) {
         signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32",
-            getGUIDHash(wormholeGUID)
+            getGUIDHash(teleportGUID)
         ));
     }
 
@@ -169,6 +169,6 @@ contract WormholeOracleAuth {
             s := calldataload(add(signatures.offset, add(0x20, start)))
             v := and(calldataload(add(signatures.offset, add(0x21, start))), 0xff)
         }
-        require(v == 27 || v == 28, "WormholeOracleAuth/bad-v");
+        require(v == 27 || v == 28, "TeleportOracleAuth/bad-v");
     }
 }

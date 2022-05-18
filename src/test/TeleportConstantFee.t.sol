@@ -18,27 +18,27 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
-import "src/WormholeConstantFee.sol";
-import "src/WormholeGUID.sol";
+import "src/TeleportConstantFee.sol";
+import "src/TeleportGUID.sol";
 
-contract WormholeConstantFeeTest is DSTest {
+contract TeleportConstantFeeTest is DSTest {
     
     uint256 internal fee = 1 ether / 100;
     uint256 internal ttl = 8 days;
 
-    WormholeConstantFee internal wormholeConstantFee;
+    TeleportConstantFee internal teleportConstantFee;
 
     function setUp() public {
-        wormholeConstantFee = new WormholeConstantFee(fee, ttl);
+        teleportConstantFee = new TeleportConstantFee(fee, ttl);
     }
 
     function testConstructor() public {
-        assertEq(wormholeConstantFee.fee(), fee);
-        assertEq(wormholeConstantFee.ttl(), ttl);
+        assertEq(teleportConstantFee.fee(), fee);
+        assertEq(teleportConstantFee.ttl(), ttl);
     }
 
     function testFeeForZeroAmount() public {
-        WormholeGUID memory guid = WormholeGUID({
+        TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
             receiver: addressToBytes32(address(123)),
@@ -48,6 +48,6 @@ contract WormholeConstantFeeTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        assertEq(wormholeConstantFee.getFee(guid, 0, 0, 0, 10 ether), 0);
+        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 10 ether), 0);
     }
 }

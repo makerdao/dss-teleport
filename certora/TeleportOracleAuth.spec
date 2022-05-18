@@ -1,23 +1,23 @@
-// WormholeOracleAuth.spec
+// TeleportOracleAuth.spec
 
-using WormholeOracleAuth as oracle
+using TeleportOracleAuth as oracle
 using Auxiliar as aux
-using WormholeJoinMock as join
+using TeleportJoinMock as join
 
 methods {
     signers(address) returns (uint256) envfree
     threshold() returns (uint256) envfree
     wards(address) returns (uint256) envfree
-    wormholeJoin() returns (address) envfree
-    requestMint(oracle.WormholeGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
-    aux.getSignHash(oracle.WormholeGUID) returns (bytes32) envfree
+    teleportJoin() returns (address) envfree
+    requestMint(oracle.TeleportGUID, uint256, uint256) returns (uint256) => DISPATCHER(true)
+    aux.getSignHash(oracle.TeleportGUID) returns (bytes32) envfree
     aux.bytes32ToAddress(bytes32) returns (address) envfree
     aux.callEcrecover(bytes32, uint256, bytes32, bytes32) returns (address) envfree
     aux.processUpToIndex(bytes32, bytes, uint256) returns (uint256) envfree
     aux.splitSignature(bytes, uint256) returns (uint8, bytes32, bytes32) envfree
     aux.oracle() returns (address) envfree
     aux.checkMalformedArray(address[]) envfree
-    join.wormholeGUID() returns(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) envfree
+    join.teleportGUID() returns(bytes32, bytes32, bytes32, bytes32, uint128, uint80, uint48) envfree
     join.maxFeePercentage() returns (uint256) envfree
     join.operatorFee() returns (uint256) envfree
     join.postFeeAmount() returns (uint256) envfree
@@ -198,14 +198,14 @@ rule removeSigners_revert(address[] signers_) {
 
 // Verify that requestMint behaves correctly
 rule requestMint(
-        oracle.WormholeGUID guid,
+        oracle.TeleportGUID guid,
         bytes signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) {
     env e;
 
-    require(wormholeJoin() == join);
+    require(teleportJoin() == join);
 
     uint256 postFeeAmount;
     uint256 totalFee;
@@ -218,7 +218,7 @@ rule requestMint(
     uint128 amount;
     uint80 nonce;
     uint48 timestamp;
-    sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp = join.wormholeGUID();
+    sourceDomain, targetDomain, receiver, operator, amount, nonce, timestamp = join.teleportGUID();
     assert(sourceDomain == guid.sourceDomain, "guid.sourceDomain was not preserved");
     assert(targetDomain == guid.targetDomain, "guid.targetDomain was not preserved");
     assert(receiver == guid.receiver, "guid.receiver was not preserved");
@@ -234,14 +234,14 @@ rule requestMint(
 
 // Verify revert rules on requestMint
 rule requestMint_revert(
-        oracle.WormholeGUID guid,
+        oracle.TeleportGUID guid,
         bytes signatures,
         uint256 maxFeePercentage,
         uint256 operatorFee
 ) {
     env e;
 
-    require(wormholeJoin() == join);
+    require(teleportJoin() == join);
     require(aux.oracle() == currentContract);
 
     address receiverAddr = aux.bytes32ToAddress(guid.receiver);
