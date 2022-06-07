@@ -43,7 +43,7 @@ contract TeleportOracleAuth {
     event SignersRemoved(address[] signers);
 
     modifier auth {
-        require(wards[msg.sender] == 1, "TeleportOracleAuth/non-authed");
+        require(wards[msg.sender] == 1, "TeleportOracleAuth/not-authorized");
         _;
     }
 
