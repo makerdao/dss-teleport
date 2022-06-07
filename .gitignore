@@ -1,1 +1,7 @@
 /out
+
+# certora
+.*certora*
+.last_confs/
+*.zip
+resource_errors.json
