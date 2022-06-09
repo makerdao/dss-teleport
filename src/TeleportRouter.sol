@@ -49,7 +49,7 @@ contract TeleportRouter {
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
 
     modifier auth {
-        require(wards[msg.sender] == 1, "TeleportRouter/non-authed");
+        require(wards[msg.sender] == 1, "TeleportRouter/not-authorized");
         _;
     }
 

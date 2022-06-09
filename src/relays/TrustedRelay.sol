@@ -75,7 +75,7 @@ contract TrustedRelay {
     event SignersRemoved(address[] signers);
 
     modifier auth {
-        require(wards[msg.sender] == 1, "TrustedRelay/non-authed");
+        require(wards[msg.sender] == 1, "TrustedRelay/not-authorized");
         _;
     }
     

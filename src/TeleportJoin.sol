@@ -95,7 +95,7 @@ contract TeleportJoin {
     }
 
     modifier auth {
-        require(wards[msg.sender] == 1, "TeleportJoin/non-authed");
+        require(wards[msg.sender] == 1, "TeleportJoin/not-authorized");
         _;
     }
 
