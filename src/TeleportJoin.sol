@@ -19,7 +19,12 @@ pragma solidity 0.8.14;
 import "./TeleportGUID.sol";
 
 interface VatLike {
+    function wards(address) external view returns (uint256);
+    function rely(address) external;
+    function init(bytes32) external;
+    function file(bytes32 ilk, bytes32 what, uint data) external;
     function dai(address) external view returns (uint256);
+    function debt() external view returns (uint256);
     function live() external view returns (uint256);
     function urns(bytes32, address) external view returns (uint256, uint256);
     function frob(bytes32, address, address, address, int256, int256) external;
