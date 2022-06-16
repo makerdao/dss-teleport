@@ -130,7 +130,7 @@ contract TeleportJoinIntegrationTest is DSTest {
 
         uint256 vatDebt = vat.debt();
         hevm.warp(block.timestamp + end.wait());
-        hevm.store(address(vat),keccak256(abi.encode(vow, 5)), bytes32(0)); // emulate clearing of vow dai
+        hevm.store(address(vat), keccak256(abi.encode(vow, 5)), bytes32(0)); // emulate clearing of vow dai
         assertEq(vat.dai(vow), 0);
 
         end.thaw();
