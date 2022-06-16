@@ -18,7 +18,8 @@ pragma solidity 0.8.14;
 
 import "ds-test/test.sol";
 
-import "src/TeleportJoin.sol";
+import {TeleportJoin} from "src/TeleportJoin.sol";
+import "src/TeleportGUID.sol";
 import "src/TeleportConstantFee.sol";
 
 interface Hevm {
@@ -32,6 +33,15 @@ interface ChainlogLike {
 
 interface AuthLike {
     function wards(address) external view returns (uint256);
+}
+
+interface VatLike {
+    function wards(address) external view returns (uint256);
+    function rely(address) external;
+    function init(bytes32) external;
+    function file(bytes32 ilk, bytes32 what, uint data) external;
+    function dai(address) external view returns (uint256);
+    function debt() external view returns (uint256);
 }
 
 interface EndLike {
