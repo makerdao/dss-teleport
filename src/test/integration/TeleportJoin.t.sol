@@ -57,6 +57,10 @@ interface CureLike {
     function load(address) external;
 }
 
+interface TokenLike {
+  function transfer(address _to, uint256 _value) external returns (bool success);
+}
+
 contract TeleportJoinIntegrationTest is DSTest {
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
@@ -69,6 +73,7 @@ contract TeleportJoinIntegrationTest is DSTest {
     EndLike internal end = EndLike(chainlog.getAddress("MCD_END"));
     CureLike internal cure = CureLike(chainlog.getAddress("MCD_CURE"));
     VatLike internal vat = VatLike(chainlog.getAddress("MCD_VAT"));
+    TokenLike internal dai = TokenLike(chainlog.getAddress("MCD_DAI"));
     address internal vow = chainlog.getAddress("MCD_VOW");
 
     TeleportJoin internal teleportJoin;
@@ -108,12 +113,13 @@ contract TeleportJoinIntegrationTest is DSTest {
     function testEmergencyShutdown() public {
         // perform teleport
 
+        assertEq(teleportJoin.cure(), 0);
         uint256 debtBeforeTeleport = vat.debt(); 
         uint256 teleportAmount = 250_000 ether;
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: SLAVE_DOMAIN,
             targetDomain: MASTER_DOMAIN,
-            receiver: addressToBytes32(address(123)),
+            receiver: addressToBytes32(address(this)),
             operator: addressToBytes32(address(654)),
             amount: uint128(teleportAmount),
             nonce: 5,
@@ -123,12 +129,23 @@ contract TeleportJoinIntegrationTest is DSTest {
         teleportJoin.requestMint(guid, 0, 0);
 
         assertEq(vat.debt(), debtBeforeTeleport + teleportAmount * RAY);
+        assertEq(teleportJoin.cure(), teleportAmount * RAY);
 
         // cage the end
 
         getAuthFor(address(end));
 
         end.cage();
+
+        // attempt to settle the dai debt
+
+        assertEq(vat.dai(address(teleportJoin)), 0);
+        dai.transfer(address(teleportJoin), teleportAmount);
+
+        teleportJoin.settle(SLAVE_DOMAIN, teleportAmount);
+
+        assertEq(vat.dai(address(teleportJoin)), teleportAmount * RAY); // the dai is now locked in teleportJoin
+        assertEq(teleportJoin.cure(), teleportAmount * RAY); // the debt was not actually settled
 
         // load the cure 
 
