@@ -93,7 +93,7 @@ Settlement process is very similar, however DAI is transfered from source domain
 
 For a slow path, once the L2->L1 message from the source domain is received on L1 and can be relayed, the user can relay the message, which will call `requestMint()` on the target domain `L1Bridge`. This will pass an L1->L2 message to `L2bridge` which will call `requestMint()` on a `TeleportJoin` contract on target domain L2.
 
-## Technical Documenation
+## Technical Documentation
 
 Each Teleport is described with the following struct:
 
@@ -108,7 +108,7 @@ struct TeleportGUID {
 	uint48 timestamp;
 }
 ```
-Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support not EVM compliant domains.
+Source domain implementation must ensure that `keccack(TeleportGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support not EVM compliant domains.
 
 ### Contracts
 
