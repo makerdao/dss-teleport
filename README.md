@@ -178,6 +178,7 @@ If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 
 
 ## Related repositories
 
-* [Optimism Teleport Bridge](https://github.com/makerdao/optimism-dai-bridge/pull/59)
-* [Integration tests](https://github.com/makerdao/teleport-integration-tests)
+* [Optimism Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/optimism-dai-bridge)
+* [Arbitrum Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/arbitrum-dai-bridge)
+* [Integration tests](https://github.com/makerdao/xdomain/tree/master/packages/teleport-integration-tests)
 
