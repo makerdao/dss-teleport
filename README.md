@@ -140,11 +140,11 @@ Source domain implementation must ensure that `keccack(TeleportGUID)` is unique 
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - auth (`TeleportRouter`, `TeleportOracleAuth`)
   * `mintPending` - operator or receiver
-  * `settle` - anyone (typically keeper)
-* `L1TeleportBridge`
+  * `settle` - anyone (typically L1 bridge)
+* `L1DaiTeleportGateway`
   * `finalizeFlush()` - L2 bridge
   * `finalizeRegisterTeleport()` - L2 bridge
-* `L2DAITeleportBridge`
+* `L2DaiTeleportGateway`
   * `initalizeTeleport` - anyone (typically user)
   * `flush` - anyone (typically keeper)
 
