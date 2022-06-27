@@ -93,7 +93,7 @@ Settlement process is very similar, however DAI is transfered from source domain
 
 For a slow path, once the L2->L1 message from the source domain is received on L1 and can be relayed, the user can relay the message, which will call `requestMint()` on the target domain `L1Bridge`. This will pass an L1->L2 message to `L2bridge` which will call `requestMint()` on a `TeleportJoin` contract on target domain L2.
 
-## Technical Documenation
+## Technical Documentation
 
 Each Teleport is described with the following struct:
 
@@ -108,7 +108,7 @@ struct TeleportGUID {
 	uint48 timestamp;
 }
 ```
-Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support not EVM compliant domains.
+Source domain implementation must ensure that `keccack(TeleportGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support not EVM compliant domains.
 
 ### Contracts
 
@@ -140,11 +140,11 @@ Source domain implementation must ensure that `keccack(WorkholeGUID)` is unique 
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - auth (`TeleportRouter`, `TeleportOracleAuth`)
   * `mintPending` - operator or receiver
-  * `settle` - anyone (typically keeper)
-* `L1TeleportBridge`
+  * `settle` - anyone (typically L1 bridge)
+* `L1DaiTeleportGateway`
   * `finalizeFlush()` - L2 bridge
   * `finalizeRegisterTeleport()` - L2 bridge
-* `L2DAITeleportBridge`
+* `L2DaiTeleportGateway`
   * `initalizeTeleport` - anyone (typically user)
   * `flush` - anyone (typically keeper)
 
@@ -178,6 +178,7 @@ If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 
 
 ## Related repositories
 
-* [Optimism Teleport Bridge](https://github.com/makerdao/optimism-dai-bridge/pull/59)
-* [Integration tests](https://github.com/makerdao/teleport-integration-tests)
+* [Optimism Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/optimism-dai-bridge)
+* [Arbitrum Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/arbitrum-dai-bridge)
+* [Integration tests](https://github.com/makerdao/xdomain/tree/master/packages/teleport-integration-tests)
 
