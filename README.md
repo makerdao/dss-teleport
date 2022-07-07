@@ -1,14 +1,14 @@
 # DAI Teleport
 
-DAI Teleport facility allows users to fast teleport DAI between "domains", i.e. different chains that have a settlement mechanism with Ethereum L1. 
+DAI Teleport facility allows users to fast teleport DAI between "domains", i.e. different chains that have a settlement mechanism with Ethereum L1.
 
-If DAI is teleported from L2 -> L1, this is equivalent to "fast withdrawal". First, DAI will be burned on L2, then minted on L1 and sent to the user as soon as the L2 transaction is confirmed. After a while, during a settlement process, DAI will be released from L1 Bridge escrow (to have DAI on L2 in the first place, it had to be put on L1 escrow some time before) and burned. 
+If DAI is teleported from L2 -> L1, this is equivalent to "fast withdrawal". First, DAI will be burned on L2, then minted on L1 and sent to the user as soon as the L2 transaction is confirmed. After a while, during a settlement process, DAI will be released from L1 Bridge escrow (to have DAI on L2 in the first place, it had to be put on L1 escrow some time before) and burned.
 
 If DAI is teleported from L2 -> L2, on the source domain it will be burned and on the destination domain it will be minted, while settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
 
 ## Security
 
-Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerability please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/).
+Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerability please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/). (Note: /src/relays/TrustedRelay.sol is current excluded as that was a proof of concept.)
 
 ## Domains, Gateways and Teleport Router
 
@@ -21,11 +21,11 @@ Teleport Router keeps track of each Domain's Gateway and routes `requestMint()` 
 
 ## Roles
 
-* **Initiator** - person initiating DAI transfer by calling `initiateTeleport` . They can optionally specify Operator and Receiver 
+* **Initiator** - person initiating DAI transfer by calling `initiateTeleport` . They can optionally specify Operator and Receiver
 * **Operator** - person (or specified third party) responsible for initiating minting process on destination domain by providing (in the fast path) Oracle attestations. Can call `requestMint` on `TeleportOracleAuth`
 * **Receiver** - person receiving minted DAI on a destination domain
 
-## DAI Teleport L2 → L1 (aka fast withdrawals) 
+## DAI Teleport L2 → L1 (aka fast withdrawals)
 
 ![FastWithdrawal](./docs/fw.png?raw=true)
 
@@ -36,8 +36,8 @@ Teleport Router keeps track of each Domain's Gateway and routes `requestMint()` 
 * `teleportJoin.fees[domain]` - *Domain Fee Structure*. Given details (TeleportGUID, current utilization etc) calculates how much charge for a mint.
 * `teleportJoin.vow` - *Fees Receiver*.
 * `TeleportOracleAuth.threshold` - *Feeds Threshold*. How many feeds (oracles) need to attest to be able to mint.
-* `TeleportOracleAuth.signers` - *Feeds List*. 
-* `TeleportRouter.gateway[domain]` - *Gateways Supported*. 
+* `TeleportOracleAuth.signers` - *Feeds List*.
+* `TeleportRouter.gateway[domain]` - *Gateways Supported*.
 
 
 ### Normal (fast) path
@@ -47,7 +47,7 @@ To fast withdraw DAI from L2, user:
 * Calls `l2bridge.initiateTeleport()` - this burns DAI on L2 and sends `finalizeRegisterTeleport()` L2 -> L1 message to withdraw DAI from L2 bridge. This message, in normal cicumstances, will never be relayed and it will eventually expire in L1 message queue
 * Waits for withdrawal attestations to be available and obtains them via Oracle API
 * Calls `TeleportOracleAuth.requestMint(TeleportGUID teleportGUID, bytes signatures, uint256 maxFeePercentage, uint256 operatorFee)` which will:
-  * Check if `sender` is `operator` or `receiver` 
+  * Check if `sender` is `operator` or `receiver`
   *   Check if enough valid attestations (sigs) are provided
   *   Call `TeleportJoin.requestMint(teleportGUID, maxfeePercentage, operatorFee)` which will
         * Check if this teleport hasn't been used before
@@ -113,7 +113,7 @@ Source domain implementation must ensure that `keccack(TeleportGUID)` is unique 
 ### Contracts
 
 **`TeleportRouter`**
-* `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one. 
+* `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one.
 * `requestMint(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by `L1Bridge`, issues a request to mint DAI for the receiver of the teleport. This request is made either directly to the L1 `TeleportJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `TeleportJoin` in the case of a teleport to another L2.
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `TeleportJoin` or target domain `L1 bridge` to settle DAI
 
@@ -136,7 +136,7 @@ Source domain implementation must ensure that `keccack(TeleportGUID)` is unique 
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - L1 Bridge
   * `settle` - L1 Bridge
-* `TeleportJoin` 
+* `TeleportJoin`
   * `rely`, `deny`, `file` - auth (Governance)
   * `requestMint` - auth (`TeleportRouter`, `TeleportOracleAuth`)
   * `mintPending` - operator or receiver
@@ -172,13 +172,12 @@ Setup: Debt ceiling: 10M DAI
 ### Oracle censoring or oracle failure
 If user is unable to obtain Oracle's attestations, slow path is taken - no user funds are at risk
 ### Oracle malfunction (wrong attestations)
-If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 is burn and withdrawn whereas in reality is not), this will result in bad debt - DAI minted in a teleport will never be settled. This will result in bad debt that eventually will have to be healed through a standard MakerDAO debt healing processes. 
+If user is able to obtain fraudulant attestation (i.e. attesting that DAI on L2 is burn and withdrawn whereas in reality is not), this will result in bad debt - DAI minted in a teleport will never be settled. This will result in bad debt that eventually will have to be healed through a standard MakerDAO debt healing processes.
 ### Source domain compromised
-### Target domain compromised 
+### Target domain compromised
 
 ## Related repositories
 
 * [Optimism Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/optimism-dai-bridge)
 * [Arbitrum Teleport Gateway](https://github.com/makerdao/xdomain/tree/master/packages/arbitrum-dai-bridge)
 * [Integration tests](https://github.com/makerdao/xdomain/tree/master/packages/teleport-integration-tests)
-
