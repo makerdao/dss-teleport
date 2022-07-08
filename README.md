@@ -62,12 +62,12 @@ Settlement process moves DAI from L1 Bridge to TeleportJoin to clear the debt th
 * On L2 keeper calls `l2bridge.flush()`
 * L2 -> L1 message `finalizeFlush()` is sent to `L1Bridge` and relayed by a keeper
 * `L1Bridge` upon receiving `finalizeFlush()` calls `TeleportRouter.settle()` which will
-    * Transfer `DAI` from bridges' escrow to `TeleportJoin`
+    * Transfer `DAI` from the bridge's escrow to `TeleportJoin`
     * Call `TeleportJoin.settle()` which will use transfered DAI to clear any outstanding debt by calling `daiJoin.join`, `vat.frob`, `vat.slip`
 
 ### Slow (emergency) path
 
-If attestations cannot be obtained (Oracles down or censoring), user needs to wait so that L2 message is confirmed on L1 (on Optimistic Rollups that typically is 7 days, on zkRollups it can be anything between few hours to a day). Once L2->L1 message can be relayed, user:
+If attestations cannot be obtained (Oracles down or censoring), user needs to wait so that L2 message is confirmed on L1 (on Optimistic Rollups that is typically 7 days, on zkRollups it can be anything between few hours to a day). Once L2->L1 message can be relayed, user:
 
 * Relays `finalizeRegisterTeleport()`  message to `L1Bridge`
 * `L1Bridge` upon receiving `finalizeRegisterTeleport()` will call `requestMint()` on `TeleportRouter` which will:
