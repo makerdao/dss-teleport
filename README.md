@@ -71,7 +71,7 @@ If attestations cannot be obtained (Oracles down or censoring), user needs to wa
 
 * Relays `finalizeRegisterTeleport()`  message to `L1Bridge`
 * `L1Bridge` upon receiving `finalizeRegisterTeleport()` will call `requestMint()` on `TeleportRouter` which will:
-    * Call `TeleportJoin.requestMint(teleportGUID, maxfeePercentage, operatorFee)` which will
+    * Call `TeleportJoin.requestMint(teleportGUID, maxfeePercentage, operatorFee)` which will:
         * Check if this teleport hasn't been used before
         * Check if the debt ceiling hasn't been reached
         * Check the current fee via `TeleportFees`
@@ -83,11 +83,11 @@ If attestations cannot be obtained (Oracles down or censoring), user needs to wa
 
 ### Normal (fast) path
 
-Teleporting DAI to another L2 domain is very similar, the only difference is that DAI is minted on a target Domain rather then on L1. For this scheme to work MakerDAO `MCD` sytem needs to be deployed on a target domain.
+Teleporting DAI to another L2 domain is very similar, the only difference is that DAI is minted on a target Domain rather than on L1. For this scheme to work, the MakerDAO `MCD` sytem needs to be deployed on a target domain.
 
 ### Settlement
 
-Settlement process is very similar, however DAI is transfered from source domain bridge on L1 to target domain bridge on L1 before rather then moved to `L1 MCD` to pay the debt. This DAI, now in target domain bridge will be backing DAI that is minted on L2 target domain.
+Settlement process is very similar, however DAI is transfered from the source domain bridge on L1 to the target domain bridge on L1 rather than moved from the source domain to `L1 MCD` to pay the debt. This DAI, now in target domain bridge on L1 will be backing DAI that is minted on L2 target domain.
 
 ### Slow (emergency) path
 
