@@ -4,11 +4,11 @@ DAI Teleport facility allows users to fast teleport DAI between "domains", i.e. 
 
 If DAI is teleported from L2 -> L1, this is equivalent to "fast withdrawal". First, DAI will be burned on L2, then minted on L1 and sent to the user as soon as the L2 transaction is confirmed. After a while, during a settlement process, DAI will be released from L1 Bridge escrow (to have DAI on L2 in the first place, it had to be put on L1 escrow some time before) and burned.
 
-If DAI is teleported from L2 -> L2, on the source domain it will be burned and on the destination domain it will be minted, while settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
+If DAI is teleported from L2 -> L2, it will be burned on the source domain and it will be minted on the destination domain, while the settlement process on L1 will eventually move DAI from source domain bridge escrow to destination domain bridge escrow.
 
 ## Security
 
-Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerability please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/). (Note: /src/relays/TrustedRelay.sol is current excluded as that was a proof of concept.)
+Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerabilities, please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/). (Note: /src/relays/TrustedRelay.sol is current excluded as that was a proof of concept.)
 
 ## Domains, Gateways and Teleport Router
 
@@ -33,11 +33,11 @@ Teleport Router keeps track of each Domain's Gateway and routes `requestMint()` 
 
 * `vat.ilk[teleportJoinIlk].line`- *Teleport Debt Ceiling*. Usually should be a sum of all debt ceilings available for each domain.
 * `teleportJoin.line[domain]` - *Domain Debt Ceiling*. How much DAI can be drawn by a particular domain.
-* `teleportJoin.fees[domain]` - *Domain Fee Structure*. Given details (TeleportGUID, current utilization etc) calculates how much charge for a mint.
+* `teleportJoin.fees[domain]` - *Domain Fee Structure*. Given details (TeleportGUID, current utilization etc) calculates how much to charge for a mint.
 * `teleportJoin.vow` - *Fees Receiver*.
 * `TeleportOracleAuth.threshold` - *Feeds Threshold*. How many feeds (oracles) need to attest to be able to mint.
 * `TeleportOracleAuth.signers` - *Feeds List*.
-* `TeleportRouter.gateway[domain]` - *Gateways Supported*.
+* `TeleportRouter.gateways[domain]` / `TeleportRouter.domains[gateway]`- *Gateway Supported for a Domain*.
 
 
 ### Normal (fast) path
@@ -108,7 +108,7 @@ struct TeleportGUID {
 	uint48 timestamp;
 }
 ```
-Source domain implementation must ensure that `keccack(TeleportGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support not EVM compliant domains.
+Source domain implementation must ensure that `keccack(TeleportGUID)` is unique for each teleport transfer. We use `bytes32` for addresses to support non-EVM compliant domains.
 
 ### Contracts
 
