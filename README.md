@@ -114,14 +114,14 @@ Source domain implementation must ensure that `keccack(TeleportGUID)` is unique 
 
 **`TeleportRouter`**
 * `file(what=="gateway", domain, gateway)` - callable only by Governance, sets the gateway for a domain. If a gateway is already set, replaces it with a new one.
-* `requestMint(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by `L1Bridge`, issues a request to mint DAI for the receiver of the teleport. This request is made either directly to the L1 `TeleportJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `TeleportJoin` in the case of a teleport to another L2.
+* `requestMint(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by the gateway for the source domain (i.e. `L1Bridge`), issues a request to mint DAI for the receiver of the teleport. This request is made either directly to the L1 `TeleportJoin` in the case of a fast withdrawal to L1 or indirectly by instructing the target domain's `L1Bridge` to pass an `L1 -> L2` message to the corresponding L2 `TeleportJoin` in the case of a teleport to another L2.
 * `function settle(bytes32 targetDomain, uint256 batchedDaiToFlush)` - callable only by the `L1bridge`, handles settlement process by requesting either `TeleportJoin` or target domain `L1 bridge` to settle DAI
 
 **`TeleportOracleAuth`**
 * `requestMint(TeleportGUID calldata teleportGUID, bytes calldata signatures, uint256 maxFeePercentage, uint256 operatorFee)` - callable only by the teleport operator or receiver, requests `TeleportJoin` to mint DAI for the receiver of the teleport provided required number of Oracle attestations are given
 
 **`TeleportJoin`**
-* `requestMint(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable either by `TeleportOracleAuth` (fast path) or by `TeleportRouter` (slow path), mints and withdraws DAI from the teleport. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
+* `requestMint(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable either by auth'ed contract (i.e. `TeleportOracleAuth` (fast path) or by `TeleportRouter` (slow path)), mints and withdraws DAI from the teleport. If debt ceiling is reached, partial amount will be withdrawn and anything pending can be withdrawn using `mintPending()` later
 * `mintPending(TeleportGUID calldata teleportGUID, uint256 maxFeePercentage, uint256 operatorFee)` - callable by teleport operator or receiver, withdraws any pending DAI from a teleport
 * `settle(bytes32 sourceDomain, uint256 batchedDaiToFlush)` - callable only by `TeleportRouter`, settles DAI debt
 
