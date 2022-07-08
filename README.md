@@ -8,7 +8,7 @@ If DAI is teleported from L2 -> L2, it will be burned on the source domain and i
 
 ## Security
 
-Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerabilities, please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/). (Note: /src/relays/TrustedRelay.sol is current excluded as that was a proof of concept.)
+Smart contracts stored in this repository are part of the bug bounty. To disclose any vulnerabilities, please refer to the [bug bounty page](https://immunefi.com/bounty/makerdao/). (Note: /src/relays/TrustedRelay.sol is currently excluded as that was a proof of concept.)
 
 ## Domains, Gateways and Teleport Router
 
