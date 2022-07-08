@@ -97,7 +97,7 @@ For a slow path, once the L2->L1 message from the source domain is received on L
 
 Each Teleport is described with the following struct:
 
-```
+```solidity
 struct TeleportGUID {
 	bytes32 sourceDomain;
 	bytes32 targetDomain;
