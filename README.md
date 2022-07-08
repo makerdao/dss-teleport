@@ -137,8 +137,8 @@ Source domain implementation must ensure that `keccack(TeleportGUID)` is unique 
   * `requestMint` - L1 Bridge
   * `settle` - L1 Bridge
 * `TeleportJoin`
-  * `rely`, `deny`, `file` - auth (Governance)
-  * `requestMint` - auth (`TeleportRouter`, `TeleportOracleAuth`)
+  * `rely`, `deny`, `file` - auth (called by Governance)
+  * `requestMint` - auth (should be called by `TeleportRouter` or `TeleportOracleAuth`)
   * `mintPending` - operator or receiver
   * `settle` - anyone (typically L1 bridge)
 * `L1DaiTeleportGateway`
