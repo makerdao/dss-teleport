@@ -29,7 +29,7 @@ interface GatewayLike {
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee);
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external;
 }
 
 contract TeleportRouter {
@@ -38,15 +38,16 @@ contract TeleportRouter {
 
     mapping (address => uint256) public wards;          // Auth
     mapping (bytes32 => address) public gateways;       // GatewayLike contracts called by the router for each domain
-    mapping (address => bytes32) public domains;        // Domains for each gateway
 
     EnumerableSet.Bytes32Set private allDomains;
+    address public parent;
 
     TokenLike immutable public dai; // L1 DAI ERC20 token
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
+    event File(bytes32 indexed what, address data);
 
     modifier auth {
         require(wards[msg.sender] == 1, "TeleportRouter/not-authorized");
@@ -75,9 +76,8 @@ contract TeleportRouter {
      * and `requestMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
      * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the L1 domain)
      * and L1 bridge contracts (for L2 domains).
-     * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
-     * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
-     * the enumerable set `allDomains`.
+     * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names this method
+     * also maintains the enumerable set `allDomains`.
      * @param what The name of the operation. Only "gateway" is supported.
      * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
      * @param data The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
@@ -91,8 +91,7 @@ contract TeleportRouter {
                     allDomains.add(domain);
                 }
             } else { 
-                // existing domain 
-                domains[prevGateway] = bytes32(0);
+                // existing domain
                 if(data == address(0)) {
                     // => remove domain from allDomains
                     allDomains.remove(domain);
@@ -100,13 +99,25 @@ contract TeleportRouter {
             }
 
             gateways[domain] = data;
-            if(data != address(0)) {
-                domains[data] = domain;
-            }
         } else {
             revert("TeleportRouter/file-unrecognized-param");
         }
         emit File(what, domain, data);
+    }
+
+    /**
+     * @notice Allows auth to configure the router. The only supported operation is "parent",
+     * which sets the fallback address if no specific domain is matched.
+     * @param what The name of the operation. Only "parent" is supported.
+     * @param data Set the fallback gateway or address(0) to disable the fallback.
+     */
+    function file(bytes32 what, address data) external auth {
+        if (what == "parent") {
+            parent = data;
+        } else {
+            revert("TeleportRouter/file-unrecognized-param");
+        }
+        emit File(what, data);
     }
 
     function numDomains() external view returns (uint256) {
@@ -132,8 +143,12 @@ contract TeleportRouter {
         uint256 maxFeePercentage,
         uint256 operatorFee
     ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
+        // We trust the parent gateway with any sourceDomain as a compromised parent implies compromised child
+        // Otherwise we restrict passing messages only from the actual source domain
+        require(msg.sender == parent || msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
         address gateway = gateways[teleportGUID.targetDomain];
+        // Use fallback if no gateway is configured for the target domain
+        if (gateway == address(0)) gateway = parent;
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
         (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(teleportGUID, maxFeePercentage, operatorFee);
     }
@@ -141,16 +156,20 @@ contract TeleportRouter {
     /**
      * @notice Call a GatewayLike contract to settle a batch of sourceDomain -> targetDomain DAI transfer. 
      * The sender must be a supported gateway
-     * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
+     * @param sourceDomain The domain sending the batch of DAI
+     * @param targetDomain The domain receiving the batch of DAI
      * @param batchedDaiToFlush The amount of DAI in the batch 
      */
-    function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
-        bytes32 sourceDomain = domains[msg.sender];
-        require(sourceDomain != bytes32(0), "TeleportRouter/sender-not-gateway");
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external {
+        // We trust the parent gateway with any sourceDomain as a compromised parent implies compromised child
+        // Otherwise we restrict passing messages only from the actual source domain
+        require(msg.sender == parent || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
         address gateway = gateways[targetDomain];
+        // Use fallback if no gateway is configured for the target domain
+        if (gateway == address(0)) gateway = parent;
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
-         // Forward the DAI to settle to the gateway contract
+        // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
-        GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
+        GatewayLike(gateway).settle(sourceDomain, targetDomain, batchedDaiToFlush);
     }
 }
