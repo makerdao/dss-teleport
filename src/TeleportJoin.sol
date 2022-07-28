@@ -305,10 +305,35 @@ contract TeleportJoin {
 
     function initiateTeleport(
         bytes32 targetDomain,
+        address receiver,
+        uint128 amount
+    ) external {
+        initiateTeleport(
+            targetDomain,
+            addressToBytes32(receiver),
+            amount,
+            0
+        );
+    }
+    function initiateTeleport(
+        bytes32 targetDomain,
+        address receiver,
+        uint128 amount,
+        address operator
+    ) external {
+        initiateTeleport(
+            targetDomain,
+            addressToBytes32(receiver),
+            amount,
+            addressToBytes32(operator)
+        );
+    }
+    function initiateTeleport(
+        bytes32 targetDomain,
         bytes32 receiver,
         uint128 amount,
         bytes32 operator
-    ) external {
+    ) public {
         TeleportGUID memory teleport = TeleportGUID({
             sourceDomain: domain,
             targetDomain: targetDomain,
