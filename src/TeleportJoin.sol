@@ -212,6 +212,20 @@ contract TeleportJoin {
     }
 
     /**
+    * @dev External authed function that registers the teleport
+    * @param teleportGUID Struct which contains the whole teleport data
+    **/
+    function registerMint(
+        TeleportGUID calldata teleportGUID
+    ) external auth {
+        bytes32 hashGUID = getGUIDHash(teleportGUID);
+        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
+        teleports[hashGUID].blessed = true;
+        teleports[hashGUID].pending = teleportGUID.amount;
+        emit Register(hashGUID, teleportGUID);
+    }
+
+    /**
     * @dev External authed function that registers the teleport and executes the mint after
     * @param teleportGUID Struct which contains the whole teleport data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)

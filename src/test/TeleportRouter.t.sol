@@ -255,7 +255,7 @@ contract TeleportRouterTest is DSTest {
         assertTrue(!_tryFile("meh", address(888)));
     }
 
-    function testFailRequestMintFromNotGateway() public {
+    function testFailRegisterMintFromNotGateway() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
@@ -267,10 +267,10 @@ contract TeleportRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(555));
 
-        router.requestMint(guid, 4 * WAD / 10000, 0);
+        router.registerMint(guid);
     }
 
-    function testRequestMintTargetingL1() public {
+    function testRegisterMintTargetingL1() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: l1Domain,
@@ -283,10 +283,10 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", l1Domain, teleportJoin);
 
-        router.requestMint(guid, 4 * WAD / 10000, 0);
+        router.registerMint(guid);
     }
 
-    function testRequestMintTargetingL2() public {
+    function testRegisterMintTargetingL2() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
@@ -299,10 +299,10 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
-        router.requestMint(guid, 4 * WAD / 10000, 0);
+        router.registerMint(guid);
     }
 
-    function testFailRequestMintTargetingInvalidDomain() public {
+    function testFailRegisterMintTargetingInvalidDomain() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "invalid-network",
@@ -314,10 +314,10 @@ contract TeleportRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(this));
 
-        router.requestMint(guid, 4 * WAD / 10000, 0);
+        router.registerMint(guid);
     }
 
-    function testRequestMintFromParent() public {
+    function testRegisterMintFromParent() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
@@ -330,7 +330,7 @@ contract TeleportRouterTest is DSTest {
         router.file("parent", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
-        router.requestMint(guid, 4 * WAD / 10000, 0);
+        router.registerMint(guid);
     }
 
     function testFailSettleFromNotGateway() public {

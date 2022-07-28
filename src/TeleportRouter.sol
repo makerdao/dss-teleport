@@ -24,11 +24,7 @@ interface TokenLike {
 }
 
 interface GatewayLike {
-    function requestMint(
-        TeleportGUID calldata teleportGUID,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external returns (uint256 postFeeAmount, uint256 totalFee);
+    function registerMint(TeleportGUID calldata teleportGUID) external;
     function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external;
 }
 
@@ -73,7 +69,7 @@ contract TeleportRouter {
     /**
      * @notice Allows auth to configure the router. The only supported operation is "gateway",
      * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
-     * and `requestMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
+     * and `registerMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
      * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the L1 domain)
      * and L1 bridge contracts (for L2 domains).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names this method
@@ -131,18 +127,10 @@ contract TeleportRouter {
     }
 
     /**
-     * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
+     * @notice Call a GatewayLike contract to register the minting of DAI. The sender must be a supported gateway
      * @param teleportGUID The teleport GUID to register
-     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-     * @param operatorFee The amount of DAI to pay to the operator
-     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
-     * @return totalFee The total amount of DAI charged as fees
      */
-    function requestMint(
-        TeleportGUID calldata teleportGUID,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
+    function registerMint(TeleportGUID calldata teleportGUID) external {
         // We trust the parent gateway with any sourceDomain as a compromised parent implies compromised child
         // Otherwise we restrict passing messages only from the actual source domain
         require(msg.sender == parent || msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
@@ -150,7 +138,7 @@ contract TeleportRouter {
         // Use fallback if no gateway is configured for the target domain
         if (gateway == address(0)) gateway = parent;
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
-        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(teleportGUID, maxFeePercentage, operatorFee);
+        GatewayLike(gateway).registerMint(teleportGUID);
     }
 
     /**
