@@ -142,7 +142,7 @@ contract TeleportJoinIntegrationTest is DSTest {
         assertEq(vat.dai(address(teleportJoin)), 0);
         dai.transfer(address(teleportJoin), teleportAmount);
 
-        teleportJoin.settle(SLAVE_DOMAIN, teleportAmount);
+        teleportJoin.settle(SLAVE_DOMAIN, MASTER_DOMAIN, teleportAmount);
 
         assertEq(vat.dai(address(teleportJoin)), teleportAmount * RAY); // the dai is now locked in teleportJoin
         assertEq(teleportJoin.cure(), teleportAmount * RAY); // the debt was not actually settled

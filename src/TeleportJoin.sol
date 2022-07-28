@@ -253,9 +253,11 @@ contract TeleportJoin {
     /**
     * @dev External function that repays debt with DAI previously pushed to this contract (in general coming from the bridges)
     * @param sourceDomain domain where the DAI is coming from
+    * @param targetDomain this domain
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external {
+        require(targetDomain == domain, "TeleportJoin/incorrect-targetDomain");
         require(batchedDaiToFlush <= 2 ** 255, "TeleportJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
