@@ -24,6 +24,7 @@ import "src/TeleportConstantFee.sol";
 import "./mocks/VatMock.sol";
 import "./mocks/DaiMock.sol";
 import "./mocks/DaiJoinMock.sol";
+import "./mocks/GatewayMock.sol";
 
 interface Hevm {
     function warp(uint) external;
@@ -51,7 +52,7 @@ contract TeleportJoinTest is DSTest {
         vat = new VatMock();
         dai = new DaiMock();
         daiJoin = new DaiJoinMock(address(vat), address(dai));
-        join = new TeleportJoin(address(vat), address(daiJoin), ilk, domain);
+        join = new TeleportJoin(address(vat), address(daiJoin), ilk, domain, address(this));
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
         join.file("fees", "l2network", address(new TeleportConstantFee(0, TTL)));

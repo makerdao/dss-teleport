@@ -93,7 +93,7 @@ contract TeleportJoinIntegrationTest is DSTest {
 
     function setUp() public {
         // setup teleportJoin
-        teleportJoin = new TeleportJoin(address(vat), chainlog.getAddress("MCD_JOIN_DAI"), ILK, MASTER_DOMAIN);
+        teleportJoin = new TeleportJoin(address(vat), chainlog.getAddress("MCD_JOIN_DAI"), ILK, MASTER_DOMAIN, address(this));
         teleportJoin.file(bytes32("vow"), vow);
         teleportJoin.file("line", SLAVE_DOMAIN, 1_000_000 ether);
         teleportJoin.file("fees", SLAVE_DOMAIN, address(new TeleportConstantFee(0, TTL)));
