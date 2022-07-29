@@ -46,22 +46,23 @@ interface FeesLike {
 
 interface GatewayLike {
     function registerMint(TeleportGUID calldata teleportGUID) external;
-    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external;
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external;
 }
 
 // Primary control for extending Teleport credit
 contract TeleportJoin {
-    mapping (address =>        uint256) public wards;              // Auth
-    mapping (bytes32 =>        address) public fees;               // Fees contract per source domain
-    mapping (bytes32 =>        uint256) public line;               // Debt ceiling per source domain
-    mapping (bytes32 =>         int256) public debt;               // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
-    mapping (bytes32 => TeleportStatus) public teleports;          // Approved teleports and pending unpaid
-    mapping (bytes32 => uint256)        public batchedDaiToFlush;  // Pending DAI to flush per target domain
+    mapping (address =>        uint256) public wards;     // Auth
+    mapping (bytes32 =>        address) public fees;      // Fees contract per source domain
+    mapping (bytes32 =>        uint256) public line;      // Debt ceiling per source domain
+    mapping (bytes32 =>         int256) public debt;      // Outstanding debt per source domain (can be < 0 when settlement occurs before mint)
+    mapping (bytes32 => TeleportStatus) public teleports; // Approved teleports and pending unpaid
+    mapping (bytes32 => uint256)        public batches;   // Pending DAI to flush per target domain
 
     address public vow;
 
     uint256 internal art; // We need to preserve the last art value before the position being skimmed (End)
     uint80  public nonce;
+    uint256 public fdust; // The minimum amount of DAI to be flushed per target domain (prevent spam)
 
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
@@ -76,13 +77,14 @@ contract TeleportJoin {
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, address data);
+    event File(bytes32 indexed what, uint256 data);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
     event File(bytes32 indexed what, bytes32 indexed domain, uint256 data);
     event Register(bytes32 indexed hashGUID, TeleportGUID teleportGUID);
     event Mint(
         bytes32 indexed hashGUID, TeleportGUID teleportGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
     );
-    event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
+    event Settle(bytes32 indexed sourceDomain, uint256 amount);
     event InitiateTeleport(TeleportGUID teleport);
     event Flush(bytes32 indexed targetDomain, uint256 dai);
 
@@ -127,6 +129,15 @@ contract TeleportJoin {
     function file(bytes32 what, address data) external auth {
         if (what == "vow") {
             vow = data;
+        } else {
+            revert("TeleportJoin/file-unrecognized-param");
+        }
+        emit File(what, data);
+    }
+
+    function file(bytes32 what, uint256 data) external auth {
+        if (what == "fdust") {
+            fdust = data;
         } else {
             revert("TeleportJoin/file-unrecognized-param");
         }
@@ -286,9 +297,9 @@ contract TeleportJoin {
     * @param amount Amount of DAI that is being processed for repayment
     **/
     function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
-        require(msg.sender == address(router), "TeleportJoin/not-router");
         require(targetDomain == domain, "TeleportJoin/incorrect-targetDomain");
         require(amount <= 2 ** 255, "TeleportJoin/overflow");
+        dai.transferFrom(msg.sender, address(this), amount);
         daiJoin.join(address(this), amount);
         if (vat.live() == 1) {
             (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
@@ -303,6 +314,13 @@ contract TeleportJoin {
         emit Settle(sourceDomain, amount);
     }
 
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    **/
     function initiateTeleport(
         bytes32 targetDomain,
         address receiver,
@@ -315,6 +333,15 @@ contract TeleportJoin {
             0
         );
     }
+
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    * @param operator An optional address that can be used to mint the DAI at the destination domain (useful for automated relays)
+    **/
     function initiateTeleport(
         bytes32 targetDomain,
         address receiver,
@@ -328,6 +355,15 @@ contract TeleportJoin {
             addressToBytes32(operator)
         );
     }
+
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    * @param operator An optional address that can be used to mint the DAI at the destination domain (useful for automated relays)
+    **/
     function initiateTeleport(
         bytes32 targetDomain,
         bytes32 receiver,
@@ -344,7 +380,7 @@ contract TeleportJoin {
             timestamp: uint48(block.timestamp)
         });
 
-        batchedDaiToFlush[targetDomain] += amount;
+        batches[targetDomain] += amount;
         require(dai.transferFrom(msg.sender, address(this), amount), "DomainHost/transfer-failed");
         
         // Initiate the censorship-resistant slow-path
@@ -354,11 +390,16 @@ contract TeleportJoin {
         emit InitiateTeleport(teleport);
     }
 
+    /**
+    * @notice Flush batched DAI to the target domain
+    * @dev Will initiate a settle operation along the secure, slow routing path
+    * @param targetDomain The target domain to settle
+    **/
     function flush(bytes32 targetDomain) external {
-        uint256 daiToFlush = batchedDaiToFlush[targetDomain];
-        require(daiToFlush > 0, "DomainGuest/zero-dai-flush");
+        uint256 daiToFlush = batches[targetDomain];
+        require(daiToFlush > fdust, "DomainGuest/flush-dust");
 
-        batchedDaiToFlush[targetDomain] = 0;
+        batches[targetDomain] = 0;
 
         router.settle(domain, targetDomain, daiToFlush);
 

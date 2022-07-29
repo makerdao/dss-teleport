@@ -20,12 +20,13 @@ import "./TeleportGUID.sol";
 import "./utils/EnumerableSet.sol";
 
 interface TokenLike {
-  function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
+    function approve(address, uint256) external returns (bool);
+    function transferFrom(address, address, uint256) external returns (bool);
 }
 
 interface GatewayLike {
     function registerMint(TeleportGUID calldata teleportGUID) external;
-    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external;
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external;
 }
 
 contract TeleportRouter {
@@ -146,9 +147,9 @@ contract TeleportRouter {
      * The sender must be a supported gateway
      * @param sourceDomain The domain sending the batch of DAI
      * @param targetDomain The domain receiving the batch of DAI
-     * @param batchedDaiToFlush The amount of DAI in the batch 
+     * @param amount The amount of DAI in the batch 
      */
-    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) external {
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
         // We trust the parent gateway with any sourceDomain as a compromised parent implies compromised child
         // Otherwise we restrict passing messages only from the actual source domain
         require(msg.sender == parent || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
@@ -157,7 +158,8 @@ contract TeleportRouter {
         if (gateway == address(0)) gateway = parent;
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
         // Forward the DAI to settle to the gateway contract
-        dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
-        GatewayLike(gateway).settle(sourceDomain, targetDomain, batchedDaiToFlush);
+        dai.transferFrom(msg.sender, address(this), amount);
+        dai.approve(gateway, amount);
+        GatewayLike(gateway).settle(sourceDomain, targetDomain, amount);
     }
 }
