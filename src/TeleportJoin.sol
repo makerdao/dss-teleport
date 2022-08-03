@@ -129,7 +129,7 @@ contract TeleportJoin {
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
-            require(data <= 2 ** 255 - 1, "TeleportJoin/not-allowed-bigger-int256");
+            require(data <= uint256(type(int256).max), "TeleportJoin/not-allowed-bigger-int256");
             line[domain_] = data;
         } else {
             revert("TeleportJoin/file-unrecognized-param");
@@ -256,7 +256,7 @@ contract TeleportJoin {
     * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
     **/
     function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
-        require(batchedDaiToFlush <= 2 ** 255, "TeleportJoin/overflow");
+        require(batchedDaiToFlush <= uint256(type(int256).max), "TeleportJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
