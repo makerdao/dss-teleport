@@ -74,10 +74,10 @@ contract TeleportRouterTest is DSTest {
 
     function testFileFailsWhenNotAuthed() public {
         assertTrue(_tryFile("gateway", "dom", address(888)));
-        assertTrue(_tryFile("parent", address(888)));
+        assertTrue(_tryFile("defaultGateway", address(888)));
         router.deny(address(this));
         assertTrue(!_tryFile("gateway", "dom", address(888)));
-        assertTrue(!_tryFile("parent", address(888)));
+        assertTrue(!_tryFile("defaultGateway", address(888)));
     }
 
     function testFileNewDomains() public {
@@ -244,10 +244,10 @@ contract TeleportRouterTest is DSTest {
         assertEq(router.domainAt(0), domain2);
     }
 
-    function testFileParent() public {
-        assertTrue(_tryFile("parent", address(123)));
+    function testFileDefaultGateway() public {
+        assertTrue(_tryFile("defaultGateway", address(123)));
 
-        assertEq(router.parent(), address(123));
+        assertEq(router.defaultGateway(), address(123));
     }
 
     function testFileInvalidWhat() public {
@@ -317,7 +317,7 @@ contract TeleportRouterTest is DSTest {
         router.registerMint(guid);
     }
 
-    function testRegisterMintFromParent() public {
+    function testRegisterMintFromDefaultGateway() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
@@ -327,7 +327,7 @@ contract TeleportRouterTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("parent", address(this));
+        router.file("defaultGateway", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
         router.registerMint(guid);
@@ -359,8 +359,8 @@ contract TeleportRouterTest is DSTest {
         router.settle("l2network", "another-l2network", 100 ether);
     }
 
-    function testSettleFromParent() public {
-        router.file("parent", address(this));
+    function testSettleFromDefaultGateway() public {
+        router.file("defaultGateway", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
