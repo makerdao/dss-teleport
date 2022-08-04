@@ -171,6 +171,21 @@ contract TeleportJoin {
     }
 
     /**
+    * @dev Internal function that registers a teleport
+    * @param teleportGUID Struct which contains the whole teleport data
+    * @param hashGUID Hash of the prev struct
+    **/
+    function _register(
+        TeleportGUID calldata teleportGUID,
+        bytes32 hashGUID
+    ) internal {
+        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
+        teleports[hashGUID].blessed = true;
+        teleports[hashGUID].pending = teleportGUID.amount;
+        emit Register(hashGUID, teleportGUID);
+    }
+
+    /**
     * @dev Internal function that executes the mint after a teleport is registered
     * @param teleportGUID Struct which contains the whole teleport data
     * @param hashGUID Hash of the prev struct
@@ -244,11 +259,7 @@ contract TeleportJoin {
     function registerMint(
         TeleportGUID calldata teleportGUID
     ) external auth {
-        bytes32 hashGUID = getGUIDHash(teleportGUID);
-        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
-        teleports[hashGUID].blessed = true;
-        teleports[hashGUID].pending = teleportGUID.amount;
-        emit Register(hashGUID, teleportGUID);
+        _register(teleportGUID, getGUIDHash(teleportGUID));
     }
 
     /**
@@ -265,10 +276,7 @@ contract TeleportJoin {
         uint256 operatorFee
     ) external auth returns (uint256 postFeeAmount, uint256 totalFee) {
         bytes32 hashGUID = getGUIDHash(teleportGUID);
-        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
-        teleports[hashGUID].blessed = true;
-        teleports[hashGUID].pending = teleportGUID.amount;
-        emit Register(hashGUID, teleportGUID);
+        _register(teleportGUID, hashGUID);
         (postFeeAmount, totalFee) = _mint(teleportGUID, hashGUID, maxFeePercentage, operatorFee);
     }
 
