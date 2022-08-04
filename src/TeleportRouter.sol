@@ -96,6 +96,9 @@ contract TeleportRouter {
             }
 
             gateways[domain] = data;
+            if (data != address(0)) {
+                dai.approve(data, type(uint256).max);
+            }
         } else {
             revert("TeleportRouter/file-unrecognized-param");
         }
@@ -111,6 +114,7 @@ contract TeleportRouter {
     function file(bytes32 what, address data) external auth {
         if (what == "defaultGateway") {
             defaultGateway = data;
+            dai.approve(data, type(uint256).max);
         } else {
             revert("TeleportRouter/file-unrecognized-param");
         }
@@ -159,7 +163,6 @@ contract TeleportRouter {
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
         // Forward the DAI to settle to the gateway contract
         dai.transferFrom(msg.sender, address(this), amount);
-        dai.approve(gateway, amount);
         GatewayLike(gateway).settle(sourceDomain, targetDomain, amount);
     }
 }
