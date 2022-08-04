@@ -299,7 +299,7 @@ contract TeleportJoin {
     }
 
     /**
-    * @dev External function that repays debt with DAI previously pushed to this contract (in general coming from the bridges)
+    * @dev External function that repays debt with DAI pulled from the caller
     * @param sourceDomain domain where the DAI is coming from
     * @param targetDomain this domain
     * @param amount Amount of DAI that is being processed for repayment
