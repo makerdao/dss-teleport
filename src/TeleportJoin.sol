@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./TeleportGUID.sol";
 
@@ -155,7 +155,7 @@ contract TeleportJoin {
 
     function file(bytes32 what, bytes32 domain_, uint256 data) external auth {
         if (what == "line") {
-            require(data <= 2 ** 255 - 1, "TeleportJoin/not-allowed-bigger-int256");
+            require(data <= uint256(type(int256).max), "TeleportJoin/not-allowed-bigger-int256");
             line[domain_] = data;
         } else {
             revert("TeleportJoin/file-unrecognized-param");
@@ -298,7 +298,7 @@ contract TeleportJoin {
     **/
     function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
         require(targetDomain == domain, "TeleportJoin/incorrect-targetDomain");
-        require(amount <= 2 ** 255, "TeleportJoin/overflow");
+        require(amount <= uint256(type(int256).max), "TeleportJoin/overflow");
         dai.transferFrom(msg.sender, address(this), amount);
         daiJoin.join(address(this), amount);
         if (vat.live() == 1) {
