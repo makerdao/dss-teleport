@@ -22,10 +22,10 @@ jobs:
         extraPullNames: dapp
 
     - name: Run tests
-      run: nix-shell --pure --run 'dapp test -v'
+      run: nix-shell --pure --argstr url ${{ secrets.ETH_RPC_URL }} --run 'dapp test -v --rpc'
       
     - name: Run coverage
-      run: nix-shell --pure --run 'bash ./coverage.sh'
+      run: nix-shell --pure --argstr url ${{ secrets.ETH_RPC_URL }} --run 'bash ./coverage.sh'
 
   solhint:
     runs-on: ubuntu-latest
