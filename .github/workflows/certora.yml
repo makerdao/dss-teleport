@@ -37,7 +37,7 @@ jobs:
         run: solc-select install 0.8.15
 
       - name: Install Certora
-        run: pip3 install certora-cli-alpha-master
+        run: pip3 install certora-cli
 
       - name: Verify ${{ matrix.teleport }}
         run: make certora-${{ matrix.teleport }}
