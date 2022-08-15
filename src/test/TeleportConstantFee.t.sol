@@ -56,7 +56,7 @@ contract TeleportConstantFeeTest is DSTest {
         assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 10 ether), 0);
     }
 
-    function testFeeForNonZeroAmount() public {
+    function testFeeForNonZeroTotalAmount() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -68,6 +68,20 @@ contract TeleportConstantFeeTest is DSTest {
         });
 
         assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 100 ether), fee);
+    }
+
+    function testFeeForNonZeroPartialAmount() public {
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(this)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+
+        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 60 ether), fee * 60 / 100);
     }
 
     function testFeeForSlowMint() public {
