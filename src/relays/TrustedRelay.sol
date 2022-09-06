@@ -55,6 +55,7 @@ contract TrustedRelay {
     mapping (address => uint256) public wards;   // Auth (Maker governance)
     mapping (address => uint256) public buds;    // Admin accounts managing trusted signers
     mapping (address => uint256) public signers; // Trusted signers
+    mapping (address => uint256) public relayers; // Whitelisted relayers
     
     uint256                public gasMargin; // in BPS (e.g 150% = 15000)
 
@@ -73,6 +74,8 @@ contract TrustedRelay {
     event File(bytes32 indexed what, uint256 data);
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
+    event RelayersAdded(address[] relayers);
+    event RelayersRemoved(address[] relayers);
 
     modifier auth {
         require(wards[msg.sender] == 1, "TrustedRelay/not-authorized");
@@ -137,6 +140,20 @@ contract TrustedRelay {
         emit SignersRemoved(signers_);
     }
 
+    function addRelayers(address[] calldata relayers_) external auth {
+        for(uint i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 1;
+        }
+        emit RelayersAdded(relayers_);
+    }
+
+    function removeRelayers(address[] calldata relayers_) external auth {
+        for(uint i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 0;
+        }
+        emit RelayersRemoved(relayers_);
+    }
+
     /**
      * @notice Gasless relay for the Oracle fast path
      * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
@@ -199,6 +216,7 @@ contract TrustedRelay {
         bytes32 r,
         bytes32 s
     ) internal {
+        require(relayers[msg.sender] == 1, "TrustedRelay/not-whitelisted");
         require(block.timestamp <= expiry, "TrustedRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
