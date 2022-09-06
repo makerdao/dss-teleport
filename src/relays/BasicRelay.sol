@@ -47,16 +47,55 @@ interface TeleportJoinLike {
 // User provides gasFee which is paid to the msg.sender
 contract BasicRelay {
 
+    mapping (address => uint256) public wards;   // Auth
+    mapping (address => uint256) public relayers; // Whitelisted relayers
+
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
     TeleportOracleAuthLike public immutable oracleAuth;
     TeleportJoinLike       public immutable teleportJoin;
 
+    event Rely(address indexed usr);
+    event Deny(address indexed usr);
+    event RelayersAdded(address[] relayers);
+    event RelayersRemoved(address[] relayers);
+
+    modifier auth {
+        require(wards[msg.sender] == 1, "BasicRelay/not-authorized");
+        _;
+    }
+
     constructor(address _oracleAuth, address _daiJoin) {
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
         oracleAuth = TeleportOracleAuthLike(_oracleAuth);
         daiJoin = DaiJoinLike(_daiJoin);
         dai = daiJoin.dai();
         teleportJoin = oracleAuth.teleportJoin();
+    }
+
+    function rely(address usr) external auth {
+        wards[usr] = 1;
+        emit Rely(usr);
+    }
+
+    function deny(address usr) external auth {
+        wards[usr] = 0;
+        emit Deny(usr);
+    }
+
+    function addRelayers(address[] calldata relayers_) external auth {
+        for(uint i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 1;
+        }
+        emit RelayersAdded(relayers_);
+    }
+
+    function removeRelayers(address[] calldata relayers_) external auth {
+        for(uint i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 0;
+        }
+        emit RelayersRemoved(relayers_);
     }
 
     /**
@@ -82,6 +121,7 @@ contract BasicRelay {
         bytes32 r,
         bytes32 s
     ) external {
+        require(relayers[msg.sender] == 1, "BasicRelay/not-whitelisted");
         require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
