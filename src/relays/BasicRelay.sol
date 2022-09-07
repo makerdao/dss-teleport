@@ -47,7 +47,7 @@ interface TeleportJoinLike {
 // User provides gasFee which is paid to the msg.sender
 contract BasicRelay {
 
-    mapping (address => uint256) public wards;   // Auth
+    mapping (address => uint256) public wards;    // Auth
     mapping (address => uint256) public relayers; // Whitelisted relayers
 
     DaiJoinLike            public immutable daiJoin;
@@ -85,14 +85,14 @@ contract BasicRelay {
     }
 
     function addRelayers(address[] calldata relayers_) external auth {
-        for(uint i; i < relayers_.length; i++) {
+        for(uint256 i; i < relayers_.length; i++) {
             relayers[relayers_[i]] = 1;
         }
         emit RelayersAdded(relayers_);
     }
 
     function removeRelayers(address[] calldata relayers_) external auth {
-        for(uint i; i < relayers_.length; i++) {
+        for(uint256 i; i < relayers_.length; i++) {
             relayers[relayers_[i]] = 0;
         }
         emit RelayersRemoved(relayers_);

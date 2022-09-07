@@ -52,9 +52,9 @@ interface DsValueLike {
 // Relay requests are signed by a trusted third-party (typically a backend orchestrating the withdrawal on behalf of the user)
 contract TrustedRelay {
 
-    mapping (address => uint256) public wards;   // Auth (Maker governance)
-    mapping (address => uint256) public buds;    // Admin accounts managing trusted signers
-    mapping (address => uint256) public signers; // Trusted signers
+    mapping (address => uint256) public wards;    // Auth (Maker governance)
+    mapping (address => uint256) public buds;     // Admin accounts managing trusted signers
+    mapping (address => uint256) public signers;  // Trusted signers
     mapping (address => uint256) public relayers; // Whitelisted relayers
     
     uint256                public gasMargin; // in BPS (e.g 150% = 15000)
@@ -141,14 +141,14 @@ contract TrustedRelay {
     }
 
     function addRelayers(address[] calldata relayers_) external auth {
-        for(uint i; i < relayers_.length; i++) {
+        for(uint256 i; i < relayers_.length; i++) {
             relayers[relayers_[i]] = 1;
         }
         emit RelayersAdded(relayers_);
     }
 
     function removeRelayers(address[] calldata relayers_) external auth {
-        for(uint i; i < relayers_.length; i++) {
+        for(uint256 i; i < relayers_.length; i++) {
             relayers[relayers_[i]] = 0;
         }
         emit RelayersRemoved(relayers_);
