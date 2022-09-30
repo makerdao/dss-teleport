@@ -22,8 +22,6 @@ import {TeleportJoin} from "src/TeleportJoin.sol";
 import "src/TeleportGUID.sol";
 import "src/TeleportConstantFee.sol";
 
-import "../mocks/GatewayMock.sol";
-
 interface Hevm {
     function warp(uint) external;
     function store(address, bytes32, bytes32) external;
@@ -96,7 +94,7 @@ contract TeleportJoinIntegrationTest is DSTest {
 
     function setUp() public {
         // setup teleportJoin
-        teleportJoin = new TeleportJoin(address(vat), chainlog.getAddress("MCD_JOIN_DAI"), ILK, MASTER_DOMAIN, address(new GatewayMock()));
+        teleportJoin = new TeleportJoin(address(vat), chainlog.getAddress("MCD_JOIN_DAI"), ILK, MASTER_DOMAIN);
         teleportJoin.file(bytes32("vow"), vow);
         teleportJoin.file("line", SLAVE_DOMAIN, 1_000_000 ether);
         teleportJoin.file("fees", SLAVE_DOMAIN, address(new TeleportConstantFee(0, TTL)));
@@ -143,8 +141,7 @@ contract TeleportJoinIntegrationTest is DSTest {
         // attempt to settle the dai debt
 
         assertEq(vat.dai(address(teleportJoin)), 0);
-        dai.transfer(address(this), teleportAmount);
-        dai.approve(address(teleportJoin), teleportAmount);
+        dai.transfer(address(teleportJoin), teleportAmount);
 
         teleportJoin.settle(SLAVE_DOMAIN, MASTER_DOMAIN, teleportAmount);
 

@@ -35,7 +35,7 @@ contract TeleportRouterTest is DSTest {
     function setUp() public {
         dai = address(new DaiMock());
         teleportJoin = address(new GatewayMock());
-        router = new TeleportRouter(dai);
+        router = new TeleportRouter(dai, l1Domain);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -54,8 +54,13 @@ contract TeleportRouterTest is DSTest {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,address)", what, data));
     }
 
+    function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
+        (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
+    }
+
     function testConstructor() public {
         assertEq(address(router.dai()), dai);
+        assertEq(router.domain(), l1Domain);
         assertEq(router.wards(address(this)), 1);
     }
 
@@ -244,10 +249,14 @@ contract TeleportRouterTest is DSTest {
         assertEq(router.domainAt(0), domain2);
     }
 
-    function testFileDefaultGateway() public {
+    function testFile() public {
+        assertEq(router.defaultGateway(), address(0));
         assertTrue(_tryFile("defaultGateway", address(123)));
-
         assertEq(router.defaultGateway(), address(123));
+
+        assertEq(router.fdust(), 0);
+        assertTrue(_tryFile("fdust", 888));
+        assertEq(router.fdust(), 888);
     }
 
     function testFileInvalidWhat() public {
@@ -372,5 +381,54 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
 
         router.settle("l2network", "invalid-network", 100 ether);
+    }
+
+    function testInitiateTeleport() public {
+        router.file("defaultGateway", teleportJoin);
+        DaiMock(dai).mint(address(this), 100_000 ether);
+        DaiMock(dai).approve(address(router), 100_000 ether);
+
+        assertEq(DaiMock(dai).balanceOf(address(this)), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(address(router)), 0);
+        assertEq(router.batches("ethereum"), 0);
+        assertEq(router.nonce(), 0);
+
+        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+
+        assertEq(DaiMock(dai).balanceOf(address(this)), 0);
+        assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
+        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(router.nonce(), 1);
+    }
+
+    function testFlush() public {
+        router.file("defaultGateway", teleportJoin);
+        DaiMock(dai).mint(address(this), 100_000 ether);
+        DaiMock(dai).approve(address(router), 100_000 ether);
+        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+
+        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(teleportJoin), 0);
+
+        router.flush("ethereum");
+
+        assertEq(router.batches("ethereum"), 0);
+        assertEq(DaiMock(dai).balanceOf(address(router)), 0);
+        assertEq(DaiMock(dai).balanceOf(teleportJoin), 100_000 ether);
+    }
+
+    function testFailFlushDust() public {
+        router.file("defaultGateway", teleportJoin);
+        DaiMock(dai).mint(address(this), 100_000 ether);
+        DaiMock(dai).approve(address(router), 100_000 ether);
+        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+
+        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(teleportJoin), 0);
+
+        router.file("fdust", 200_000 ether);
+        router.flush("ethereum");
     }
 }

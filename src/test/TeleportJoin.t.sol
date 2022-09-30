@@ -24,7 +24,6 @@ import "src/TeleportConstantFee.sol";
 import "./mocks/VatMock.sol";
 import "./mocks/DaiMock.sol";
 import "./mocks/DaiJoinMock.sol";
-import "./mocks/GatewayMock.sol";
 
 interface Hevm {
     function warp(uint) external;
@@ -52,7 +51,7 @@ contract TeleportJoinTest is DSTest {
         vat = new VatMock();
         dai = new DaiMock();
         daiJoin = new DaiJoinMock(address(vat), address(dai));
-        join = new TeleportJoin(address(vat), address(daiJoin), ilk, domain, address(new GatewayMock()));
+        join = new TeleportJoin(address(vat), address(daiJoin), ilk, domain);
         join.file("line", "l2network", 1_000_000 ether);
         join.file("vow", vow);
         join.file("fees", "l2network", address(new TeleportConstantFee(0, TTL)));
@@ -85,10 +84,6 @@ contract TeleportJoinTest is DSTest {
 
     function _tryFile(bytes32 what, address data) internal returns (bool ok) {
         (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,address)", what, data));
-    }
-
-    function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
-        (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
     }
 
     function _tryFile(bytes32 what, bytes32 domain_, address data) internal returns (bool ok) {
@@ -125,10 +120,6 @@ contract TeleportJoinTest is DSTest {
         assertTrue(_tryFile("vow", address(888)));
         assertEq(join.vow(), address(888));
 
-        assertEq(join.fdust(), 0);
-        assertTrue(_tryFile("fdust", 888));
-        assertEq(join.fdust(), 888);
-
         assertEq(join.fees("aaa"), address(0));
         assertTrue(_tryFile("fees", "aaa", address(888)));
         assertEq(join.fees("aaa"), address(888));
@@ -149,7 +140,6 @@ contract TeleportJoinTest is DSTest {
 
     function testInvalidWhat() public {
        assertTrue(!_tryFile("meh", address(888)));
-       assertTrue(!_tryFile("meh", 888));
        assertTrue(!_tryFile("meh", domain, address(888)));
        assertTrue(!_tryFile("meh", domain, 888));
     }
@@ -528,7 +518,7 @@ contract TeleportJoinTest is DSTest {
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 100_000 ether);
 
         join.settle("l2network", domain, 100_000 ether);
 
@@ -539,7 +529,7 @@ contract TeleportJoinTest is DSTest {
     function testWithdrawNegativeDebt() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 100_000 ether);
 
         join.settle("l2network", domain, 100_000 ether);
 
@@ -567,7 +557,7 @@ contract TeleportJoinTest is DSTest {
     function testWithdrawPartialNegativeDebt() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 100_000 ether);
 
         join.settle("l2network", domain, 100_000 ether);
 
@@ -597,7 +587,7 @@ contract TeleportJoinTest is DSTest {
     function testWithdrawVatCaged() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 100_000 ether);
 
         join.settle("l2network", domain, 100_000 ether);
 
@@ -650,7 +640,7 @@ contract TeleportJoinTest is DSTest {
 
         vat.suck(address(0), address(this), 250_000 * RAD);
         daiJoin.exit(address(this), 250_000 ether);
-        dai.approve(address(join), 250_000 ether);
+        dai.transfer(address(join), 250_000 ether);
 
         join.settle("l2network", domain, 250_000 ether);
 
@@ -769,7 +759,7 @@ contract TeleportJoinTest is DSTest {
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 100_000 ether);
         join.settle("l2network", domain, 100_000 ether);
 
         TeleportGUID memory guid = TeleportGUID({
@@ -817,7 +807,7 @@ contract TeleportJoinTest is DSTest {
 
         vat.suck(address(0), address(this), 10_000 * RAD);
         daiJoin.exit(address(this), 10_000 ether);
-        dai.approve(address(join), 100_000 ether);
+        dai.transfer(address(join), 10_000 ether);
         join.settle("l2network_3", domain, 10_000 ether);
 
         assertEq(join.debt("l2network"), -50_000 ether);
@@ -868,46 +858,5 @@ contract TeleportJoinTest is DSTest {
         assertEq(_ink(), 350_000 ether);
         assertEq(_art(), 100_000 ether);
         assertEq(join.cure(), 100_000 * RAD);
-    }
-
-    function testInitiateTeleport() public {
-        vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
-
-        assertEq(dai.balanceOf(address(this)), 100_000 ether);
-        assertEq(join.batches("ethereum"), 0);
-        assertEq(join.nonce(), 0);
-
-        join.initiateTeleport("ethereum", address(123), 100_000 ether);
-
-        assertEq(dai.balanceOf(address(this)), 0);
-        assertEq(join.batches("ethereum"), 100_000 ether);
-        assertEq(join.nonce(), 1);
-    }
-
-    function testFlush() public {
-        vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
-        join.initiateTeleport("ethereum", address(123), 100_000 ether);
-
-        assertEq(join.batches("ethereum"), 100_000 ether);
-
-        join.flush("ethereum");
-
-        assertEq(join.batches("ethereum"), 0);
-    }
-
-    function testFailFlushDust() public {
-        vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.approve(address(join), 100_000 ether);
-        join.initiateTeleport("ethereum", address(123), 100_000 ether);
-
-        assertEq(join.batches("ethereum"), 100_000 ether);
-
-        join.file("fdust", 200_000 ether);
-        join.flush("ethereum");
     }
 }
