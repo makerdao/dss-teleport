@@ -36,17 +36,11 @@ interface DaiJoinLike {
 }
 
 interface TokenLike {
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
     function approve(address, uint256) external returns (bool);
 }
 
 interface FeesLike {
     function getFee(TeleportGUID calldata, uint256, int256, uint256, uint256) external view returns (uint256);
-}
-
-interface GatewayLike {
-    function registerMint(TeleportGUID calldata teleportGUID) external;
-    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external;
 }
 
 // Primary control for extending Teleport credit
@@ -63,7 +57,6 @@ contract TeleportJoin {
 
     VatLike     immutable public vat;
     DaiJoinLike immutable public daiJoin;
-    TokenLike   immutable public dai;
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
 
@@ -91,9 +84,8 @@ contract TeleportJoin {
         emit Rely(msg.sender);
         vat = VatLike(vat_);
         daiJoin = DaiJoinLike(daiJoin_);
-        dai = daiJoin.dai();
         vat.hope(daiJoin_);
-        dai.approve(daiJoin_, type(uint256).max);
+        daiJoin.dai().approve(daiJoin_, type(uint256).max);
         ilk = ilk_;
         domain = domain_;
     }
@@ -281,7 +273,7 @@ contract TeleportJoin {
     }
 
     /**
-    * @dev External function that repays debt with DAI pulled from the caller
+    * @dev External function that repays debt with DAI previously pushed to this contract (in general coming from the bridges)
     * @param sourceDomain domain where the DAI is coming from
     * @param targetDomain this domain
     * @param amount Amount of DAI that is being processed for repayment
