@@ -260,7 +260,7 @@ contract TeleportRouter {
     **/
     function flush(bytes32 targetDomain) external {
         uint256 daiToFlush = batches[targetDomain];
-        require(daiToFlush > fdust, "DomainGuest/flush-dust");
+        require(daiToFlush >= fdust, "DomainGuest/flush-dust");
 
         batches[targetDomain] = 0;
 
