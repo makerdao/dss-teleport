@@ -144,32 +144,6 @@ contract TeleportJoinTest is DSTest {
        assertTrue(!_tryFile("meh", domain, 888));
     }
 
-    function testRegister() public {
-        TeleportGUID memory guid = TeleportGUID({
-            sourceDomain: "l2network",
-            targetDomain: "ethereum",
-            receiver: addressToBytes32(address(123)),
-            operator: addressToBytes32(address(this)),
-            amount: 250_000 ether,
-            nonce: 5,
-            timestamp: uint48(block.timestamp)
-        });
-
-        assertEq(dai.balanceOf(address(123)), 0);
-        assertTrue(!_blessed(guid));
-        assertEq(_pending(guid), 0);
-        assertEq(_ink(), 0);
-        assertEq(_art(), 0);
-
-        join.registerMint(guid);
-
-        assertEq(dai.balanceOf(address(123)), 0);
-        assertTrue(_blessed(guid));
-        assertEq(_pending(guid), 250_000 ether);
-        assertEq(_ink(), 0);
-        assertEq(_art(), 0);
-    }
-
     function testRegisterAndWithdrawAll() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -517,10 +491,9 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.debt("l2network"), 0);
 
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
 
-        join.settle("l2network", domain, 100_000 ether);
+        join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
@@ -528,10 +501,9 @@ contract TeleportJoinTest is DSTest {
 
     function testWithdrawNegativeDebt() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
 
-        join.settle("l2network", domain, 100_000 ether);
+        join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
@@ -556,10 +528,9 @@ contract TeleportJoinTest is DSTest {
 
     function testWithdrawPartialNegativeDebt() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
 
-        join.settle("l2network", domain, 100_000 ether);
+        join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
@@ -586,10 +557,9 @@ contract TeleportJoinTest is DSTest {
 
     function testWithdrawVatCaged() public {
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
 
-        join.settle("l2network", domain, 100_000 ether);
+        join.settle("l2network", 100_000 ether);
 
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.cure(), 0);
@@ -639,10 +609,9 @@ contract TeleportJoinTest is DSTest {
         vat.cage();
 
         vat.suck(address(0), address(this), 250_000 * RAD);
-        daiJoin.exit(address(this), 250_000 ether);
-        dai.transfer(address(join), 250_000 ether);
+        daiJoin.exit(address(join), 250_000 ether);
 
-        join.settle("l2network", domain, 250_000 ether);
+        join.settle("l2network", 250_000 ether);
 
         assertEq(join.debt("l2network"), 0);
         assertEq(_ink(), 250_000 ether);
@@ -758,9 +727,8 @@ contract TeleportJoinTest is DSTest {
         join.file("fees", "l2network_3", address(new TeleportConstantFee(0, TTL)));
 
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
-        join.settle("l2network", domain, 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network", 100_000 ether);
 
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network_2",
@@ -806,9 +774,8 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.cure(), 200_000 * RAD);
 
         vat.suck(address(0), address(this), 10_000 * RAD);
-        daiJoin.exit(address(this), 10_000 ether);
-        dai.transfer(address(join), 10_000 ether);
-        join.settle("l2network_3", domain, 10_000 ether);
+        daiJoin.exit(address(join), 10_000 ether);
+        join.settle("l2network_3", 10_000 ether);
 
         assertEq(join.debt("l2network"), -50_000 ether);
         assertEq(join.debt("l2network_2"), 150_000 ether);
