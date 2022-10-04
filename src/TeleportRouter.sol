@@ -160,7 +160,7 @@ contract TeleportRouter {
      * @param amount The amount of DAI in the batch 
      */
     function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
-        // We trust the parent gateway gateway with any sourceDomain as a compromised parent gateway implies compromised child
+        // We trust the parent gateway with any sourceDomain as a compromised parent gateway implies compromised child
         // Otherwise we restrict passing messages only from the actual source domain
         require(msg.sender == gateways[parentDomain] || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
         
