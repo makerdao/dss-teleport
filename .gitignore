@@ -5,3 +5,5 @@
 .last_confs/
 *.zip
 resource_errors.json
+.zip-output-url.txt
+certora_debug_log.txt

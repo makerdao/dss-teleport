@@ -265,6 +265,62 @@ definition operatorFeeAmt(bool canGenerate, uint256 operatorFee)
                         :
                             0;
 
+// Verify that registerMint behaves correctly
+rule registerMint(
+        join.TeleportGUID guid
+    ) {
+    env e;
+
+    bytes32 hashGUID = aux.getGUIDHash(guid);
+
+    bool    blessedBefore;
+    uint248 pendingBefore;
+    blessedBefore, pendingBefore = teleports(hashGUID);
+
+    registerMint(e, guid);
+
+    bool    blessedAfter;
+    uint248 pendingAfter;
+    blessedAfter, pendingAfter = teleports(hashGUID);
+
+    assert(blessedBefore == false, "blessed before call should be false");
+    assert(blessedAfter == true, "blessed after call should be true");
+    assert(pendingAfter == guid.amount, "pending has not acted as expected");
+}
+
+// Verify revert rules on registerMint
+rule registerMint_revert(
+        join.TeleportGUID guid
+    ) {
+    env e;
+
+    uint256 ward = wards(e.msg.sender);
+
+    bytes32 hashGUID = aux.getGUIDHash(guid);
+
+    bytes32 domain = domain();
+
+    bool vatLive = vat.live() == 1;
+    uint256 line = vatLive ? line(guid.sourceDomain): 0;
+    int256 debt = debt(guid.sourceDomain);
+
+    bool    blessed;
+    uint248 pending;
+    blessed, pending = teleports(hashGUID);
+
+    registerMint@withrevert(e, guid);
+
+    bool revert1  = e.msg.value > 0;
+    bool revert2  = ward != 1;
+    bool revert3  = blessed;
+
+    assert(revert1  => lastReverted, "revert1 failed");
+    assert(revert2  => lastReverted, "revert2 failed");
+    assert(revert3  => lastReverted, "revert3 failed");
+
+    assert(lastReverted => revert1  || revert2  || revert3, "Revert rules are not covering all the cases");
+}
+
 // Verify that requestMint behaves correctly
 rule requestMint(
         join.TeleportGUID guid,
@@ -665,7 +721,7 @@ rule mintPending_revert(
                            revert22 || revert23 || revert24, "Revert rules are not covering all the cases");
 }
 
-rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
+rule settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) {
     env e;
 
     bool vatLive = vat.live() == 1;
@@ -679,9 +735,9 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
 
     uint256 vatDaiJoinBefore = vat.dai(currentContract);
 
-    uint256 amtToPayBack = batchedDaiToFlush <= artBefore ? batchedDaiToFlush : artBefore;
+    uint256 amtToPayBack = amount <= artBefore ? amount : artBefore;
 
-    settle(e, sourceDomain, batchedDaiToFlush);
+    settle(e, sourceDomain, targetDomain, amount);
 
     int256 debtAfter = debt(sourceDomain);
 
@@ -693,23 +749,25 @@ rule settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
 
     uint256 vatDaiJoinAfter = vat.dai(currentContract);
 
-    assert(to_mathint(debtAfter) == to_mathint(debtBefore) - to_mathint(batchedDaiToFlush), "debt has not decreased as expected");
+    assert(to_mathint(debtAfter) == to_mathint(debtBefore) - to_mathint(amount), "debt has not decreased as expected");
     assert(vatLive => inkAfter == inkBefore - amtToPayBack, "ink has not decreased as expected");
     assert(vatLive => artAfter == artBefore - amtToPayBack, "art has not decreased as expected");
     assert(!vatLive => inkAfter == inkBefore, "ink has not stayed the same as expected");
     assert(!vatLive => artAfter == artBefore, "art has not stayed the same as expected");
     assert(vatLive => cureAfter == (artBefore - amtToPayBack) * RAY(), "cure has not been updated as expected");
     assert(!vatLive => cureAfter == cureBefore, "cure has not stayed the same as expected");
-    assert(vatLive => vatDaiJoinAfter == vatDaiJoinBefore + (batchedDaiToFlush - amtToPayBack) * RAY(), "join vat dai has not increased as expected 1");
-    assert(!vatLive => vatDaiJoinAfter == vatDaiJoinBefore + batchedDaiToFlush * RAY(), "join vat dai has not increased as expected 2");
+    assert(vatLive => vatDaiJoinAfter == vatDaiJoinBefore + (amount - amtToPayBack) * RAY(), "join vat dai has not increased as expected 1");
+    assert(!vatLive => vatDaiJoinAfter == vatDaiJoinBefore + amount * RAY(), "join vat dai has not increased as expected 2");
 }
 
-rule settle_revert(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
+rule settle_revert(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) {
     env e;
 
     require(vat() == vat);
     require(daiJoin.vat() == vat);
     require(daiJoin.dai() == dai);
+
+    bytes32 domain = domain();
 
     bool vatLive = vat.live() == 1;
 
@@ -727,21 +785,22 @@ rule settle_revert(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     uint256 daiBalJoin = dai.balanceOf(currentContract);
     uint256 daiAllJoinDaiJoin = dai.allowance(currentContract, daiJoin);
 
-    uint256 amtToPayBack = batchedDaiToFlush <= art ? batchedDaiToFlush : art;
+    uint256 amtToPayBack = amount <= art ? amount : art;
 
-    settle@withrevert(e, sourceDomain, batchedDaiToFlush);
+    settle@withrevert(e, sourceDomain, targetDomain, amount);
 
     bool revert1  = e.msg.value > 0;
-    bool revert2  = batchedDaiToFlush > max_int256();
-    bool revert3  = batchedDaiToFlush * RAY() > max_uint256;
-    bool revert4  = batchedDaiToFlush * RAY() > vatDaiDaiJoin;
-    bool revert5  = vatDaiJoin + batchedDaiToFlush * RAY() > max_uint256;
-    bool revert6  = daiBalJoin < batchedDaiToFlush;
-    bool revert7  = daiAllJoinDaiJoin < batchedDaiToFlush;
-    bool revert8  = vatLive && amtToPayBack > 0 && -1 * to_mathint(amtToPayBack) * RAY() < min_int256();
-    bool revert9  = vatLive && amtToPayBack > ink;
-    bool revert10 = vatLive && vatGemJoin + amtToPayBack > max_uint256;
-    bool revert11 = to_mathint(debt) - to_mathint(batchedDaiToFlush) < min_int256();
+    bool revert2  = targetDomain != domain;
+    bool revert3  = amount > max_int256();
+    bool revert4  = amount * RAY() > max_uint256;
+    bool revert5  = amount * RAY() > vatDaiDaiJoin;
+    bool revert6  = vatDaiJoin + amount * RAY() > max_uint256;
+    bool revert7  = daiBalJoin < amount;
+    bool revert8  = daiAllJoinDaiJoin < amount;
+    bool revert9  = vatLive && amtToPayBack > 0 && -1 * to_mathint(amtToPayBack) * RAY() < min_int256();
+    bool revert10 = vatLive && amtToPayBack > ink;
+    bool revert11 = vatLive && vatGemJoin + amtToPayBack > max_uint256;
+    bool revert12 = to_mathint(debt) - to_mathint(amount) < min_int256();
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");
@@ -754,9 +813,10 @@ rule settle_revert(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     assert(revert9  => lastReverted, "revert9 failed");
     assert(revert10 => lastReverted, "revert10 failed");
     assert(revert11 => lastReverted, "revert11 failed");
+    assert(revert12 => lastReverted, "revert12 failed");
 
     assert(lastReverted => revert1  || revert2  || revert3  ||
                            revert4  || revert5  || revert6  ||
                            revert7  || revert8  || revert9  ||
-                           revert10 || revert11, "Revert rules are not covering all the cases");
+                           revert10 || revert11 || revert12, "Revert rules are not covering all the cases");
 }
