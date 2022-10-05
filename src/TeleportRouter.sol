@@ -79,7 +79,7 @@ contract TeleportRouter {
      * @notice Allows auth to configure the router. The only supported operation is "gateway",
      * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
      * and `registerMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
-     * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the L1 domain)
+     * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the domain of the TeleportRouter instance), 
      * and L1 bridge contracts (for L2 domains).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names this method
      * also maintains the enumerable set `allDomains`.
