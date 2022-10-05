@@ -28,14 +28,15 @@ contract TeleportRouterTest is DSTest {
     TeleportRouter internal router;
     address internal dai;
     address internal teleportJoin;
-    bytes32 constant internal l1Domain = "ethereum";
+    bytes32 constant internal domain = "rollup";
+    bytes32 constant internal parentDomain = "ethereum";
 
     uint256 internal constant WAD = 10**18;
 
     function setUp() public {
         dai = address(new DaiMock());
         teleportJoin = address(new GatewayMock());
-        router = new TeleportRouter(dai, l1Domain);
+        router = new TeleportRouter(dai, domain, parentDomain);
     }
 
     function _tryRely(address usr) internal returns (bool ok) {
@@ -46,8 +47,8 @@ contract TeleportRouterTest is DSTest {
         (ok,) = address(router).call(abi.encodeWithSignature("deny(address)", usr));
     }
 
-    function _tryFile(bytes32 what, bytes32 domain, address data) internal returns (bool ok) {
-        (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, domain, data));
+    function _tryFile(bytes32 what, bytes32 _domain, address data) internal returns (bool ok) {
+        (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, _domain, data));
     }
 
     function _tryFile(bytes32 what, address data) internal returns (bool ok) {
@@ -60,7 +61,8 @@ contract TeleportRouterTest is DSTest {
 
     function testConstructor() public {
         assertEq(address(router.dai()), dai);
-        assertEq(router.domain(), l1Domain);
+        assertEq(router.domain(), domain);
+        assertEq(router.parentDomain(), parentDomain);
         assertEq(router.wards(address(this)), 1);
     }
 
@@ -75,14 +77,6 @@ contract TeleportRouterTest is DSTest {
 
         assertTrue(!_tryRely(address(456)));
         assertTrue(!_tryDeny(address(456)));
-    }
-
-    function testFileFailsWhenNotAuthed() public {
-        assertTrue(_tryFile("gateway", "dom", address(888)));
-        assertTrue(_tryFile("parentGateway", address(888)));
-        router.deny(address(this));
-        assertTrue(!_tryFile("gateway", "dom", address(888)));
-        assertTrue(!_tryFile("parentGateway", address(888)));
     }
 
     function testFileNewDomains() public {
@@ -110,34 +104,35 @@ contract TeleportRouterTest is DSTest {
     }
 
     function testFileNewGatewayForExistingDomain() public {
-        bytes32 domain = "dom";
+        bytes32 domain1 = "dom";
         address gateway1 = address(111);
-        assertTrue(_tryFile("gateway", domain, gateway1));
-        assertEq(router.gateways(domain), gateway1);
+        assertTrue(_tryFile("gateway", domain1, gateway1));
+        assertEq(router.gateways(domain1), gateway1);
         assertEq(router.numDomains(), 1);
-        assertEq(router.domainAt(0), domain);
+        assertEq(router.domainAt(0), domain1);
         address gateway2 = address(222);
         
-        assertTrue(_tryFile("gateway", domain, gateway2));
+        assertTrue(_tryFile("gateway", domain1, gateway2));
 
-        assertEq(router.gateways(domain), gateway2);
+        assertEq(router.gateways(domain1), gateway2);
         assertEq(router.numDomains(), 1);
-        assertEq(router.domainAt(0), domain);
+        assertEq(router.domainAt(0), domain1);
     }
 
     function testFileRemoveLastDomain() public {
-        bytes32 domain = "dom";
+        bytes32 domain1 = "dom";
         address gateway = address(111);
-        assertTrue(_tryFile("gateway", domain, gateway));
-        assertEq(router.gateways(domain), gateway);
+        assertTrue(_tryFile("gateway", domain1, gateway));
+        assertEq(router.gateways(domain1), gateway);
         assertEq(router.numDomains(), 1);
-        assertEq(router.domainAt(0), domain);
+        assertEq(router.domainAt(0), domain1);
 
-        // Remove last domain
-        assertTrue(_tryFile("gateway", domain, address(0)));
+        // Remove last domain1
+        assertTrue(_tryFile("gateway", domain1, address(0)));
 
-        assertEq(router.gateways(domain), address(0));
-        assertTrue(!router.hasDomain(domain));
+        assertEq(router.gateways(domain1), address(0));
+        assertTrue(!router.hasDomain(domain1));
+        assertEq(router.numDomains(), 0);
     }
 
 
@@ -250,10 +245,6 @@ contract TeleportRouterTest is DSTest {
     }
 
     function testFile() public {
-        assertEq(router.parentGateway(), address(0));
-        assertTrue(_tryFile("parentGateway", address(123)));
-        assertEq(router.parentGateway(), address(123));
-
         assertEq(router.fdust(), 0);
         assertTrue(_tryFile("fdust", 888));
         assertEq(router.fdust(), 888);
@@ -264,10 +255,16 @@ contract TeleportRouterTest is DSTest {
         assertTrue(!_tryFile("meh", address(888)));
     }
 
+    function testFileFailsWhenNotAuthed() public {
+        router.deny(address(this));
+        assertTrue(!_tryFile("gateway", "dom", address(888)));
+        assertTrue(!_tryFile("fdust", 1));
+    }
+
     function testFailRegisterMintFromNotGateway() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
-            targetDomain: l1Domain,
+            targetDomain: domain,
             receiver: addressToBytes32(address(123)),
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
@@ -279,10 +276,10 @@ contract TeleportRouterTest is DSTest {
         router.registerMint(guid);
     }
 
-    function testRegisterMintTargetingL1() public {
+    function testRegisterMintTargetingActualDomain() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
-            targetDomain: l1Domain,
+            targetDomain: domain,
             receiver: addressToBytes32(address(123)),
             operator: addressToBytes32(address(234)),
             amount: 250_000 ether,
@@ -290,12 +287,12 @@ contract TeleportRouterTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", l1Domain, teleportJoin);
+        router.file("gateway", domain, teleportJoin);
 
         router.registerMint(guid);
     }
 
-    function testRegisterMintTargetingL2() public {
+    function testRegisterMintTargetingSubDomain() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
@@ -326,7 +323,7 @@ contract TeleportRouterTest is DSTest {
         router.registerMint(guid);
     }
 
-    function testRegisterMintFromparentGateway() public {
+    function testRegisterMintFromParentGateway() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "another-l2network",
@@ -336,7 +333,7 @@ contract TeleportRouterTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        router.file("parentGateway", address(this));
+        router.file("gateway", parentDomain, address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
         router.registerMint(guid);
@@ -347,19 +344,19 @@ contract TeleportRouterTest is DSTest {
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", l1Domain, 100 ether);
+        router.settle("l2network", domain, 100 ether);
     }
 
-    function testSettleTargetingL1() public {
+    function testSettleTargetingActualDomain() public {
         router.file("gateway", "l2network", address(this));
-        router.file("gateway", l1Domain, teleportJoin);
+        router.file("gateway", domain, teleportJoin);
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", l1Domain, 100 ether);
+        router.settle("l2network", domain, 100 ether);
     }
 
-    function testSettleTargetingL2() public {
+    function testSettleTargetingSubDomain() public {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
         DaiMock(dai).mint(address(this), 100 ether);
@@ -368,8 +365,8 @@ contract TeleportRouterTest is DSTest {
         router.settle("l2network", "another-l2network", 100 ether);
     }
 
-    function testSettleFromparentGateway() public {
-        router.file("parentGateway", address(this));
+    function testSettleFromParentGateway() public {
+        router.file("gateway", parentDomain, address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
@@ -384,51 +381,54 @@ contract TeleportRouterTest is DSTest {
     }
 
     function testInitiateTeleport() public {
-        router.file("parentGateway", teleportJoin);
+        address parentGateway = address(new GatewayMock());
+        router.file("gateway", parentDomain, parentGateway);
         DaiMock(dai).mint(address(this), 100_000 ether);
         DaiMock(dai).approve(address(router), 100_000 ether);
 
         assertEq(DaiMock(dai).balanceOf(address(this)), 100_000 ether);
         assertEq(DaiMock(dai).balanceOf(address(router)), 0);
-        assertEq(router.batches("ethereum"), 0);
+        assertEq(router.batches(parentDomain), 0);
         assertEq(router.nonce(), 0);
 
-        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+        router.initiateTeleport(parentDomain, address(123), 100_000 ether);
 
         assertEq(DaiMock(dai).balanceOf(address(this)), 0);
         assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
-        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(router.batches(parentDomain), 100_000 ether);
         assertEq(router.nonce(), 1);
     }
 
     function testFlush() public {
-        router.file("parentGateway", teleportJoin);
+        address parentGateway = address(new GatewayMock());
+        router.file("gateway", parentDomain, parentGateway);
         DaiMock(dai).mint(address(this), 100_000 ether);
         DaiMock(dai).approve(address(router), 100_000 ether);
-        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+        router.initiateTeleport(parentDomain, address(123), 100_000 ether);
 
-        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(router.batches(parentDomain), 100_000 ether);
         assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
-        assertEq(DaiMock(dai).balanceOf(teleportJoin), 0);
+        assertEq(DaiMock(dai).balanceOf(parentGateway), 0);
 
-        router.flush("ethereum");
+        router.flush(parentDomain);
 
-        assertEq(router.batches("ethereum"), 0);
+        assertEq(router.batches(parentDomain), 0);
         assertEq(DaiMock(dai).balanceOf(address(router)), 0);
-        assertEq(DaiMock(dai).balanceOf(teleportJoin), 100_000 ether);
+        assertEq(DaiMock(dai).balanceOf(parentGateway), 100_000 ether);
     }
 
     function testFailFlushDust() public {
-        router.file("parentGateway", teleportJoin);
+        address parentGateway = address(new GatewayMock());
+        router.file("gateway", parentDomain, parentGateway);
         DaiMock(dai).mint(address(this), 100_000 ether);
         DaiMock(dai).approve(address(router), 100_000 ether);
-        router.initiateTeleport("ethereum", address(123), 100_000 ether);
+        router.initiateTeleport(parentDomain, address(123), 100_000 ether);
 
-        assertEq(router.batches("ethereum"), 100_000 ether);
+        assertEq(router.batches(parentDomain), 100_000 ether);
         assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
-        assertEq(DaiMock(dai).balanceOf(teleportJoin), 0);
+        assertEq(DaiMock(dai).balanceOf(parentGateway), 0);
 
         router.file("fdust", 200_000 ether);
-        router.flush("ethereum");
+        router.flush(parentDomain);
     }
 }

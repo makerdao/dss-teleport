@@ -38,17 +38,16 @@ contract TeleportRouter {
     mapping (bytes32 => uint256) public batches;        // Pending DAI to flush per target domain
 
     EnumerableSet.Bytes32Set private allDomains;
-    address public parentGateway;
     uint80  public nonce;
     uint256 public fdust;   // The minimum amount of DAI to be flushed per target domain (prevent spam)
 
     TokenLike immutable public dai;
     bytes32   immutable public domain;
+    bytes32   immutable public parentDomain;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
-    event File(bytes32 indexed what, address data);
     event File(bytes32 indexed what, uint256 data);
     event InitiateTeleport(TeleportGUID teleport);
     event Flush(bytes32 indexed targetDomain, uint256 dai);
@@ -58,9 +57,10 @@ contract TeleportRouter {
         _;
     }
 
-    constructor(address dai_, bytes32 domain_) {
+    constructor(address dai_, bytes32 domain_, bytes32 parentDomain_) {
         dai = TokenLike(dai_);
         domain = domain_;
+        parentDomain = parentDomain_;
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -112,22 +112,6 @@ contract TeleportRouter {
         }
         emit File(what, _domain, data);
     }
-
-    /**
-     * @notice Allows auth to configure the router. The only supported operation is "parentGateway",
-     * which sets the fallback address if no specific domain is matched.
-     * @param what The name of the operation. Only "parentGateway" is supported.
-     * @param data Set the fallback gateway or address(0) to disable the fallback.
-     */
-    function file(bytes32 what, address data) external auth {
-        if (what == "parentGateway") {
-            parentGateway = data;
-            dai.approve(data, type(uint256).max);
-        } else {
-            revert("TeleportRouter/file-unrecognized-param");
-        }
-        emit File(what, data);
-    }
     
     function file(bytes32 what, uint256 data) external auth {
         if (what == "fdust") {
@@ -153,9 +137,9 @@ contract TeleportRouter {
      * @param teleportGUID The teleport GUID to register
      */
     function registerMint(TeleportGUID calldata teleportGUID) external {
-        // We trust the parentGateway gateway with any sourceDomain as a compromised parentGateway implies compromised child
+        // We trust the parent gateway with any sourceDomain as a compromised parent gateway implies compromised child
         // Otherwise we restrict passing messages only from the actual source domain
-        require(msg.sender == parentGateway || msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
+        require(msg.sender == gateways[parentDomain] || msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
         
         _registerMint(teleportGUID);
     }
@@ -163,7 +147,7 @@ contract TeleportRouter {
     function _registerMint(TeleportGUID memory teleportGUID) internal {
         address gateway = gateways[teleportGUID.targetDomain];
         // Use fallback if no gateway is configured for the target domain
-        if (gateway == address(0)) gateway = parentGateway;
+        if (gateway == address(0)) gateway = gateways[parentDomain];
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
         GatewayLike(gateway).registerMint(teleportGUID);
     }
@@ -176,9 +160,9 @@ contract TeleportRouter {
      * @param amount The amount of DAI in the batch 
      */
     function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
-        // We trust the parentGateway gateway with any sourceDomain as a compromised parentGateway implies compromised child
+        // We trust the parent gateway with any sourceDomain as a compromised parent gateway implies compromised child
         // Otherwise we restrict passing messages only from the actual source domain
-        require(msg.sender == parentGateway || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
+        require(msg.sender == gateways[parentDomain] || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
         
         _settle(msg.sender, sourceDomain, targetDomain, amount);
     }
@@ -186,7 +170,7 @@ contract TeleportRouter {
     function _settle(address from, bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) internal {
         address gateway = gateways[targetDomain];
         // Use fallback if no gateway is configured for the target domain
-        if (gateway == address(0)) gateway = parentGateway;
+        if (gateway == address(0)) gateway = gateways[parentDomain];
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
         // Forward the DAI to settle to the gateway contract
         dai.transferFrom(from, gateway, amount);
@@ -276,7 +260,7 @@ contract TeleportRouter {
     **/
     function flush(bytes32 targetDomain) external {
         uint256 daiToFlush = batches[targetDomain];
-        require(daiToFlush > fdust, "DomainGuest/flush-dust");
+        require(daiToFlush >= fdust, "DomainGuest/flush-dust");
 
         batches[targetDomain] = 0;
 
