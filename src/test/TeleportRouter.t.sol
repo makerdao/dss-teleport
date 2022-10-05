@@ -371,7 +371,7 @@ contract TeleportRouterTest is DSTest {
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle(parentDomain, "another-l2network", 100 ether);
+        router.settle("l2network", "another-l2network", 100 ether);
     }
 
     function testFailSettleTargetingInvalidDomain() public {
@@ -388,7 +388,7 @@ contract TeleportRouterTest is DSTest {
 
         assertEq(DaiMock(dai).balanceOf(address(this)), 100_000 ether);
         assertEq(DaiMock(dai).balanceOf(address(router)), 0);
-        assertEq(router.batches(domain), 0);
+        assertEq(router.batches(parentDomain), 0);
         assertEq(router.nonce(), 0);
 
         router.initiateTeleport(parentDomain, address(123), 100_000 ether);
