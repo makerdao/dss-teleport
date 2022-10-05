@@ -244,7 +244,7 @@ contract TeleportRouter {
         });
 
         batches[targetDomain] += amount;
-        require(dai.transferFrom(msg.sender, address(this), amount), "DomainHost/transfer-failed");
+        require(dai.transferFrom(msg.sender, address(this), amount), "TeleportRouter/transfer-failed");
         
         // Initiate the censorship-resistant slow-path
         _registerMint(teleport);
@@ -260,7 +260,7 @@ contract TeleportRouter {
     **/
     function flush(bytes32 targetDomain) external {
         uint256 daiToFlush = batches[targetDomain];
-        require(daiToFlush >= fdust, "DomainGuest/flush-dust");
+        require(daiToFlush >= fdust, "TeleportRouter/flush-dust");
 
         batches[targetDomain] = 0;
 
