@@ -80,7 +80,7 @@ contract TeleportRouter {
      * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
      * and `registerMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
      * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the domain of the TeleportRouter instance), 
-     * and L1 bridge contracts (for L2 domains).
+     * , DomainHost bridges (for the domains that are children to TeleportRouter's domain) and a DomainGuest bridge (for the domain that is parent to TeleportRouter's domain).
      * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names this method
      * also maintains the enumerable set `allDomains`.
      * @param what The name of the operation. Only "gateway" is supported.
