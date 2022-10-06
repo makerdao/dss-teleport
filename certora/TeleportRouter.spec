@@ -137,10 +137,6 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
         gateways(domain) == data, "file did not set gateways(domain) as expected"
     );
     assert(
-        !dataIsEmpty
-        => dai.allowance(currentContract, data) == max_uint256, "file did not set max allowance as expected"
-    );
-    assert(
         gatewayWasEmpty && !hasDomainBefore && !dataIsEmpty && numDomainsBefore < max_uint256
         => numDomainsAfter == numDomainsBefore + 1, "file did not increase allDomains length as expected"
     );
@@ -149,10 +145,6 @@ rule file_domain_address(bytes32 what, bytes32 domain, address data) {
         !lastReverted && gatewayWasEmpty && !dataIsEmpty
         => domainAt == domain, "file did not modify allDomains as expected"
     );
-    // assert(
-    //     !gatewayWasEmpty && gatewayBefore != data
-    //     => dai.allowance(currentContract, gatewayBefore) == 0, "file did not clear allowance as expected"
-    // );
     assert(
         !gatewayWasEmpty && hasDomainBefore && dataIsEmpty
         => numDomainsAfter == numDomainsBefore - 1, "file did not decrease allDomains length as expected"
