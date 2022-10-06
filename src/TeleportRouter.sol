@@ -105,9 +105,6 @@ contract TeleportRouter {
             }
 
             gateways[_domain] = data;
-            if (data != address(0)) {
-                dai.approve(data, type(uint256).max);
-            }
         } else {
             revert("TeleportRouter/file-unrecognized-param");
         }
