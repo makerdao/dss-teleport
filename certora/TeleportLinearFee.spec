@@ -25,7 +25,7 @@ rule getFee(fees.TeleportGUID guid, uint256 a, int256 b, uint256 c, uint256 amtT
 
     uint256 feeCalculated = e.block.timestamp >= guid.timestamp + ttl()
                             ? 0
-                            : fee() * amtToTake / WAD;
+                            : fee() * amtToTake / WAD();
 
     uint256 feeGot = getFee(e, guid, a, b, c, amtToTake);
 
