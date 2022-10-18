@@ -18,45 +18,31 @@ pragma solidity 0.8.15;
 
 import "ds-test/test.sol";
 
-import "src/TeleportConstantFee.sol";
+import "src/TeleportLinearFee.sol";
 import "src/TeleportGUID.sol";
 
 interface Hevm {
     function warp(uint) external;
 }
 
-contract TeleportConstantFeeTest is DSTest {
-
+contract TeleportLinearFeeTest is DSTest {
+    
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
-    uint256 internal fee = 1 ether / 100;
+    uint256 internal fee = 1 ether / 10000; // 1 BPS fee
     uint256 internal ttl = 8 days;
 
-    TeleportConstantFee internal teleportConstantFee;
+    TeleportLinearFee internal teleportLinearFee;
 
     function setUp() public {
-        teleportConstantFee = new TeleportConstantFee(fee, ttl);
+        teleportLinearFee = new TeleportLinearFee(fee, ttl);
     }
 
     function testConstructor() public {
-        assertEq(teleportConstantFee.fee(), fee);
-        assertEq(teleportConstantFee.ttl(), ttl);
+        assertEq(teleportLinearFee.fee(), fee);
+        assertEq(teleportLinearFee.ttl(), ttl);
     }
 
-    function testFeeForZeroAmount() public {
-        TeleportGUID memory guid = TeleportGUID({
-            sourceDomain: "l2network",
-            targetDomain: "ethereum",
-            receiver: addressToBytes32(address(123)),
-            operator: addressToBytes32(address(this)),
-            amount: 0,
-            nonce: 5,
-            timestamp: uint48(block.timestamp)
-        });
-
-        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 10 ether), 0);
-    }
-
-    function testFeeForNonZeroTotalAmount() public {
+    function testFeeForNonZeroAmount() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -67,21 +53,7 @@ contract TeleportConstantFeeTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 100 ether), fee);
-    }
-
-    function testFeeForNonZeroPartialAmount() public {
-        TeleportGUID memory guid = TeleportGUID({
-            sourceDomain: "l2network",
-            targetDomain: "ethereum",
-            receiver: addressToBytes32(address(123)),
-            operator: addressToBytes32(address(this)),
-            amount: 100 ether,
-            nonce: 5,
-            timestamp: uint48(block.timestamp)
-        });
-
-        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 60 ether), fee * 60 / 100);
+        assertEq(teleportLinearFee.getFee(guid, 0, 0, 0, 100 ether), 0.01 ether);
     }
 
     function testFeeForSlowMint() public {
@@ -96,6 +68,6 @@ contract TeleportConstantFeeTest is DSTest {
         });
         hevm.warp(block.timestamp + ttl);
 
-        assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 100 ether), 0);
+        assertEq(teleportLinearFee.getFee(guid, 0, 0, 0, 100 ether), 0);
     }
 }

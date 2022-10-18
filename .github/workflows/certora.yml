@@ -10,7 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         teleport:
-          - fee
+          - con-fee
+          - lin-fee
           - join
           - router
           - oracle
