@@ -214,7 +214,8 @@ contract BasicRelayTest is DSTest {
 
         assertEq(dai.balanceOf(receiver), 0);
         assertEq(dai.balanceOf(address(this)), 0);
-        relay.relay(
+
+        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector, 
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -224,9 +225,13 @@ contract BasicRelayTest is DSTest {
             r,
             s
         );
+        address feeCollector = address(0xf33C0113c702);
+        (bool success,) = address(relay).call(abi.encodePacked(relayData, feeCollector));
+        assertTrue(success);
+
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
-        assertEq(dai.balanceOf(address(this)), 1 ether);
+        assertEq(dai.balanceOf(feeCollector), 1 ether);
     }
 
     function testFail_relay_expired() public {

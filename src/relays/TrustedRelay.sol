@@ -157,6 +157,8 @@ contract TrustedRelay {
     /**
      * @notice Gasless relay for the Oracle fast path
      * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
+     * Must be called by a whitelisted relayer account with the feeCollector address appended
+     * at the end of the calldata, e.g.: `(bool success,) = address(basicRelay).call(abi.encodePacked(relayData, feeCollector));`
      * @param teleportGUID The teleport GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
@@ -187,7 +189,12 @@ contract TrustedRelay {
         requestMint(teleportGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
 
         // Send the gas fee to the relayer
-        dai.transfer(msg.sender, gasFee);
+        address feeCollector;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato uses eip-2771 format to pass feeCollector
+        }
+        dai.transfer(feeCollector, gasFee);
 
         // Optionally execute an external call
         if(to != address(0)) {
