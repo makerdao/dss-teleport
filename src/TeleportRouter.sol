@@ -25,8 +25,8 @@ interface TokenLike {
 }
 
 interface GatewayLike {
-    function registerMint(TeleportGUID calldata teleportGUID) external;
-    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external;
+    function registerMint(TeleportGUID calldata) external;
+    function settle(bytes32, bytes32, uint256) external;
 }
 
 contract TeleportRouter {
@@ -115,7 +115,7 @@ contract TeleportRouter {
         if (what == "fdust") {
             fdust = data;
         } else {
-            revert("TeleportJoin/file-unrecognized-param");
+            revert("TeleportRouter/file-unrecognized-param");
         }
         emit File(what, data);
     }
