@@ -91,14 +91,14 @@ contract TeleportRouter {
     function file(bytes32 what, bytes32 _domain, address data) external auth {
         if (what == "gateway") {
             address prevGateway = gateways[_domain];
-            if(prevGateway == address(0)) { 
+            if (prevGateway == address(0)) { 
                 // new domain => add it to allDomains
-                if(data != address(0)) {
+                if (data != address(0)) {
                     allDomains.add(_domain);
                 }
             } else { 
                 // existing domain
-                if(data == address(0)) {
+                if (data == address(0)) {
                     // => remove domain from allDomains
                     allDomains.remove(_domain);
                 }
