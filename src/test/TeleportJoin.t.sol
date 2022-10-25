@@ -801,8 +801,8 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.cure(), 200_000 * RAD);
 
         vat.suck(address(0), address(this), 10_000 * RAD);
-        daiJoin.exit(address(this), 10_000 ether);
-        dai.transfer(address(join), 10_000 ether);
+        daiJoin.exit(address(join), 10_000 ether);
+
         join.settle("l2network_3", domain, 10_000 ether);
 
         assertEq(join.debt("l2network"), -50_000 ether);
