@@ -517,8 +517,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.debt("l2network"), 0);
 
         vat.suck(address(0), address(this), 100_000 * RAD);
-        daiJoin.exit(address(this), 100_000 ether);
-        dai.transfer(address(join), 100_000 ether);
+        daiJoin.exit(address(join), 100_000 ether);
 
         join.settle("l2network", domain, 100_000 ether);
 
