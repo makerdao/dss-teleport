@@ -51,10 +51,6 @@ contract TeleportRouterTest is DSTest {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,bytes32,address)", what, _domain, data));
     }
 
-    function _tryFile(bytes32 what, address data) internal returns (bool ok) {
-        (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,address)", what, data));
-    }
-
     function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
     }
@@ -252,7 +248,6 @@ contract TeleportRouterTest is DSTest {
 
     function testFileInvalidWhat() public {
         assertTrue(!_tryFile("meh", "aaa", address(888)));
-        assertTrue(!_tryFile("meh", address(888)));
     }
 
     function testFileFailsWhenNotAuthed() public {
