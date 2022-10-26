@@ -188,11 +188,11 @@ contract TrustedRelay {
         // Withdraw the L1 DAI to the receiver
         requestMint(teleportGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
 
-        // Send the gas fee to the relayer
+        // Send the gas fee to the fee collector
         address feeCollector;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato uses eip-2771 format to pass feeCollector
+            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
         }
         dai.transfer(feeCollector, gasFee);
 

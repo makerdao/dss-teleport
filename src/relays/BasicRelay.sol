@@ -136,11 +136,11 @@ contract BasicRelay {
         (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(teleportGUID, signatures, maxFeePercentage, gasFee);
         require(postFeeAmount + totalFee == teleportGUID.amount, "BasicRelay/partial-mint-disallowed");
 
-        // Send the gas fee to the relayer
+        // Send the gas fee to the fee collector
         address feeCollector;
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato uses eip-2771 format to pass feeCollector
+            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
         }
         dai.transfer(feeCollector, gasFee);
     }
