@@ -20,16 +20,13 @@ import "./TeleportGUID.sol";
 import "./utils/EnumerableSet.sol";
 
 interface TokenLike {
-  function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);
+    function approve(address, uint256) external returns (bool);
+    function transferFrom(address, address, uint256) external returns (bool);
 }
 
 interface GatewayLike {
-    function requestMint(
-        TeleportGUID calldata teleportGUID,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external returns (uint256 postFeeAmount, uint256 totalFee);
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external;
+    function registerMint(TeleportGUID calldata) external;
+    function settle(bytes32, bytes32, uint256) external;
 }
 
 contract TeleportRouter {
@@ -38,23 +35,32 @@ contract TeleportRouter {
 
     mapping (address => uint256) public wards;          // Auth
     mapping (bytes32 => address) public gateways;       // GatewayLike contracts called by the router for each domain
-    mapping (address => bytes32) public domains;        // Domains for each gateway
+    mapping (bytes32 => uint256) public batches;        // Pending DAI to flush per target domain
 
     EnumerableSet.Bytes32Set private allDomains;
+    uint80  public nonce;
+    uint256 public fdust;   // The minimum amount of DAI to be flushed per target domain (prevent spam)
 
-    TokenLike immutable public dai; // L1 DAI ERC20 token
+    TokenLike immutable public dai;
+    bytes32   immutable public domain;
+    bytes32   immutable public parentDomain;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
     event File(bytes32 indexed what, bytes32 indexed domain, address data);
+    event File(bytes32 indexed what, uint256 data);
+    event InitiateTeleport(TeleportGUID teleport);
+    event Flush(bytes32 indexed targetDomain, uint256 dai);
 
     modifier auth {
         require(wards[msg.sender] == 1, "TeleportRouter/not-authorized");
         _;
     }
 
-    constructor(address dai_) {
+    constructor(address dai_, bytes32 domain_, bytes32 parentDomain_) {
         dai = TokenLike(dai_);
+        domain = domain_;
+        parentDomain = parentDomain_;
         wards[msg.sender] = 1;
         emit Rely(msg.sender);
     }
@@ -72,41 +78,46 @@ contract TeleportRouter {
     /**
      * @notice Allows auth to configure the router. The only supported operation is "gateway",
      * which allows adding, replacing or removing a gateway contract for a given domain. The router forwards `settle()` 
-     * and `requestMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
-     * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the L1 domain)
-     * and L1 bridge contracts (for L2 domains).
-     * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names and
-     * the reverse mapping `domains` which maps domain names to GatewayLike contracts, this method also maintains
-     * the enumerable set `allDomains`.
+     * and `registerMint()` calls to the gateway contract installed for a given domain. Gateway contracts must therefore
+     * conform to the GatewayLike interface. Examples of valid gateways include TeleportJoin (for the domain of the TeleportRouter instance), 
+     * DomainHost bridges (for the domains that are children to TeleportRouter's domain)
+     * and a DomainGuest bridge (for the domain that is parent to TeleportRouter's domain).
+     * @dev In addition to updating the mapping `gateways` which maps GatewayLike contracts to domain names this method
+     * also maintains the enumerable set `allDomains`.
      * @param what The name of the operation. Only "gateway" is supported.
-     * @param domain The domain for which a GatewayLike contract is added, replaced or removed.
+     * @param _domain The domain for which a GatewayLike contract is added, replaced or removed.
      * @param data The address of the GatewayLike contract to install for the domain (or address(0) to remove a domain)
      */
-    function file(bytes32 what, bytes32 domain, address data) external auth {
+    function file(bytes32 what, bytes32 _domain, address data) external auth {
         if (what == "gateway") {
-            address prevGateway = gateways[domain];
-            if(prevGateway == address(0)) { 
+            address prevGateway = gateways[_domain];
+            if (prevGateway == address(0)) { 
                 // new domain => add it to allDomains
-                if(data != address(0)) {
-                    allDomains.add(domain);
+                if (data != address(0)) {
+                    allDomains.add(_domain);
                 }
             } else { 
-                // existing domain 
-                domains[prevGateway] = bytes32(0);
-                if(data == address(0)) {
+                // existing domain
+                if (data == address(0)) {
                     // => remove domain from allDomains
-                    allDomains.remove(domain);
+                    allDomains.remove(_domain);
                 }
             }
 
-            gateways[domain] = data;
-            if(data != address(0)) {
-                domains[data] = domain;
-            }
+            gateways[_domain] = data;
         } else {
             revert("TeleportRouter/file-unrecognized-param");
         }
-        emit File(what, domain, data);
+        emit File(what, _domain, data);
+    }
+    
+    function file(bytes32 what, uint256 data) external auth {
+        if (what == "fdust") {
+            fdust = data;
+        } else {
+            revert("TeleportRouter/file-unrecognized-param");
+        }
+        emit File(what, data);
     }
 
     function numDomains() external view returns (uint256) {
@@ -115,42 +126,144 @@ contract TeleportRouter {
     function domainAt(uint256 index) external view returns (bytes32) {
         return allDomains.at(index);
     }
-    function hasDomain(bytes32 domain) external view returns (bool) {
-        return allDomains.contains(domain);
+    function hasDomain(bytes32 _domain) external view returns (bool) {
+        return allDomains.contains(_domain);
     }
 
     /**
-     * @notice Call a GatewayLike contract to request the minting of DAI. The sender must be a supported gateway
+     * @notice Call a GatewayLike contract to register the minting of DAI. The sender must be a supported gateway
      * @param teleportGUID The teleport GUID to register
-     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
-     * @param operatorFee The amount of DAI to pay to the operator
-     * @return postFeeAmount The amount of DAI sent to the receiver after taking out fees
-     * @return totalFee The total amount of DAI charged as fees
      */
-    function requestMint(
-        TeleportGUID calldata teleportGUID,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) external returns (uint256 postFeeAmount, uint256 totalFee) {
-        require(msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
+    function registerMint(TeleportGUID calldata teleportGUID) external {
+        // We trust the parent gateway with any sourceDomain as a compromised parent gateway implies compromised child
+        // Otherwise we restrict passing messages only from the actual source domain
+        require(msg.sender == gateways[parentDomain] || msg.sender == gateways[teleportGUID.sourceDomain], "TeleportRouter/sender-not-gateway");
+        
+        _registerMint(teleportGUID);
+    }
+
+    function _registerMint(TeleportGUID memory teleportGUID) internal {
         address gateway = gateways[teleportGUID.targetDomain];
+        // Use fallback if no gateway is configured for the target domain
+        if (gateway == address(0)) gateway = gateways[parentDomain];
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
-        (postFeeAmount, totalFee) = GatewayLike(gateway).requestMint(teleportGUID, maxFeePercentage, operatorFee);
+        GatewayLike(gateway).registerMint(teleportGUID);
     }
 
     /**
      * @notice Call a GatewayLike contract to settle a batch of sourceDomain -> targetDomain DAI transfer. 
      * The sender must be a supported gateway
-     * @param targetDomain The domain receiving the batch of DAI (only L1 supported for now)
-     * @param batchedDaiToFlush The amount of DAI in the batch 
+     * @param sourceDomain The domain sending the batch of DAI
+     * @param targetDomain The domain receiving the batch of DAI
+     * @param amount The amount of DAI in the batch 
      */
-    function settle(bytes32 targetDomain, uint256 batchedDaiToFlush) external {
-        bytes32 sourceDomain = domains[msg.sender];
-        require(sourceDomain != bytes32(0), "TeleportRouter/sender-not-gateway");
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
+        // We trust the parent gateway with any sourceDomain as a compromised parent gateway implies compromised child
+        // Otherwise we restrict passing messages only from the actual source domain
+        require(msg.sender == gateways[parentDomain] || msg.sender == gateways[sourceDomain], "TeleportRouter/sender-not-gateway");
+        
+        _settle(msg.sender, sourceDomain, targetDomain, amount);
+    }
+
+    function _settle(address from, bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) internal {
         address gateway = gateways[targetDomain];
+        // Use fallback if no gateway is configured for the target domain
+        if (gateway == address(0)) gateway = gateways[parentDomain];
         require(gateway != address(0), "TeleportRouter/unsupported-target-domain");
-         // Forward the DAI to settle to the gateway contract
-        dai.transferFrom(msg.sender, gateway, batchedDaiToFlush);
-        GatewayLike(gateway).settle(sourceDomain, batchedDaiToFlush);
+        // Forward the DAI to settle to the gateway contract
+        dai.transferFrom(from, gateway, amount);
+        GatewayLike(gateway).settle(sourceDomain, targetDomain, amount);
+    }
+
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    **/
+    function initiateTeleport(
+        bytes32 targetDomain,
+        address receiver,
+        uint128 amount
+    ) external {
+        initiateTeleport(
+            targetDomain,
+            addressToBytes32(receiver),
+            amount,
+            0
+        );
+    }
+
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    * @param operator An optional address that can be used to mint the DAI at the destination domain (useful for automated relays)
+    **/
+    function initiateTeleport(
+        bytes32 targetDomain,
+        address receiver,
+        uint128 amount,
+        address operator
+    ) external {
+        initiateTeleport(
+            targetDomain,
+            addressToBytes32(receiver),
+            amount,
+            addressToBytes32(operator)
+        );
+    }
+
+    /**
+    * @notice Initiate Maker teleport
+    * @dev Will fire a teleport event, burn the dai and initiate a censorship-resistant slow-path message
+    * @param targetDomain The target domain to teleport to
+    * @param receiver The receiver address of the DAI on the target domain
+    * @param amount The amount of DAI to teleport
+    * @param operator An optional address that can be used to mint the DAI at the destination domain (useful for automated relays)
+    **/
+    function initiateTeleport(
+        bytes32 targetDomain,
+        bytes32 receiver,
+        uint128 amount,
+        bytes32 operator
+    ) public {
+        TeleportGUID memory teleport = TeleportGUID({
+            sourceDomain: domain,
+            targetDomain: targetDomain,
+            receiver: receiver,
+            operator: operator,
+            amount: amount,
+            nonce: nonce++,
+            timestamp: uint48(block.timestamp)
+        });
+
+        batches[targetDomain] += amount;
+        require(dai.transferFrom(msg.sender, address(this), amount), "TeleportRouter/transfer-failed");
+        
+        // Initiate the censorship-resistant slow-path
+        _registerMint(teleport);
+        
+        // Oracle listens to this event for the fast-path
+        emit InitiateTeleport(teleport);
+    }
+
+    /**
+    * @notice Flush batched DAI to the target domain
+    * @dev Will initiate a settle operation along the secure, slow routing path
+    * @param targetDomain The target domain to settle
+    **/
+    function flush(bytes32 targetDomain) external {
+        uint256 daiToFlush = batches[targetDomain];
+        require(daiToFlush >= fdust, "TeleportRouter/flush-dust");
+
+        batches[targetDomain] = 0;
+
+        _settle(address(this), domain, targetDomain, daiToFlush);
+
+        emit Flush(targetDomain, daiToFlush);
     }
 }

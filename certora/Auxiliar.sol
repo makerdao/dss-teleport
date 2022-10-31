@@ -32,6 +32,10 @@ contract Auxiliar {
         ));
     }
 
+    function addressToBytes32(address addr) external pure returns (bytes32) {
+        return bytes32(uint256(uint160(addr)));
+    }
+
     function bytes32ToAddress(bytes32 addr) external pure returns (address) {
         return address(uint160(uint256(addr)));
     }

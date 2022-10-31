@@ -39,7 +39,7 @@ interface VatLike {
     function wards(address) external view returns (uint256);
     function rely(address) external;
     function init(bytes32) external;
-    function file(bytes32 ilk, bytes32 what, uint data) external;
+    function file(bytes32, bytes32, uint256) external;
     function dai(address) external view returns (uint256);
     function debt() external view returns (uint256);
 }
@@ -58,7 +58,8 @@ interface CureLike {
 }
 
 interface TokenLike {
-  function transfer(address _to, uint256 _value) external returns (bool success);
+    function transfer(address, uint256) external returns (bool);
+    function approve(address, uint256) external returns (bool);
 }
 
 contract TeleportJoinIntegrationTest is DSTest {
@@ -142,7 +143,7 @@ contract TeleportJoinIntegrationTest is DSTest {
         assertEq(vat.dai(address(teleportJoin)), 0);
         dai.transfer(address(teleportJoin), teleportAmount);
 
-        teleportJoin.settle(SLAVE_DOMAIN, teleportAmount);
+        teleportJoin.settle(SLAVE_DOMAIN, MASTER_DOMAIN, teleportAmount);
 
         assertEq(vat.dai(address(teleportJoin)), teleportAmount * RAY); // the dai is now locked in teleportJoin
         assertEq(teleportJoin.cure(), teleportAmount * RAY); // the debt was not actually settled
