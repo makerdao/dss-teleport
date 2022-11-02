@@ -158,7 +158,7 @@ contract TrustedRelay {
      * @notice Gasless relay for the Oracle fast path
      * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
      * Must be called by a whitelisted relayer account with the feeCollector address appended
-     * at the end of the calldata, e.g.: `(bool success,) = address(basicRelay).call(abi.encodePacked(relayData, feeCollector));`
+     * at the end of the calldata, e.g.: `(bool success,) = address(trustedRelay).call(abi.encodePacked(relayData, feeCollector));`
      * @param teleportGUID The teleport GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
