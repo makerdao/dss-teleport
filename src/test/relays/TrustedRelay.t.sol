@@ -340,7 +340,7 @@ contract TrustedRelayTest is DSTest {
 
     function test_relay_with_trusted_signer() public {
         _whitelistThis();
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address[] memory signers = new address[](1);
         signers[0] = hevm.addr(sk);
         relay.addSigners(signers);
