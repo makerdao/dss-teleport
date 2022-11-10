@@ -141,6 +141,14 @@ contract BasicRelayTest is DSTest {
         (ok,) = address(relay).call(abi.encodeWithSignature("deny(address)", usr));
     }
 
+    function _tryAddRelayers(address[] memory relayers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("addRelayers(address[])", relayers));
+    }
+
+    function _tryRemoveRelayers(address[] memory relayers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("removeRelayers(address[])", relayers));
+    }
+
     function _tryRelay(
         TeleportGUID memory teleportGUID,
         bytes memory signatures,
@@ -167,7 +175,7 @@ contract BasicRelayTest is DSTest {
     function _whitelistThis() internal {
         address[] memory relayers = new address[](1);
         relayers[0] = address(this);
-        relay.addRelayers(relayers);
+        assertTrue(_tryAddRelayers(relayers));
     }
 
     function test_constructor_args() public {
@@ -198,17 +206,24 @@ contract BasicRelayTest is DSTest {
             assertEq(relay.relayers(address(uint160(i))), 0);
         }
 
-        relay.addRelayers(relayers);
+        assertTrue(_tryAddRelayers(relayers));
 
         for(uint i; i < relayers.length; i++) {
             assertEq(relay.relayers(address(uint160(i))), 1);
         }
 
-        relay.removeRelayers(relayers);
+        assertTrue(_tryRemoveRelayers(relayers));
 
         for(uint i; i < relayers.length; i++) {
             assertEq(relay.relayers(address(uint160(i))), 0);
         }
+
+        assertTrue(_tryDeny(address(this)));
+
+        assertEq(relay.wards(address(this)), 0);
+
+        assertTrue(!_tryAddRelayers(relayers));
+        assertTrue(!_tryRemoveRelayers(relayers));
     }
 
     function test_relay() public {
