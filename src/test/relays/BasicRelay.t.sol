@@ -100,6 +100,7 @@ contract TeleportOracleAuthMock {
 contract BasicRelayTest is DSTest {
 
     uint256 internal constant WAD = 10**18;
+    address internal constant feeCollector = address(0xf33C0113c702);
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
 
@@ -138,6 +139,29 @@ contract BasicRelayTest is DSTest {
 
     function _tryDeny(address usr) internal returns (bool ok) {
         (ok,) = address(relay).call(abi.encodeWithSignature("deny(address)", usr));
+    }
+
+    function _tryRelay(
+        TeleportGUID memory teleportGUID,
+        bytes memory signatures,
+        uint256 maxFeePercentage,
+        uint256 gasFee,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal returns (bool ok) {
+        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector,
+            teleportGUID,
+            signatures,
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+        (ok,) = address(relay).call(abi.encodePacked(relayData, feeCollector));
     }
 
     function _whitelistThis() internal {
@@ -215,7 +239,7 @@ contract BasicRelayTest is DSTest {
         assertEq(dai.balanceOf(receiver), 0);
         assertEq(dai.balanceOf(address(this)), 0);
 
-        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector, 
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -224,10 +248,7 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
-        address feeCollector = address(0xf33C0113c702);
-        (bool success,) = address(relay).call(abi.encodePacked(relayData, feeCollector));
-        assertTrue(success);
+        ));
 
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
@@ -261,7 +282,7 @@ contract BasicRelayTest is DSTest {
 
         hevm.warp(block.timestamp + 1);
 
-        relay.relay(
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -270,7 +291,7 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 
     function testFail_relay_bad_signature() public {
@@ -298,7 +319,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -307,7 +328,7 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 
     function testFail_relay_partial_mint() public {
@@ -337,7 +358,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -346,7 +367,7 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 
     function testFail_relayer_not_whitelisted() public {
@@ -373,7 +394,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -382,6 +403,6 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 }

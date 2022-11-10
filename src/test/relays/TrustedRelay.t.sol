@@ -213,7 +213,7 @@ contract TrustedRelayTest is DSTest {
         address to,
         bytes memory data
     ) internal returns (bool ok) {
-        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector, 
+        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector,
             teleportGUID,
             signatures,
             maxFeePercentage,
@@ -695,7 +695,7 @@ contract TrustedRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -706,7 +706,7 @@ contract TrustedRelayTest is DSTest {
             s,
             address(0),
             ""
-        );
+        ));
     }
 
     function testFail_relay_excessive_fee() public {
