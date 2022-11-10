@@ -383,7 +383,7 @@ contract TrustedRelayTest is DSTest {
 
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
-        assertEq(dai.balanceOf(feeCollector), 1 ether);        
+        assertEq(dai.balanceOf(feeCollector), 1 ether);
     }
 
     function test_relay_when_receiver_is_signer() public {
