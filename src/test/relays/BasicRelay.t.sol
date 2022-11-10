@@ -314,7 +314,7 @@ contract BasicRelayTest is DSTest {
         join.setMaxMint(50 ether);
 
         _whitelistThis();
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
