@@ -228,7 +228,7 @@ contract BasicRelayTest is DSTest {
 
     function test_relay() public {
         _whitelistThis();
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -270,9 +270,9 @@ contract BasicRelayTest is DSTest {
         assertEq(dai.balanceOf(feeCollector), 1 ether);
     }
 
-    function testFail_relay_expired() public {
+    function test_relay_expired() public {
         _whitelistThis();
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -297,7 +297,7 @@ contract BasicRelayTest is DSTest {
 
         hevm.warp(block.timestamp + 1);
 
-        assertTrue(_tryRelay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -309,9 +309,9 @@ contract BasicRelayTest is DSTest {
         ));
     }
 
-    function testFail_relay_bad_signature() public {
+    function test_relay_bad_signature() public {
         _whitelistThis();
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -334,7 +334,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        assertTrue(_tryRelay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -346,7 +346,7 @@ contract BasicRelayTest is DSTest {
         ));
     }
 
-    function testFail_relay_partial_mint() public {
+    function test_relay_partial_mint() public {
         join.setMaxMint(50 ether);
 
         _whitelistThis();
@@ -373,7 +373,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        assertTrue(_tryRelay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -385,8 +385,8 @@ contract BasicRelayTest is DSTest {
         ));
     }
 
-    function testFail_relayer_not_whitelisted() public {
-        uint256 sk = uint(keccak256(abi.encode(8)));
+    function test_relayer_not_whitelisted() public {
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -409,7 +409,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        assertTrue(_tryRelay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
