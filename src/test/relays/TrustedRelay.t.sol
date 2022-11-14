@@ -121,13 +121,6 @@ contract TrustedRelayMock is TrustedRelay {
     }
 }
 
-contract ExampleContract {
-    uint256 public state;
-    function inc() external {
-        state++;
-    }
-}
-
 contract TrustedRelayTest is DSTest {
 
     uint256 internal constant BPS = 10**4;
@@ -144,7 +137,6 @@ contract TrustedRelayTest is DSTest {
     TeleportJoinMock internal join;
     TeleportOracleAuthMock internal oracleAuth;
     DSValueMock internal ethPriceOracle;
-    ExampleContract internal ext;
 
     function getSignHash(
         TeleportGUID memory teleportGUID,
@@ -164,7 +156,6 @@ contract TrustedRelayTest is DSTest {
         daiJoin = new DaiJoinMock(address(vat), address(dai));
         join = new TeleportJoinMock(dai);
         oracleAuth = new TeleportOracleAuthMock(join);
-        ext = new ExampleContract();
         ethPriceOracle = new DSValueMock();
         ethPriceOracle.poke(bytes32(3000 * WAD));
         relay = new TrustedRelayMock(address(oracleAuth), address(daiJoin), address(ethPriceOracle));
@@ -217,9 +208,7 @@ contract TrustedRelayTest is DSTest {
         uint256 expiry,
         uint8 v,
         bytes32 r,
-        bytes32 s,
-        address to,
-        bytes memory data
+        bytes32 s
     ) internal returns (bool ok) {
         bytes memory relayData = abi.encodeWithSelector(relay.relay.selector,
             teleportGUID,
@@ -229,9 +218,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            to,
-            data
+            s
         );
         (ok,) = address(relay).call(abi.encodePacked(relayData, feeCollector));
     }
@@ -392,9 +379,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
 
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
@@ -437,67 +422,12 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
 
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
         assertEq(dai.balanceOf(feeCollector), 1 ether);  
-    }
-
-    function test_relay_with_ext_call() public {
-        _whitelistThis();
-        uint256 sk = uint256(keccak256(abi.encode(8)));
-        address[] memory signers = new address[](1);
-        signers[0] = hevm.addr(sk);
-        relay.addSigners(signers);
-        address receiver = address(123);
-        TeleportGUID memory guid = TeleportGUID({
-            sourceDomain: "l2network",
-            targetDomain: "ethereum",
-            receiver: addressToBytes32(receiver),
-            operator: addressToBytes32(address(relay)),
-            amount: 100 ether,
-            nonce: 5,
-            timestamp: uint48(block.timestamp)
-        });
-        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
-        uint256 gasFee = WAD;                       // 1 DAI of gas
-        uint256 expiry = block.timestamp;
-        bytes32 signHash = getSignHash(
-            guid,
-            maxFeePercentage,
-            gasFee,
-            expiry
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
-
-
-
-        assertEq(dai.balanceOf(receiver), 0);
-        assertEq(dai.balanceOf(address(this)), 0);
-        uint256 prevState = ext.state();
-
-        assertTrue(_tryRelay(
-            guid,
-            "",     // Not testing OracleAuth signatures here
-            maxFeePercentage,
-            gasFee,
-            expiry,
-            v,
-            r,
-            s,
-            address(ext),
-            abi.encodeWithSelector(ExampleContract.inc.selector)
-        ));
-
-        // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
-        assertEq(dai.balanceOf(receiver), 98 ether);
-        assertEq(dai.balanceOf(feeCollector), 1 ether);  
-        assertEq(ext.state(), prevState + 1);
     }
 
     function test_relay_with_disabled_oracle() public {
@@ -543,9 +473,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
 
         // Should get 100 DAI - 1% teleport fee - 80 DAI gas fee
@@ -593,9 +521,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
     }
 
@@ -636,9 +562,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
     }
 
@@ -675,9 +599,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
     }
 
@@ -719,9 +641,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
     }
 
@@ -761,51 +681,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
-        ));
-    }
-
-    function test_relay_with_reverting_ext_call() public {
-        _whitelistThis();
-        uint256 sk = uint256(keccak256(abi.encode(8)));
-        address[] memory signers = new address[](1);
-        signers[0] = hevm.addr(sk);
-        relay.addSigners(signers);
-        address receiver = address(123);
-        TeleportGUID memory guid = TeleportGUID({
-            sourceDomain: "l2network",
-            targetDomain: "ethereum",
-            receiver: addressToBytes32(receiver),
-            operator: addressToBytes32(address(relay)),
-            amount: 100 ether,
-            nonce: 5,
-            timestamp: uint48(block.timestamp)
-        });
-        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
-        uint256 gasFee =  WAD;                      // 1 DAI of gas refund
-        uint256 expiry = block.timestamp;
-        bytes32 signHash = getSignHash(
-            guid,
-            maxFeePercentage,
-            gasFee,
-            expiry
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
-
-        assertTrue(!_tryRelay(
-            guid,
-            "",     // Not testing OracleAuth signatures here
-            maxFeePercentage,
-            gasFee,
-            expiry,
-            v,
-            r,
-            s,
-            address(ext),
-            ""
+            s
         ));
     }
 
@@ -844,9 +720,7 @@ contract TrustedRelayTest is DSTest {
             expiry,
             v,
             r,
-            s,
-            address(0),
-            ""
+            s
         ));
     }
 }

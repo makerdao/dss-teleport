@@ -168,8 +168,6 @@ contract TrustedRelay {
      * @param v Part of ECDSA signature
      * @param r Part of ECDSA signature
      * @param s Part of ECDSA signature
-     * @param to (optional) The address of an external contract to call after requesting the L1 DAI (address(0) if unused)
-     * @param data (optional) The calldata to use for the call to the aforementionned external contract
      */
     function relay(
         TeleportGUID calldata teleportGUID,
@@ -179,9 +177,7 @@ contract TrustedRelay {
         uint256 expiry,
         uint8 v,
         bytes32 r,
-        bytes32 s,
-        address to,
-        bytes calldata data
+        bytes32 s
     ) external {
         uint256 startGas = gasleft();
 
@@ -195,18 +191,6 @@ contract TrustedRelay {
             feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
         }
         dai.transfer(feeCollector, gasFee);
-
-        // Optionally execute an external call
-        if(to != address(0)) {
-            (bool success,) = to.call(data);
-            if (!success) {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    returndatacopy(0, 0, returndatasize())
-                    revert(0, returndatasize())
-                }
-            }
-        }
 
         // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
         (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
