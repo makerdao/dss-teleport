@@ -126,20 +126,6 @@ contract TrustedRelay {
         emit File(what, data);
     }
 
-    function addSigners(address[] calldata signers_) external toll {
-        for(uint256 i; i < signers_.length; i++) {
-            signers[signers_[i]] = 1;
-        }
-        emit SignersAdded(signers_);
-    }
-
-    function removeSigners(address[] calldata signers_) external toll {
-        for(uint256 i; i < signers_.length; i++) {
-            signers[signers_[i]] = 0;
-        }
-        emit SignersRemoved(signers_);
-    }
-
     function addRelayers(address[] calldata relayers_) external auth {
         for(uint256 i; i < relayers_.length; i++) {
             relayers[relayers_[i]] = 1;
@@ -152,6 +138,20 @@ contract TrustedRelay {
             relayers[relayers_[i]] = 0;
         }
         emit RelayersRemoved(relayers_);
+    }
+
+    function addSigners(address[] calldata signers_) external toll {
+        for(uint256 i; i < signers_.length; i++) {
+            signers[signers_[i]] = 1;
+        }
+        emit SignersAdded(signers_);
+    }
+
+    function removeSigners(address[] calldata signers_) external toll {
+        for(uint256 i; i < signers_.length; i++) {
+            signers[signers_[i]] = 0;
+        }
+        emit SignersRemoved(signers_);
     }
 
     /**
