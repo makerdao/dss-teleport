@@ -100,6 +100,7 @@ contract TeleportOracleAuthMock {
 contract BasicRelayTest is DSTest {
 
     uint256 internal constant WAD = 10**18;
+    address internal constant feeCollector = address(0xf33C0113c702);
 
     Hevm internal hevm = Hevm(HEVM_ADDRESS);
 
@@ -132,15 +133,102 @@ contract BasicRelayTest is DSTest {
         join.setMaxMint(100 ether);
     }
 
+    function _tryRely(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("rely(address)", usr));
+    }
+
+    function _tryDeny(address usr) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("deny(address)", usr));
+    }
+
+    function _tryAddRelayers(address[] memory relayers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("addRelayers(address[])", relayers));
+    }
+
+    function _tryRemoveRelayers(address[] memory relayers) internal returns (bool ok) {
+        (ok,) = address(relay).call(abi.encodeWithSignature("removeRelayers(address[])", relayers));
+    }
+
+    function _tryRelay(
+        TeleportGUID memory teleportGUID,
+        bytes memory signatures,
+        uint256 maxFeePercentage,
+        uint256 gasFee,
+        uint256 expiry,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal returns (bool ok) {
+        bytes memory relayData = abi.encodeWithSelector(relay.relay.selector,
+            teleportGUID,
+            signatures,
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+        (ok,) = address(relay).call(abi.encodePacked(relayData, feeCollector));
+    }
+
+    function _whitelistThis() internal {
+        address[] memory relayers = new address[](1);
+        relayers[0] = address(this);
+        assertTrue(_tryAddRelayers(relayers));
+    }
+
     function test_constructor_args() public {
+        assertEq(relay.wards(address(this)), 1);
         assertEq(address(relay.daiJoin()), address(daiJoin));
         assertEq(address(relay.dai()), address(dai));
         assertEq(address(relay.oracleAuth()), address(oracleAuth));
         assertEq(address(relay.teleportJoin()), address(join));
     }
 
+    function testRelyDeny() public {
+        assertEq(relay.wards(address(456)), 0);
+        assertTrue(_tryRely(address(456)));
+        assertEq(relay.wards(address(456)), 1);
+        assertTrue(_tryDeny(address(456)));
+        assertEq(relay.wards(address(456)), 0);
+
+        relay.deny(address(this));
+
+        assertTrue(!_tryRely(address(456)));
+        assertTrue(!_tryDeny(address(456)));
+    }
+
+    function testAddRemoveRelayers() public {
+        address[] memory relayers = new address[](3);
+        for(uint i; i < relayers.length; i++) {
+            relayers[i] = address(uint160(i));
+            assertEq(relay.relayers(address(uint160(i))), 0);
+        }
+
+        assertTrue(_tryAddRelayers(relayers));
+
+        for(uint i; i < relayers.length; i++) {
+            assertEq(relay.relayers(address(uint160(i))), 1);
+        }
+
+        assertTrue(_tryRemoveRelayers(relayers));
+
+        for(uint i; i < relayers.length; i++) {
+            assertEq(relay.relayers(address(uint160(i))), 0);
+        }
+
+        assertTrue(_tryDeny(address(this)));
+
+        assertEq(relay.wards(address(this)), 0);
+
+        assertTrue(!_tryAddRelayers(relayers));
+        assertTrue(!_tryRemoveRelayers(relayers));
+    }
+
     function test_relay() public {
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        _whitelistThis();
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -165,7 +253,8 @@ contract BasicRelayTest is DSTest {
 
         assertEq(dai.balanceOf(receiver), 0);
         assertEq(dai.balanceOf(address(this)), 0);
-        relay.relay(
+
+        assertTrue(_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -174,14 +263,60 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
+
         // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
         assertEq(dai.balanceOf(receiver), 98 ether);
-        assertEq(dai.balanceOf(address(this)), 1 ether);
+        assertEq(dai.balanceOf(feeCollector), 1 ether);
     }
 
-    function testFail_relay_expired() public {
-        uint256 sk = uint(keccak256(abi.encode(8)));
+    function test_relay_no_fee_collector() public {
+        _whitelistThis();
+        uint256 sk = uint256(keccak256(abi.encode(8)));
+        address receiver = hevm.addr(sk);
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        assertEq(dai.balanceOf(receiver), 0);
+
+        // relay() should succeed even without the appended feeCollector
+        // but the fee will be sent to an incorrect address
+        relay.relay(
+            guid,
+            "",
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+
+        // Should get 100 DAI - 1% teleport fee - 1 DAI gas fee
+        assertEq(dai.balanceOf(receiver), 98 ether);
+    }
+
+    function test_relay_expired() public {
+        _whitelistThis();
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -206,7 +341,7 @@ contract BasicRelayTest is DSTest {
 
         hevm.warp(block.timestamp + 1);
 
-        relay.relay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -215,11 +350,12 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 
-    function testFail_relay_bad_signature() public {
-        uint256 sk = uint(keccak256(abi.encode(8)));
+    function test_relay_bad_signature() public {
+        _whitelistThis();
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -242,7 +378,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -251,13 +387,14 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
-        );
+        ));
     }
 
-    function testFail_relay_partial_mint() public {
+    function test_relay_partial_mint() public {
         join.setMaxMint(50 ether);
 
-        uint256 sk = uint(keccak256(abi.encode(8)));
+        _whitelistThis();
+        uint256 sk = uint256(keccak256(abi.encode(8)));
         address receiver = hevm.addr(sk);
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -280,7 +417,7 @@ contract BasicRelayTest is DSTest {
 
         (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
 
-        relay.relay(
+        assertTrue(!_tryRelay(
             guid,
             "",     // Not testing OracleAuth signatures here
             maxFeePercentage,
@@ -289,6 +426,42 @@ contract BasicRelayTest is DSTest {
             v,
             r,
             s
+        ));
+    }
+
+    function test_relayer_not_whitelisted() public {
+        uint256 sk = uint256(keccak256(abi.encode(8)));
+        address receiver = hevm.addr(sk);
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = WAD;                       // 1 DAI of gas
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
         );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        assertTrue(!_tryRelay(
+            guid,
+            "",     // Not testing OracleAuth signatures here
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        ));
     }
 }

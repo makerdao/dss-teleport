@@ -52,9 +52,10 @@ interface DsValueLike {
 // Relay requests are signed by a trusted third-party (typically a backend orchestrating the withdrawal on behalf of the user)
 contract TrustedRelay {
 
-    mapping (address => uint256) public wards;   // Auth (Maker governance)
-    mapping (address => uint256) public buds;    // Admin accounts managing trusted signers
-    mapping (address => uint256) public signers; // Trusted signers
+    mapping (address => uint256) public wards;    // Auth (Maker governance)
+    mapping (address => uint256) public buds;     // Admin accounts managing trusted signers
+    mapping (address => uint256) public signers;  // Trusted signers
+    mapping (address => uint256) public relayers; // Whitelisted relayers
     
     uint256                public gasMargin; // in BPS (e.g 150% = 15000)
 
@@ -73,6 +74,8 @@ contract TrustedRelay {
     event File(bytes32 indexed what, uint256 data);
     event SignersAdded(address[] signers);
     event SignersRemoved(address[] signers);
+    event RelayersAdded(address[] relayers);
+    event RelayersRemoved(address[] relayers);
 
     modifier auth {
         require(wards[msg.sender] == 1, "TrustedRelay/not-authorized");
@@ -123,6 +126,20 @@ contract TrustedRelay {
         emit File(what, data);
     }
 
+    function addRelayers(address[] calldata relayers_) external auth {
+        for(uint256 i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 1;
+        }
+        emit RelayersAdded(relayers_);
+    }
+
+    function removeRelayers(address[] calldata relayers_) external auth {
+        for(uint256 i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 0;
+        }
+        emit RelayersRemoved(relayers_);
+    }
+
     function addSigners(address[] calldata signers_) external toll {
         for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 1;
@@ -140,6 +157,8 @@ contract TrustedRelay {
     /**
      * @notice Gasless relay for the Oracle fast path
      * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
+     * Must be called by a whitelisted relayer account with the feeCollector address appended
+     * at the end of the calldata, e.g.: `(bool success,) = address(trustedRelay).call(abi.encodePacked(relayData, feeCollector));`
      * @param teleportGUID The teleport GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
@@ -149,8 +168,6 @@ contract TrustedRelay {
      * @param v Part of ECDSA signature
      * @param r Part of ECDSA signature
      * @param s Part of ECDSA signature
-     * @param to (optional) The address of an external contract to call after requesting the L1 DAI (address(0) if unused)
-     * @param data (optional) The calldata to use for the call to the aforementionned external contract
      */
     function relay(
         TeleportGUID calldata teleportGUID,
@@ -160,29 +177,20 @@ contract TrustedRelay {
         uint256 expiry,
         uint8 v,
         bytes32 r,
-        bytes32 s,
-        address to,
-        bytes calldata data
+        bytes32 s
     ) external {
         uint256 startGas = gasleft();
 
         // Withdraw the L1 DAI to the receiver
         requestMint(teleportGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
 
-        // Send the gas fee to the relayer
-        dai.transfer(msg.sender, gasFee);
-
-        // Optionally execute an external call
-        if(to != address(0)) {
-            (bool success,) = to.call(data);
-            if (!success) {
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    returndatacopy(0, 0, returndatasize())
-                    revert(0, returndatasize())
-                }
-            }
+        // Send the gas fee to the fee collector
+        address feeCollector;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
         }
+        dai.transfer(feeCollector, gasFee);
 
         // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
         (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
@@ -199,6 +207,7 @@ contract TrustedRelay {
         bytes32 r,
         bytes32 s
     ) internal {
+        require(relayers[msg.sender] == 1, "TrustedRelay/not-whitelisted");
         require(block.timestamp <= expiry, "TrustedRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
