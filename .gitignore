@@ -1,4 +1,5 @@
 /out
+/cache
 
 # certora
 .*certora*
