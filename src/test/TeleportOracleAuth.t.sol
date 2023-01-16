@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/test.sol";
 
 import "src/TeleportOracleAuth.sol";
 
@@ -27,9 +27,7 @@ interface Hevm {
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
-contract TeleportOracleAuthTest is DSTest {
-
-    Hevm hevm = Hevm(HEVM_ADDRESS);
+contract TeleportOracleAuthTest is Test {
     TeleportOracleAuth internal auth;
     address internal teleportJoin;
 
@@ -78,8 +76,8 @@ contract TeleportOracleAuthTest is DSTest {
         signers = new address[](numSigners);
         for(uint i; i < numSigners; i++) {
             uint sk = uint256(keccak256(abi.encode(seeds[i])));
-            signers[i] = hevm.addr(sk);
-            (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+            signers[i] = vm.addr(sk);
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(sk, signHash);
             signatures = abi.encodePacked(signatures, r, s, v);
         }
         assertEq(signatures.length, numSigners * 65);

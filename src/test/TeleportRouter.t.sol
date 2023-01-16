@@ -16,14 +16,14 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/test.sol";
 
 import "src/TeleportRouter.sol";
 
 import "./mocks/GatewayMock.sol";
 import "./mocks/DaiMock.sol";
 
-contract TeleportRouterTest is DSTest {
+contract TeleportRouterTest is Test {
     
     TeleportRouter internal router;
     address internal dai;

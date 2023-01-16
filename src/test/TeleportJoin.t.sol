@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/test.sol";
 
 import "src/TeleportJoin.sol";
 import "src/TeleportConstantFee.sol";
@@ -32,9 +32,7 @@ interface Hevm {
     function store(address, bytes32, bytes32) external;
 }
 
-contract TeleportJoinTest is DSTest {
-
-    Hevm internal hevm = Hevm(HEVM_ADDRESS);
+contract TeleportJoinTest is Test {
     bytes32 constant internal ilk = "L2DAI";
     bytes32 constant internal domain = "ethereum";
     TeleportJoin internal join;
@@ -358,7 +356,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(fees.fee(), 100 ether);
 
         join.file("fees", "l2network", address(fees));
-        hevm.warp(block.timestamp + TTL + 1 days);    // Over ttl - you don't pay fees
+        vm.warp(block.timestamp + TTL + 1 days);    // Over ttl - you don't pay fees
         assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(vat.dai(vow), 0);
@@ -855,7 +853,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.cure(), 250_000 * RAD);
 
         // Emulate removal of position debt (third party repayment or position being skimmed)
-        hevm.store(
+        vm.store(
             address(vat),
             bytes32(uint256(keccak256(abi.encode(address(join), keccak256(abi.encode(bytes32(ilk), uint256(2)))))) + 1),
             bytes32(0)

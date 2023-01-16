@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/test.sol";
 
 import {TeleportJoin} from "src/TeleportJoin.sol";
 import "src/TeleportGUID.sol";
@@ -62,10 +62,7 @@ interface TokenLike {
     function approve(address, uint256) external returns (bool);
 }
 
-contract TeleportJoinIntegrationTest is DSTest {
-
-    Hevm internal hevm = Hevm(HEVM_ADDRESS);
-
+contract TeleportJoinIntegrationTest is Test {
     bytes32 constant internal ILK = "TELEPORT-ETHEREUM-MASTER-1";
     bytes32 constant internal MASTER_DOMAIN = "ETHEREUM-MASTER-1";
     bytes32 constant internal SLAVE_DOMAIN = "L2NETWORK-SLAVE-1";
@@ -84,7 +81,7 @@ contract TeleportJoinIntegrationTest is DSTest {
     uint256 internal constant TTL = 8 days;
 
     function getAuthFor(address auth) internal {
-        hevm.store(
+        vm.store(
             auth,
             keccak256(abi.encode(address(this), 0)),
             bytes32(uint256(1))
@@ -157,8 +154,8 @@ contract TeleportJoinIntegrationTest is DSTest {
         // thaw the end
 
         uint256 vatDebt = vat.debt();
-        hevm.warp(block.timestamp + end.wait());
-        hevm.store(address(vat), keccak256(abi.encode(vow, 5)), bytes32(0)); // emulate clearing of vow dai
+        vm.warp(block.timestamp + end.wait());
+        vm.store(address(vat), keccak256(abi.encode(vow, 5)), bytes32(0)); // emulate clearing of vow dai
         assertEq(vat.dai(vow), 0);
 
         end.thaw();
