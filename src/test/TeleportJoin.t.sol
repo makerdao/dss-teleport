@@ -94,6 +94,32 @@ contract TeleportJoinTest is DSTest {
         (ok,) = address(join).call(abi.encodeWithSignature("file(bytes32,bytes32,uint256)", what, domain_, data));
     }
 
+    function _tryRequestMint(
+        TeleportGUID memory teleportGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature(
+            "requestMint((bytes32,bytes32,bytes32,bytes32,uint128,uint80,uint48),uint256,uint256)",
+            teleportGUID,
+            maxFeePercentage,
+            operatorFee
+        ));
+    }
+
+    function _tryMintPending(
+        TeleportGUID memory teleportGUID,
+        uint256 maxFeePercentage,
+        uint256 operatorFee
+    ) internal returns (bool ok) {
+        (ok,) = address(join).call(abi.encodeWithSignature(
+            "mintPending((bytes32,bytes32,bytes32,bytes32,uint128,uint80,uint48),uint256,uint256)",
+            teleportGUID,
+            maxFeePercentage,
+            operatorFee
+        ));
+    }
+
     function testConstructor() public {
         assertEq(address(join.vat()), address(vat));
         assertEq(address(join.daiJoin()), address(daiJoin));
@@ -248,7 +274,7 @@ contract TeleportJoinTest is DSTest {
     }
 
 
-    function testFailRegisterAlreadyRegistered() public {
+    function testRegisterAlreadyRegistered() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -258,11 +284,11 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 0);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
+        assertTrue(!_tryRequestMint(guid, 0, 0));
     }
 
-    function testFailRegisterWrongDomain() public {
+    function testRegisterWrongDomain() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "etherium",
@@ -272,7 +298,7 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 0);
+        assertTrue(!_tryRequestMint(guid, 0, 0));
     }
 
     function testRegisterAndWithdrawPayingFee() public {
@@ -302,7 +328,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(totalFee, 100 ether);
     }
 
-    function testFailRegisterAndWithdrawPayingFee() public {
+    function testRegisterAndWithdrawPayingInsufficientFee() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -314,7 +340,7 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
-        join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 250K < 100 (not enough)
+        assertTrue(!_tryRequestMint(guid, 3 * WAD / 10000, 0)); // 0.03% * 250K < 100 (not enough)
     }
 
     function testRegisterAndWithdrawFeeTTLExpires() public {
@@ -333,7 +359,7 @@ contract TeleportJoinTest is DSTest {
 
         join.file("fees", "l2network", address(fees));
         hevm.warp(block.timestamp + TTL + 1 days);    // Over ttl - you don't pay fees
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(vat.dai(vow), 0);
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
@@ -358,7 +384,7 @@ contract TeleportJoinTest is DSTest {
 
         join.file("line", "l2network", 200_000 ether);
         join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
-        join.requestMint(guid, 4 * WAD / 10000, 0); // 0.04% * 200K = 80 (just enough as fee is also proportional)
+        assertTrue(_tryRequestMint(guid, 4 * WAD / 10000, 0)); // 0.04% * 200K = 80 (just enough as fee is also proportional)
 
         assertEq(vat.dai(vow), 80 * RAD);
         assertEq(dai.balanceOf(address(123)), 199_920 ether);
@@ -370,7 +396,7 @@ contract TeleportJoinTest is DSTest {
 
         join.file("line", "l2network", 250_000 ether);
 
-        join.mintPending(guid, 4 * WAD / 10000, 0); // 0.04% * 50 = 20 (just enough as fee is also proportional)
+        assertTrue(_tryMintPending(guid, 4 * WAD / 10000, 0)); // 0.04% * 50 = 20 (just enough as fee is also proportional)
 
         assertEq(vat.dai(vow), 100 * RAD);
         assertEq(dai.balanceOf(address(123)), 249_900 ether);
@@ -380,7 +406,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(join.cure(), 250_000 * RAD);
     }
 
-    function testFailRegisterAndWithdrawPartialPayingFee() public {
+    function testRegisterAndWithdrawPartialPayingInsufficientFee() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -395,10 +421,10 @@ contract TeleportJoinTest is DSTest {
 
         join.file("line", "l2network", 200_000 ether);
         join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
-        join.requestMint(guid, 3 * WAD / 10000, 0); // 0.03% * 200K < 80 (not enough)
+        assertTrue(!_tryRequestMint(guid, 3 * WAD / 10000, 0)); // 0.03% * 200K < 80 (not enough)
     }
 
-    function testFailRegisterAndWithdrawPartialPayingFee2() public {
+    function testRegisterAndWithdrawPartialPayingFee2() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -413,11 +439,11 @@ contract TeleportJoinTest is DSTest {
 
         join.file("line", "l2network", 200_000 ether);
         join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
-        join.requestMint(guid, 4 * WAD / 10000, 0);
+        assertTrue(_tryRequestMint(guid, 4 * WAD / 10000, 0));
 
         join.file("line", "l2network", 250_000 ether);
 
-        join.mintPending(guid, 3 * WAD / 10000, 0); // 0.03% * 50 < 20 (not enough)
+        assertTrue(!_tryMintPending(guid, 3 * WAD / 10000, 0)); // 0.03% * 50 < 20 (not enough)
     }
 
     function testMintPendingByOperator() public {
@@ -432,14 +458,14 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0, 0);
+        assertTrue(_tryMintPending(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
@@ -457,14 +483,14 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0, 0);
+        assertTrue(_tryMintPending(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(123)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
@@ -482,20 +508,20 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(this)), 200_000 ether);
         assertTrue(_blessed(guid));
         assertEq(_pending(guid), 50_000 ether);
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0, 0);
+        assertTrue(_tryMintPending(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(this)), 225_000 ether);
         assertEq(_pending(guid), 25_000 ether);
     }
 
-    function testFailMintPendingWrongOperator() public {
+    function testMintPendingWrongOperator() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -507,10 +533,10 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         join.file("line", "l2network", 225_000 ether);
-        join.mintPending(guid, 0, 0);
+        assertTrue(!_tryMintPending(guid, 0, 0));
     }
 
     function testSettle() public {
@@ -544,7 +570,7 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(123)), 250_000 ether);
         assertEq(_ink(), 150_000 ether);
@@ -572,7 +598,7 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 100_000 ether);
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(123)), 200_000 ether);
         assertEq(_pending(guid), 50_000 ether);
@@ -604,7 +630,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(vat.live(), 0);
 
         join.file("fees", "l2network", address(new TeleportConstantFee(100 ether, TTL)));
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(dai.balanceOf(address(123)), 100_000 ether); // Can't pay more than DAI is already in the join
         assertEq(_pending(guid), 150_000 ether);
@@ -625,7 +651,7 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(join.debt("l2network"), 250_000 ether);
         assertEq(_ink(), 250_000 ether);
@@ -667,7 +693,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(totalFee, 250 ether);
     }
 
-    function testFailOperatorFeeTooHigh() public {
+    function testOperatorFeeTooHigh() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -677,7 +703,7 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 250_001 ether);   // Slightly over the amount
+        assertTrue(!_tryRequestMint(guid, 0, 250_001 ether));   // Slightly over the amount
     }
 
     function testRegisterAndWithdrawPartialPayingOperatorFee() public {
@@ -692,7 +718,7 @@ contract TeleportJoinTest is DSTest {
         });
 
         join.file("line", "l2network", 200_000 ether);
-        join.requestMint(guid, 0, 200 ether);
+        assertTrue(_tryRequestMint(guid, 0, 200 ether));
 
         assertEq(dai.balanceOf(address(this)), 200 ether);
         assertEq(dai.balanceOf(address(123)), 199_800 ether);
@@ -702,7 +728,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(_art(), 200_000 ether);
 
         join.file("line", "l2network", 250_000 ether);
-        join.mintPending(guid, 0, 5 ether);
+        assertTrue(_tryMintPending(guid, 0, 5 ether));
 
         assertEq(dai.balanceOf(address(this)), 205 ether);
         assertEq(dai.balanceOf(address(123)), 249_795 ether);
@@ -723,7 +749,7 @@ contract TeleportJoinTest is DSTest {
         });
         assertEq(dai.balanceOf(address(this)), 0);
         join.file("fees", "l2network", address(new TeleportConstantFee(1000 ether, TTL)));
-        join.requestMint(guid, 40 ether / 10000, 249 ether);
+        assertTrue(_tryRequestMint(guid, 40 ether / 10000, 249 ether));
         assertEq(dai.balanceOf(address(this)), 249 ether);
         assertEq(vat.dai(vow), 1000 * RAD);
         assertEq(dai.balanceOf(address(123)), 248_751 ether);
@@ -732,7 +758,7 @@ contract TeleportJoinTest is DSTest {
         assertEq(_art(), 250_000 ether);
     }
 
-    function testFailRegisterAndWithdrawOperatorFeeTooHigh() public {
+    function testRegisterAndWithdrawOperatorFeeTooHigh() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "ethereum",
@@ -743,7 +769,7 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         join.file("fees", "l2network", address(new TeleportConstantFee(1000 ether, TTL)));
-        join.requestMint(guid, 40 ether / 10000, 249_001 ether);    // Too many fees
+        assertTrue(!_tryRequestMint(guid, 40 ether / 10000, 249_001 ether));    // Too many fees
     }
 
     function testTotalDebtSeveralDomains() public {
@@ -766,7 +792,7 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         guid = TeleportGUID({
             sourceDomain: "l2network_3",
@@ -777,7 +803,7 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(join.debt("l2network"), -100_000 ether);
         assertEq(join.debt("l2network_2"), 150_000 ether);
@@ -793,7 +819,7 @@ contract TeleportJoinTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(join.debt("l2network"), -50_000 ether);
         assertEq(join.debt("l2network_2"), 150_000 ether);
@@ -822,7 +848,7 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(_ink(), 250_000 ether);
         assertEq(_art(), 250_000 ether);
@@ -848,7 +874,7 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
 
-        join.requestMint(guid, 0, 0);
+        assertTrue(_tryRequestMint(guid, 0, 0));
 
         assertEq(_ink(), 350_000 ether);
         assertEq(_art(), 100_000 ether);

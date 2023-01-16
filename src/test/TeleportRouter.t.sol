@@ -55,6 +55,21 @@ contract TeleportRouterTest is DSTest {
         (ok,) = address(router).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
     }
 
+    function _tryRegisterMint(
+        TeleportGUID memory teleportGUID
+    ) internal returns (bool ok) {
+        (ok,) = address(router).call(abi.encodeWithSignature(
+            "registerMint((bytes32,bytes32,bytes32,bytes32,uint128,uint80,uint48))", 
+            teleportGUID
+        ));
+    }
+    function _tryFlush(bytes32 targetDomain) internal returns (bool ok) {
+        (ok,) = address(router).call(abi.encodeWithSignature("flush(bytes32)", targetDomain));
+    }
+    function _trySettle(bytes32 sourceDomain, bytes32 targetDomain, uint256 batchedDaiToFlush) internal returns (bool ok) {
+        (ok,) = address(router).call(abi.encodeWithSignature("settle(bytes32,bytes32,uint256)", sourceDomain, targetDomain, batchedDaiToFlush));
+    }
+
     function testConstructor() public {
         assertEq(address(router.dai()), dai);
         assertEq(router.domain(), domain);
@@ -256,7 +271,7 @@ contract TeleportRouterTest is DSTest {
         assertTrue(!_tryFile("fdust", 1));
     }
 
-    function testFailRegisterMintFromNotGateway() public {
+    function testRegisterMintFromNotGateway() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: domain,
@@ -268,7 +283,7 @@ contract TeleportRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(555));
 
-        router.registerMint(guid);
+        assertTrue(!_tryRegisterMint(guid));
     }
 
     function testRegisterMintTargetingActualDomain() public {
@@ -284,7 +299,7 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", domain, teleportJoin);
 
-        router.registerMint(guid);
+        assertTrue(_tryRegisterMint(guid));
     }
 
     function testRegisterMintTargetingSubDomain() public {
@@ -300,10 +315,10 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", "l2network", address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
-        router.registerMint(guid);
+        assertTrue(_tryRegisterMint(guid));
     }
 
-    function testFailRegisterMintTargetingInvalidDomain() public {
+    function testRegisterMintTargetingInvalidDomain() public {
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
             targetDomain: "invalid-network",
@@ -315,7 +330,7 @@ contract TeleportRouterTest is DSTest {
         });
         router.file("gateway", "l2network", address(this));
 
-        router.registerMint(guid);
+        assertTrue(!_tryRegisterMint(guid));
     }
 
     function testRegisterMintFromParentGateway() public {
@@ -331,15 +346,15 @@ contract TeleportRouterTest is DSTest {
         router.file("gateway", parentDomain, address(this));
         router.file("gateway", "another-l2network", address(new GatewayMock()));
 
-        router.registerMint(guid);
+        assertTrue(_tryRegisterMint(guid));
     }
 
-    function testFailSettleFromNotGateway() public {
+    function testSettleFromNotGateway() public {
         router.file("gateway", "l2network", address(555));
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", domain, 100 ether);
+        assertTrue(!_trySettle("l2network", domain, 100 ether));
     }
 
     function testSettleTargetingActualDomain() public {
@@ -348,7 +363,7 @@ contract TeleportRouterTest is DSTest {
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", domain, 100 ether);
+        assertTrue(_trySettle("l2network", domain, 100 ether));
     }
 
     function testSettleTargetingSubDomain() public {
@@ -357,7 +372,7 @@ contract TeleportRouterTest is DSTest {
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", "another-l2network", 100 ether);
+        assertTrue(_trySettle("l2network", "another-l2network", 100 ether));
     }
 
     function testSettleFromParentGateway() public {
@@ -366,13 +381,13 @@ contract TeleportRouterTest is DSTest {
         DaiMock(dai).mint(address(this), 100 ether);
         DaiMock(dai).approve(address(router), 100 ether);
 
-        router.settle("l2network", "another-l2network", 100 ether);
+        assertTrue(_trySettle("l2network", "another-l2network", 100 ether));
     }
 
-    function testFailSettleTargetingInvalidDomain() public {
+    function testSettleTargetingInvalidDomain() public {
         router.file("gateway", "l2network", address(this));
 
-        router.settle("l2network", "invalid-network", 100 ether);
+        assertTrue(!_trySettle("l2network", "invalid-network", 100 ether));
     }
 
     function testInitiateTeleport() public {
@@ -405,14 +420,14 @@ contract TeleportRouterTest is DSTest {
         assertEq(DaiMock(dai).balanceOf(address(router)), 100_000 ether);
         assertEq(DaiMock(dai).balanceOf(parentGateway), 0);
 
-        router.flush(parentDomain);
+        assertTrue(_tryFlush(parentDomain));
 
         assertEq(router.batches(parentDomain), 0);
         assertEq(DaiMock(dai).balanceOf(address(router)), 0);
         assertEq(DaiMock(dai).balanceOf(parentGateway), 100_000 ether);
     }
 
-    function testFailFlushDust() public {
+    function testFlushDust() public {
         address parentGateway = address(new GatewayMock());
         router.file("gateway", parentDomain, parentGateway);
         DaiMock(dai).mint(address(this), 100_000 ether);
@@ -424,6 +439,6 @@ contract TeleportRouterTest is DSTest {
         assertEq(DaiMock(dai).balanceOf(parentGateway), 0);
 
         router.file("fdust", 200_000 ether);
-        router.flush(parentDomain);
+        assertTrue(!_tryFlush(parentDomain));
     }
 }

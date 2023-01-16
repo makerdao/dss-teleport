@@ -73,14 +73,14 @@ contract TeleportOracleAuth {
     }
 
     function addSigners(address[] calldata signers_) external auth {
-        for(uint i; i < signers_.length; i++) {
+        for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 1;
         }
         emit SignersAdded(signers_);
     }
 
     function removeSigners(address[] calldata signers_) external auth {
-        for(uint i; i < signers_.length; i++) {
+        for(uint256 i; i < signers_.length; i++) {
             signers[signers_[i]] = 0;
         }
         emit SignersRemoved(signers_);

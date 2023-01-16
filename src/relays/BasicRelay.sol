@@ -47,21 +47,62 @@ interface TeleportJoinLike {
 // User provides gasFee which is paid to the msg.sender
 contract BasicRelay {
 
+    mapping (address => uint256) public wards;    // Auth
+    mapping (address => uint256) public relayers; // Whitelisted relayers
+
     DaiJoinLike            public immutable daiJoin;
     TokenLike              public immutable dai;
     TeleportOracleAuthLike public immutable oracleAuth;
     TeleportJoinLike       public immutable teleportJoin;
 
+    event Rely(address indexed usr);
+    event Deny(address indexed usr);
+    event RelayersAdded(address[] relayers);
+    event RelayersRemoved(address[] relayers);
+
+    modifier auth {
+        require(wards[msg.sender] == 1, "BasicRelay/not-authorized");
+        _;
+    }
+
     constructor(address _oracleAuth, address _daiJoin) {
+        wards[msg.sender] = 1;
+        emit Rely(msg.sender);
         oracleAuth = TeleportOracleAuthLike(_oracleAuth);
         daiJoin = DaiJoinLike(_daiJoin);
         dai = daiJoin.dai();
         teleportJoin = oracleAuth.teleportJoin();
     }
 
+    function rely(address usr) external auth {
+        wards[usr] = 1;
+        emit Rely(usr);
+    }
+
+    function deny(address usr) external auth {
+        wards[usr] = 0;
+        emit Deny(usr);
+    }
+
+    function addRelayers(address[] calldata relayers_) external auth {
+        for(uint256 i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 1;
+        }
+        emit RelayersAdded(relayers_);
+    }
+
+    function removeRelayers(address[] calldata relayers_) external auth {
+        for(uint256 i; i < relayers_.length; i++) {
+            relayers[relayers_[i]] = 0;
+        }
+        emit RelayersRemoved(relayers_);
+    }
+
     /**
      * @notice Gasless relay for the Oracle fast path
-     * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`
+     * The final signature is ABI-encoded `hashGUID`, `maxFeePercentage`, `gasFee`, `expiry`.
+     * Must be called by a whitelisted relayer account with the feeCollector address appended
+     * at the end of the calldata, e.g.: `(bool success,) = address(basicRelay).call(abi.encodePacked(relayData, feeCollector));`
      * @param teleportGUID The teleport GUID
      * @param signatures The byte array of concatenated signatures ordered by increasing signer addresses.
      * Each signature is {bytes32 r}{bytes32 s}{uint8 v}
@@ -82,6 +123,7 @@ contract BasicRelay {
         bytes32 r,
         bytes32 s
     ) external {
+        require(relayers[msg.sender] == 1, "BasicRelay/not-whitelisted");
         require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
@@ -94,8 +136,13 @@ contract BasicRelay {
         (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(teleportGUID, signatures, maxFeePercentage, gasFee);
         require(postFeeAmount + totalFee == teleportGUID.amount, "BasicRelay/partial-mint-disallowed");
 
-        // Send the gas fee to the relayer
-        dai.transfer(msg.sender, gasFee);
+        // Send the gas fee to the fee collector
+        address feeCollector;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
+        }
+        dai.transfer(feeCollector, gasFee);
     }
 
 }
