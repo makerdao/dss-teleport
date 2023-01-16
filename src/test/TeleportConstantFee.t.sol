@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "forge-std/test.sol";
+import "forge-std/Test.sol";
 
 import "src/TeleportConstantFee.sol";
 import "src/TeleportGUID.sol";
