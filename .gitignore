@@ -1,6 +1,9 @@
 /out
 /cache
 
+coverage/
+lcov.info
+
 # certora
 .*certora*
 .last_confs/
