@@ -114,7 +114,7 @@ contract TeleportOracleAuthTest is Test {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
-        auth.isValid(signHash, signatures, signers.length);
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
     // Since ecrecover silently returns 0 on failure, it's a good idea to make sure
