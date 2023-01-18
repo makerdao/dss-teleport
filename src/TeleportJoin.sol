@@ -260,7 +260,8 @@ contract TeleportJoin {
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
             (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(batchedDaiToFlush, art_);
+            int256 debt_ = debt[sourceDomain];
+            uint256 amtToPayBack = debt_ > 0 ? _min(batchedDaiToFlush, uint256(debt_)) : 0;
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
             unchecked {

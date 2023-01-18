@@ -852,4 +852,41 @@ contract TeleportJoinTest is DSTest {
         assertEq(_art(), 100_000 ether);
         assertEq(join.cure(), 100_000 * RAD);
     }
+
+    function testSettleSurplusThenWithdraw() public {
+        join.file("line", "l2network_2", 1_000_000 ether);
+        join.file("fees", "l2network_2", address(new TeleportConstantFee(0, TTL)));
+
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), 0 ether);
+
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network_2", 100_000 ether); // settle DAI as negative debt
+
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), -100_000 ether);
+
+        guid = TeleportGUID({
+            sourceDomain: "l2network_2",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+    }
 }
