@@ -870,6 +870,7 @@ contract TeleportJoinTest is DSTest {
 
         assertEq(join.debt("l2network"), 100_000 ether);
         assertEq(join.debt("l2network_2"), 0 ether);
+        assertEq(_art(), 100_000 ether);
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(join), 100_000 ether);
@@ -877,6 +878,7 @@ contract TeleportJoinTest is DSTest {
 
         assertEq(join.debt("l2network"), 100_000 ether);
         assertEq(join.debt("l2network_2"), -100_000 ether);
+        assertEq(_art(), 100_000 ether);
 
         guid = TeleportGUID({
             sourceDomain: "l2network_2",
