@@ -891,4 +891,41 @@ contract TeleportJoinTest is DSTest {
         });
         join.requestMint(guid, 0, 0);
     }
+
+    function testSettleAfterPermissionlessRepay() public {
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(vat.dai(vow), 0);
+        assertEq(vat.sin(vow), 0);
+
+        // add collateral and repay part of the ilk debt
+        vat.slip(ilk, address(this), int256(10_000 * RAD));
+        vat.suck(address(0), address(this), 20_000 * RAD);
+        vat.frob(ilk, address(join), address(this), address(this), 10_000 ether, -20_000 ether);
+        assertEq(_ink(), 110_000 ether);
+        assertEq(_art(), 80_000 ether);
+
+        // settle the previous mint
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network", 100_000 ether);
+
+        assertEq(join.debt("l2network"), 0);
+        assertEq(_ink(), 10_000 ether);
+        assertEq(_art(), 10_000 ether);
+        assertEq(vat.dai(vow), 30_000 * RAD);
+        assertEq(vat.sin(vow), 0);
+    }
 }
