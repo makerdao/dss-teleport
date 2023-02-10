@@ -40,6 +40,15 @@ definition RAY() returns uint256 = 10^27;
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
 
+ghost debtSum() returns mathint {
+    init_state axiom debtSum() == 0;
+}
+
+hook Sstore debt[KEY bytes32 a] int256 debtV (int256 old_debtV) STORAGE {
+    // Only sum if the debt is positive
+    havoc debtSum assuming debtSum@new() == debtSum@old() + (debtV > 0 ? to_mathint(debtV) : 0) - (old_debtV > 0 ? to_mathint(old_debtV) : 0);
+}
+
 invariant lineCantExceedMaxInt256(bytes32 domain)
 to_mathint(line(domain)) <= max_int256()
 filtered { f -> !f.isFallback }
@@ -58,6 +67,29 @@ rule cureCantChangeIfVatCaged(method f) filtered { f -> !f.isFallback } {
     uint256 cureAfter = cure();
 
     assert(cureAfter == cureBefore);
+}
+
+// verify debt never goes above art
+rule sumOfdebtsCantGoAboveArt(method f, bytes32 someDomain) filtered { f -> !f.isFallback } {
+    env e;
+
+    mathint debtSumBefore = debtSum();
+    uint256 inkBefore;
+    uint256 artBefore;
+    inkBefore, artBefore = vat.urns(ilk(), currentContract);
+
+    require(debtSumBefore <= to_mathint(artBefore));
+
+    calldataarg arg;
+    f@withrevert(e, arg);
+
+    mathint debtSumAfter = debtSum();
+
+    uint256 inkAfter;
+    uint256 artAfter;
+    inkAfter, artAfter = vat.urns(ilk(), currentContract);
+
+    assert(debtSumAfter <= to_mathint(artAfter), "debtAfter has not been kept below or equal than artAfter");
 }
 
 // Verify fallback always reverts
