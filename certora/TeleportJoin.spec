@@ -70,7 +70,7 @@ rule cureCantChangeIfVatCaged(method f) filtered { f -> !f.isFallback } {
 }
 
 // verify debt never goes above art
-rule sumOfdebtsCantGoAboveArt(method f, bytes32 someDomain) filtered { f -> !f.isFallback } {
+rule inkArtDebtInvariants(method f) filtered { f -> !f.isFallback } {
     env e;
 
     mathint debtSumBefore = debtSum();
@@ -78,7 +78,10 @@ rule sumOfdebtsCantGoAboveArt(method f, bytes32 someDomain) filtered { f -> !f.i
     uint256 artBefore;
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    require(debtSumBefore <= to_mathint(artBefore));
+    require(debtSumBefore == to_mathint(inkBefore));
+    require(artBefore <= inkBefore);
+
+    bool vatLive = vat.live() == 1;
 
     calldataarg arg;
     f@withrevert(e, arg);
@@ -89,7 +92,9 @@ rule sumOfdebtsCantGoAboveArt(method f, bytes32 someDomain) filtered { f -> !f.i
     uint256 artAfter;
     inkAfter, artAfter = vat.urns(ilk(), currentContract);
 
-    assert(debtSumAfter <= to_mathint(artAfter), "debtAfter has not been kept below or equal than artAfter");
+    assert(vatLive => debtSumAfter == to_mathint(inkAfter), "debtSum did not maintain the same value than ink");
+    assert(artBefore == inkBefore => artAfter == inkAfter, "art did not maintain the same value than ink");
+    assert(artBefore < inkBefore => artAfter == inkAfter || artAfter == inkAfter - (inkBefore - artBefore), "art did not get equal to ink nor maintain the same difference with the it");
 }
 
 // Verify fallback always reverts
