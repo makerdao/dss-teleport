@@ -275,8 +275,7 @@ contract TeleportJoin {
                 unchecked {
                     diff = ink_ - art_;
                 }
-                vat.suck(vow_, vow_, diff * RAY); // This needs to be done to make sure we can deduct sin[vow] and vice in the next call
-                vat.grab(ilk, address(this), address(this), vow_, 0, _int256(diff)); // After this call the urn's art will be equal to its ink
+                vat.frob(ilk, address(this), address(this), vow_, 0, _int256(diff)); // After this call the urn's art will be equal to its ink
             }
 
             int256 debt_ = debt[sourceDomain];
