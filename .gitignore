@@ -1,4 +1,8 @@
 /out
+/cache
+
+coverage/
+lcov.info
 
 # certora
 .*certora*
@@ -6,3 +10,4 @@
 *.zip
 resource_errors.json
 .zip-output-url.txt
+certora_debug_log.txt
