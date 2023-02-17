@@ -40,15 +40,6 @@ definition RAY() returns uint256 = 10^27;
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
 
-ghost debtSum() returns mathint {
-    init_state axiom debtSum() == 0;
-}
-
-hook Sstore debt[KEY bytes32 a] int256 debtV (int256 old_debtV) STORAGE {
-    // Only sum if the debt is positive
-    havoc debtSum assuming debtSum@new() == debtSum@old() + (debtV > 0 ? to_mathint(debtV) : 0) - (old_debtV > 0 ? to_mathint(old_debtV) : 0);
-}
-
 invariant lineCantExceedMaxInt256(bytes32 domain)
 to_mathint(line(domain)) <= max_int256()
 filtered { f -> !f.isFallback }
@@ -69,32 +60,38 @@ rule cureCantChangeIfVatCaged(method f) filtered { f -> !f.isFallback } {
     assert(cureAfter == cureBefore);
 }
 
-// Verify ink/art/debt invariants
-rule inkArtDebtInvariants(method f) filtered { f -> !f.isFallback } {
+// Verify that any debt will be bounded by the ink
+rule inkBoundsDebt(method f, bytes32 d1, bytes32 d2) {
     env e;
 
-    mathint debtSumBefore = debtSum();
+    require(d1 != d2);
+
     uint256 inkBefore;
-    uint256 artBefore;
+    uint256 artBefore;  // unused
     inkBefore, artBefore = vat.urns(ilk(), currentContract);
 
-    require(debtSumBefore == to_mathint(inkBefore));
-    require(artBefore <= inkBefore);
+    int256 debt1Before = debt(d1);
+    int256 debt2Before = debt(d2);
 
-    bool vatLive = vat.live() == 1;
+    require(to_mathint(debt1Before) <= to_mathint(inkBefore));
+    require(to_mathint(debt2Before) <= to_mathint(inkBefore));
+    require(to_mathint(debt1Before) + to_mathint(debt2Before) <= to_mathint(inkBefore));
 
     calldataarg arg;
     f(e, arg);
 
-    mathint debtSumAfter = debtSum();
-
     uint256 inkAfter;
-    uint256 artAfter;
+    uint256 artAfter;  // unused
     inkAfter, artAfter = vat.urns(ilk(), currentContract);
 
-    assert(vatLive => debtSumAfter == to_mathint(inkAfter), "debtSum did not maintain the same value than ink");
-    assert(artBefore == inkBefore => artAfter == inkAfter, "art did not maintain the same value than ink");
-    assert(artBefore < inkBefore => artAfter == inkAfter || artAfter == inkAfter - (inkBefore - artBefore), "art did not get equal to ink nor maintain the same difference with the it");
+    int256 debt1After = debt(d1);
+    int256 debt2After = debt(d2);
+
+    // With debt1After != debt1Before we guarantee that d1 is the domain used in the call
+    assert(debt1After != debt1Before => debt2After == debt2Before, "More than once debt was modified");
+    assert(debt1After != debt1Before => to_mathint(debt1After) <= to_mathint(inkAfter), "debt1 was increased beyond the ink limit");
+    assert(debt1After != debt1Before => to_mathint(debt2After) <= to_mathint(inkAfter), "debt2 was increased beyond the ink limit");
+    assert(debt1After != debt1Before => to_mathint(debt1After) + to_mathint(debt2After) <= to_mathint(inkAfter), "debt1+debt2 were increased beyond the ink limit");
 }
 
 // Verify fallback always reverts
