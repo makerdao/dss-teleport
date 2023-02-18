@@ -40,6 +40,14 @@ definition RAY() returns uint256 = 10^27;
 definition min_int256() returns mathint = -1 * 2^255;
 definition max_int256() returns mathint = 2^255 - 1;
 
+ghost someDebtChanged() returns bool {
+    init_state axiom someDebtChanged() == false;
+}
+
+hook Sstore debt[KEY bytes32 a] int256 debtV (int256 old_debtV) STORAGE {
+    havoc someDebtChanged assuming someDebtChanged@new() == ((debtV != old_debtV) ? true : someDebtChanged@old());
+}
+
 invariant lineCantExceedMaxInt256(bytes32 domain)
 to_mathint(line(domain)) <= max_int256()
 filtered { f -> !f.isFallback }
@@ -65,6 +73,7 @@ rule inkBoundsDebt(method f, bytes32 d1, bytes32 d2) {
     env e;
 
     require(d1 != d2);
+    require(!someDebtChanged());  // start false to detect an actual change in some debt value
 
     uint256 inkBefore;
     uint256 artBefore;  // unused
@@ -87,11 +96,15 @@ rule inkBoundsDebt(method f, bytes32 d1, bytes32 d2) {
     int256 debt1After = debt(d1);
     int256 debt2After = debt(d2);
 
+    bool someDebtChanged = someDebtChanged();
+
     // With debt1After != debt1Before we guarantee that d1 is the domain used in the call
+    assert(debt1After != debt1Before => someDebtChanged);
     assert(debt1After != debt1Before => debt2After == debt2Before, "More than once debt was modified");
     assert(debt1After != debt1Before => to_mathint(debt1After) <= to_mathint(inkAfter), "debt1 was increased beyond the ink limit");
     assert(debt1After != debt1Before => to_mathint(debt2After) <= to_mathint(inkAfter), "debt2 was increased beyond the ink limit");
     assert(debt1After != debt1Before => to_mathint(debt1After) + to_mathint(debt2After) <= to_mathint(inkAfter), "debt1+debt2 were increased beyond the ink limit");
+    assert(!someDebtChanged => inkBefore == inkAfter);
 }
 
 // Verify fallback always reverts
