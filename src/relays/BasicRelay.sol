@@ -123,7 +123,7 @@ contract BasicRelay {
         bytes32 r,
         bytes32 s
     ) external {
-        require(relayers[msg.sender] == 1, "BasicRelay/not-whitelisted");
+        require(relayers[msg.sender] == 1 || gasFee == 0, "BasicRelay/not-whitelisted");
         require(block.timestamp <= expiry, "BasicRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 
@@ -136,13 +136,14 @@ contract BasicRelay {
         (uint256 postFeeAmount, uint256 totalFee) = oracleAuth.requestMint(teleportGUID, signatures, maxFeePercentage, gasFee);
         require(postFeeAmount + totalFee == teleportGUID.amount, "BasicRelay/partial-mint-disallowed");
 
-        // Send the gas fee to the fee collector
-        address feeCollector;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
+        if(gasFee > 0) {
+            // Send the gas fee to the fee collector
+            address feeCollector;
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
+            }
+            dai.transfer(feeCollector, gasFee);
         }
-        dai.transfer(feeCollector, gasFee);
     }
-
 }
