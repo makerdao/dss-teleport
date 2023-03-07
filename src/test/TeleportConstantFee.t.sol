@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
 import "src/TeleportConstantFee.sol";
 import "src/TeleportGUID.sol";
@@ -25,9 +25,7 @@ interface Hevm {
     function warp(uint) external;
 }
 
-contract TeleportConstantFeeTest is DSTest {
-
-    Hevm internal hevm = Hevm(HEVM_ADDRESS);
+contract TeleportConstantFeeTest is Test {
     uint256 internal fee = 1 ether / 100;
     uint256 internal ttl = 8 days;
 
@@ -94,7 +92,7 @@ contract TeleportConstantFeeTest is DSTest {
             nonce: 5,
             timestamp: uint48(block.timestamp)
         });
-        hevm.warp(block.timestamp + ttl);
+        vm.warp(block.timestamp + ttl);
 
         assertEq(teleportConstantFee.getFee(guid, 0, 0, 0, 100 ether), 0);
     }

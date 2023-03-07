@@ -72,7 +72,7 @@ contract TeleportJoin {
     event Mint(
         bytes32 indexed hashGUID, TeleportGUID teleportGUID, uint256 amount, uint256 maxFeePercentage, uint256 operatorFee, address originator
     );
-    event Settle(bytes32 indexed sourceDomain, uint256 batchedDaiToFlush);
+    event Settle(bytes32 indexed sourceDomain, uint256 amount);
 
     struct TeleportStatus {
         bool    blessed;
@@ -145,6 +145,21 @@ contract TeleportJoin {
     }
 
     /**
+    * @dev Internal function that registers a teleport
+    * @param teleportGUID Struct which contains the whole teleport data
+    * @param hashGUID Hash of the prev struct
+    **/
+    function _register(
+        TeleportGUID calldata teleportGUID,
+        bytes32 hashGUID
+    ) internal {
+        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
+        teleports[hashGUID].blessed = true;
+        teleports[hashGUID].pending = teleportGUID.amount;
+        emit Register(hashGUID, teleportGUID);
+    }
+
+    /**
     * @dev Internal function that executes the mint after a teleport is registered
     * @param teleportGUID Struct which contains the whole teleport data
     * @param hashGUID Hash of the prev struct
@@ -212,6 +227,16 @@ contract TeleportJoin {
     }
 
     /**
+    * @dev External authed function that registers the teleport
+    * @param teleportGUID Struct which contains the whole teleport data
+    **/
+    function registerMint(
+        TeleportGUID calldata teleportGUID
+    ) external auth {
+        _register(teleportGUID, getGUIDHash(teleportGUID));
+    }
+
+    /**
     * @dev External authed function that registers the teleport and executes the mint after
     * @param teleportGUID Struct which contains the whole teleport data
     * @param maxFeePercentage Max percentage of the withdrawn amount (in WAD) to be paid as fee (e.g 1% = 0.01 * WAD)
@@ -225,10 +250,7 @@ contract TeleportJoin {
         uint256 operatorFee
     ) external auth returns (uint256 postFeeAmount, uint256 totalFee) {
         bytes32 hashGUID = getGUIDHash(teleportGUID);
-        require(!teleports[hashGUID].blessed, "TeleportJoin/already-blessed");
-        teleports[hashGUID].blessed = true;
-        teleports[hashGUID].pending = teleportGUID.amount;
-        emit Register(hashGUID, teleportGUID);
+        _register(teleportGUID, hashGUID);
         (postFeeAmount, totalFee) = _mint(teleportGUID, hashGUID, maxFeePercentage, operatorFee);
     }
 
@@ -253,21 +275,23 @@ contract TeleportJoin {
     /**
     * @dev External function that repays debt with DAI previously pushed to this contract (in general coming from the bridges)
     * @param sourceDomain domain where the DAI is coming from
-    * @param batchedDaiToFlush Amount of DAI that is being processed for repayment
+    * @param targetDomain this domain
+    * @param amount Amount of DAI that is being processed for repayment
     **/
-    function settle(bytes32 sourceDomain, uint256 batchedDaiToFlush) external {
-        require(batchedDaiToFlush <= uint256(type(int256).max), "TeleportJoin/overflow");
-        daiJoin.join(address(this), batchedDaiToFlush);
+    function settle(bytes32 sourceDomain, bytes32 targetDomain, uint256 amount) external {
+        require(targetDomain == domain, "TeleportJoin/incorrect-targetDomain");
+        require(amount <= uint256(type(int256).max), "TeleportJoin/overflow");
+        daiJoin.join(address(this), amount);
         if (vat.live() == 1) {
             (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(batchedDaiToFlush, art_);
+            uint256 amtToPayBack = _min(amount, art_);
             vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
             vat.slip(ilk, address(this), -int256(amtToPayBack));
             unchecked {
                 art = art_ - amtToPayBack; // Always safe operation
             }
         }
-        debt[sourceDomain] -= int256(batchedDaiToFlush);
-        emit Settle(sourceDomain, batchedDaiToFlush);
+        debt[sourceDomain] -= int256(amount);
+        emit Settle(sourceDomain, amount);
     }
 }

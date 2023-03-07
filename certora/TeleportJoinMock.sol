@@ -9,8 +9,6 @@ contract TeleportJoinMock {
     uint256 public operatorFee;
     uint256 public postFeeAmount;
     uint256 public totalFee;
-    bytes32 public sourceDomain;
-    uint256 public batchedDaiToFlush;
 
     function requestMint(
         TeleportGUID memory teleportGUID_,
@@ -22,10 +20,5 @@ contract TeleportJoinMock {
         operatorFee = operatorFee_;
         postFeeAmount_ = postFeeAmount;
         totalFee_ = totalFee;
-    }
-
-    function settle(bytes32 sourceDomain_, uint256 batchedDaiToFlush_) external {
-        sourceDomain = sourceDomain_;
-        batchedDaiToFlush = batchedDaiToFlush_;
     }
 }

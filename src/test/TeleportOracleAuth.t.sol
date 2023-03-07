@@ -16,7 +16,7 @@
 
 pragma solidity 0.8.15;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
 import "src/TeleportOracleAuth.sol";
 
@@ -27,48 +27,13 @@ interface Hevm {
     function sign(uint, bytes32) external returns (uint8, bytes32, bytes32);
 }
 
-contract TeleportOracleAuthTest is DSTest {
-
-    Hevm hevm = Hevm(HEVM_ADDRESS);
+contract TeleportOracleAuthTest is Test {
     TeleportOracleAuth internal auth;
     address internal teleportJoin;
 
     function setUp() public {
         teleportJoin = address(new GatewayMock());
         auth = new TeleportOracleAuth(teleportJoin);
-    }
-
-    function _tryRely(address usr) internal returns (bool ok) {
-        (ok,) = address(auth).call(abi.encodeWithSignature("rely(address)", usr));
-    }
-
-    function _tryDeny(address usr) internal returns (bool ok) {
-        (ok,) = address(auth).call(abi.encodeWithSignature("deny(address)", usr));
-    }
-
-    function _tryFile(bytes32 what, uint256 data) internal returns (bool ok) {
-        (ok,) = address(auth).call(abi.encodeWithSignature("file(bytes32,uint256)", what, data));
-    }
-
-    function _tryIsValid(bytes32 signHash, bytes memory signatures, uint256 threshold_) internal returns (bool ok) {
-        bytes memory res;
-        (ok, res) = address(auth).call(abi.encodeWithSignature("isValid(bytes32,bytes,uint256)", signHash, signatures, threshold_));
-        return ok && abi.decode(res, (bool));
-    }
-
-    function _tryRequestMint(
-        TeleportGUID memory teleportGUID,
-        bytes memory signatures,
-        uint256 maxFeePercentage,
-        uint256 operatorFee
-    ) internal returns (bool ok) {
-        (ok,) = address(auth).call(abi.encodeWithSignature(
-            "requestMint((bytes32,bytes32,bytes32,bytes32,uint128,uint80,uint48),bytes,uint256,uint256)",
-            teleportGUID,
-            signatures,
-            maxFeePercentage,
-            operatorFee
-        ));
     }
 
     function getSignatures(bytes32 signHash) internal returns (bytes memory signatures, address[] memory signers) {
@@ -78,8 +43,8 @@ contract TeleportOracleAuthTest is DSTest {
         signers = new address[](numSigners);
         for(uint i; i < numSigners; i++) {
             uint sk = uint256(keccak256(abi.encode(seeds[i])));
-            signers[i] = hevm.addr(sk);
-            (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+            signers[i] = vm.addr(sk);
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(sk, signHash);
             signatures = abi.encodePacked(signatures, r, s, v);
         }
         assertEq(signatures.length, numSigners * 65);
@@ -92,33 +57,37 @@ contract TeleportOracleAuthTest is DSTest {
 
     function testRelyDeny() public {
         assertEq(auth.wards(address(456)), 0);
-        assertTrue(_tryRely(address(456)));
+        auth.rely(address(456));
         assertEq(auth.wards(address(456)), 1);
-        assertTrue(_tryDeny(address(456)));
+        auth.deny(address(456));
         assertEq(auth.wards(address(456)), 0);
 
         auth.deny(address(this));
 
-        assertTrue(!_tryRely(address(456)));
-        assertTrue(!_tryDeny(address(456)));
+        vm.expectRevert("TeleportOracleAuth/not-authorized");
+        auth.rely(address(456));
+        vm.expectRevert("TeleportOracleAuth/not-authorized");
+        auth.deny(address(456));
     }
 
     function testFileFailsWhenNotAuthed() public {
-        assertTrue(_tryFile("threshold", 888));
+        auth.file("threshold", 888);
         auth.deny(address(this));
-        assertTrue(!_tryFile("threshold", 888));
+        vm.expectRevert("TeleportOracleAuth/not-authorized");
+        auth.file("threshold", 888);
     }
 
     function testFileNewThreshold() public {
         assertEq(auth.threshold(), 0);
 
-        assertTrue(_tryFile("threshold", 3));
+        auth.file("threshold", 3);
 
         assertEq(auth.threshold(), 3);
     }
 
     function testFileInvalidWhat() public {
-        assertTrue(!_tryFile("meh", 888));
+        vm.expectRevert("TeleportOracleAuth/file-unrecognized-param");
+        auth.file("meh", 888);
     }
 
     function testAddRemoveSigners() public {
@@ -145,7 +114,7 @@ contract TeleportOracleAuthTest is DSTest {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
-        assertTrue(_tryIsValid(signHash, signatures, signers.length));
+        assertTrue(auth.isValid(signHash, signatures, signers.length));
     }
 
     // Since ecrecover silently returns 0 on failure, it's a good idea to make sure
@@ -163,14 +132,16 @@ contract TeleportOracleAuthTest is DSTest {
         signers[0] = address(0);
 
         auth.addSigners(signers);
-        assertTrue(!_tryIsValid(signHash, signatures, signers.length));
+        vm.expectRevert("TeleportOracleAuth/bad-sig-order");
+        auth.isValid(signHash, signatures, signers.length);
     }
 
     function test_isValid_notEnoughSig() public {
         bytes32 signHash = keccak256("msg");
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
-        assertTrue(!_tryIsValid(signHash, signatures, signers.length + 1));
+        vm.expectRevert("TeleportOracleAuth/not-enough-sig");
+        auth.isValid(signHash, signatures, signers.length + 1);
     }
 
     function test_isValid_badSig() public {
@@ -178,7 +149,8 @@ contract TeleportOracleAuthTest is DSTest {
         (bytes memory signatures, address[] memory signers) = getSignatures(signHash);
         auth.addSigners(signers);
         signatures[0] = bytes1(uint8((uint256(uint8(signatures[0])) + 1) % 256));
-        assertTrue(!_tryIsValid(signHash, signatures, signers.length));
+        vm.expectRevert("TeleportOracleAuth/bad-sig-order");
+        auth.isValid(signHash, signatures, signers.length);
     }
 
     function test_mintByOperator() public {
@@ -195,7 +167,7 @@ contract TeleportOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        assertTrue(_tryRequestMint(guid, signatures, maxFee, 0));
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mintByOperatorNotReceiver() public {
@@ -212,7 +184,7 @@ contract TeleportOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        assertTrue(_tryRequestMint(guid, signatures, maxFee, 0));
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mintByReceiver() public {
@@ -229,7 +201,7 @@ contract TeleportOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        assertTrue(_tryRequestMint(guid, signatures, maxFee, 0));
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
     function test_mint_notOperatorNorReceiver() public {
@@ -246,7 +218,8 @@ contract TeleportOracleAuthTest is DSTest {
 
         uint maxFee = 0;
 
-        assertTrue(!_tryRequestMint(guid, signatures, maxFee, 0));
+        vm.expectRevert("TeleportOracleAuth/not-receiver-nor-operator");
+        auth.requestMint(guid, signatures, maxFee, 0);
     }
 
 }
