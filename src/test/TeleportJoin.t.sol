@@ -856,6 +856,7 @@ contract TeleportJoinTest is DSTest {
     function testSettleSurplusThenWithdraw() public {
         join.file("line", "l2network_2", 1_000_000 ether);
         join.file("fees", "l2network_2", address(new TeleportConstantFee(0, TTL)));
+        assertEq(dai.balanceOf(address(123)), 0);
 
         TeleportGUID memory guid = TeleportGUID({
             sourceDomain: "l2network",
@@ -868,9 +869,12 @@ contract TeleportJoinTest is DSTest {
         });
         join.requestMint(guid, 0, 0);
 
+        assertEq(dai.balanceOf(address(123)), 100_000 ether);
         assertEq(join.debt("l2network"), 100_000 ether);
         assertEq(join.debt("l2network_2"), 0 ether);
+        assertEq(_ink(), 100_000 ether);
         assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
 
         vat.suck(address(0), address(this), 100_000 * RAD);
         daiJoin.exit(address(join), 100_000 ether);
@@ -878,7 +882,9 @@ contract TeleportJoinTest is DSTest {
 
         assertEq(join.debt("l2network"), 100_000 ether);
         assertEq(join.debt("l2network_2"), -100_000 ether);
+        assertEq(_ink(), 100_000 ether);
         assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
 
         guid = TeleportGUID({
             sourceDomain: "l2network_2",
@@ -890,6 +896,13 @@ contract TeleportJoinTest is DSTest {
             timestamp: uint48(block.timestamp)
         });
         join.requestMint(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(123)), 200_000 ether);
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), 0 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
     }
 
     function testSettleAfterPermissionlessRepay() public {

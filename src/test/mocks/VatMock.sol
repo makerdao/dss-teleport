@@ -80,18 +80,6 @@ contract VatMock {
         urns[i][u] = urn;
     }
 
-    function grab(bytes32 i, address u, address v, address w, int256 dink, int256 dart) external {
-        Urn storage urn = urns[i][u];
-
-        urn.ink = add(urn.ink, dink);
-        urn.art = add(urn.art, dart);
-
-        int256 dtab = mul(RAY, dart);
-
-        gem[i][v] = sub(gem[i][v], dink);
-        sin[w]    = sub(sin[w],    dtab);
-    }
-
     function move(address src, address dst, uint256 rad) external {
         require(wish(src, msg.sender), "Vat/not-allowed");
         dai[src] = sub(dai[src], rad);

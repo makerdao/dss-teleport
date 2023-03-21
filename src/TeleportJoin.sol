@@ -62,9 +62,9 @@ contract TeleportJoin {
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
 
-    string  constant public ARITHMETIC_ERROR = string(abi.encodeWithSignature("Panic(uint256)", 0x11));
-    uint256 constant public WAD = 10 ** 18;
-    uint256 constant public RAY = 10 ** 27;
+    string  constant internal ARITHMETIC_ERROR = string(abi.encodeWithSignature("Panic(uint256)", 0x11));
+    uint256 constant internal WAD = 10 ** 18;
+    uint256 constant internal RAY = 10 ** 27;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
@@ -280,10 +280,12 @@ contract TeleportJoin {
 
             int256 debt_ = debt[sourceDomain];
             uint256 amtToPayBack = _min(batchedDaiToFlush, debt_ > 0 ? uint256(debt_) : 0);
-            vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
-            vat.slip(ilk, address(this), -int256(amtToPayBack));
-            unchecked {
-                art = ink_ - amtToPayBack; // Always safe operation
+            if(amtToPayBack > 0) {
+                vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
+                vat.slip(ilk, address(this), -int256(amtToPayBack));
+                unchecked {
+                    art = ink_ - amtToPayBack; // Always safe operation
+                }
             }
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
