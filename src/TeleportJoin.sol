@@ -27,7 +27,6 @@ interface VatLike {
     function move(address, address, uint256) external;
     function nope(address) external;
     function slip(bytes32, address, int256) external;
-    function suck(address, address, uint256) external;
 }
 
 interface DaiJoinLike {
