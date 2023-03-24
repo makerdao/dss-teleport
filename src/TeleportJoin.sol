@@ -23,10 +23,12 @@ interface VatLike {
     function live() external view returns (uint256);
     function urns(bytes32, address) external view returns (uint256, uint256);
     function frob(bytes32, address, address, address, int256, int256) external;
+    function grab(bytes32, address, address, address, int256, int256) external;
     function hope(address) external;
     function move(address, address, uint256) external;
     function nope(address) external;
     function slip(bytes32, address, int256) external;
+    function suck(address, address, uint256) external;
 }
 
 interface DaiJoinLike {
@@ -273,7 +275,8 @@ contract TeleportJoin {
                 unchecked {
                     diff = ink_ - art_;
                 }
-                vat.frob(ilk, address(this), address(this), vow_, 0, _int256(diff)); // After this call the urn's art will be equal to its ink
+                vat.suck(vow_, vow_, diff * RAY); // This needs to be done to make sure we can deduct sin[vow] and vice in the next call
+                vat.grab(ilk, address(this), address(this), vow_, 0, _int256(diff)); // After this call the urn's art will be equal to its ink
             }
 
             int256 debt_ = debt[sourceDomain];
