@@ -804,11 +804,12 @@ rule settle_revert(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     bool revert6  = daiBalJoin < batchedDaiToFlush;
     bool revert7  = daiAllJoinDaiJoin < batchedDaiToFlush;
     bool revert8  = vatLive && art < ink && (ink - art) * RAY() > max_int256();
-    bool revert9  = vatLive && art < ink && vatDaiVow + (ink - art) * RAY() > max_uint256;
-    bool revert10 = vatLive && amtToPayBack > 0 && -1 * to_mathint(amtToPayBack) * RAY() < min_int256();
-    bool revert11 = vatLive && amtToPayBack > ink;
-    bool revert12 = vatLive && vatGemJoin + amtToPayBack > max_uint256;
-    bool revert13 = to_mathint(debt) - to_mathint(batchedDaiToFlush) < min_int256();
+    bool revert9  = vatLive && art < ink && vatSinVow + (ink - art) * RAY() > max_uint256;
+    bool revert10 = vatLive && art < ink && vatDaiVow + (ink - art) * RAY() > max_uint256;
+    bool revert11 = vatLive && amtToPayBack > 0 && -1 * to_mathint(amtToPayBack) * RAY() < min_int256();
+    bool revert12 = vatLive && amtToPayBack > ink;
+    bool revert13 = vatLive && vatGemJoin + amtToPayBack > max_uint256;
+    bool revert14 = to_mathint(debt) - to_mathint(batchedDaiToFlush) < min_int256();
 
     assert(revert1  => lastReverted, "revert1 failed");
     assert(revert2  => lastReverted, "revert2 failed");
@@ -823,10 +824,11 @@ rule settle_revert(bytes32 sourceDomain, uint256 batchedDaiToFlush) {
     assert(revert11 => lastReverted, "revert11 failed");
     assert(revert12 => lastReverted, "revert12 failed");
     assert(revert13 => lastReverted, "revert13 failed");
+    assert(revert14 => lastReverted, "revert14 failed");
 
     assert(lastReverted => revert1  || revert2  || revert3  ||
                            revert4  || revert5  || revert6  ||
                            revert7  || revert8  || revert9  ||
                            revert10 || revert11 || revert12 ||
-                           revert13, "Revert rules are not covering all the cases");
+                           revert13 || revert14, "Revert rules are not covering all the cases");
 }
