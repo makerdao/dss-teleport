@@ -314,6 +314,48 @@ contract BasicRelayTest is DSTest {
         assertEq(dai.balanceOf(receiver), 98 ether);
     }
 
+    function test_relay_not_whitelisted_no_refund() public {
+        uint256 sk = uint256(keccak256(abi.encode(8)));
+        address receiver = hevm.addr(sk);
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(receiver),
+            operator: addressToBytes32(address(relay)),
+            amount: 100 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        uint256 maxFeePercentage = WAD * 1 / 100;   // 1%
+        uint256 gasFee = 0;                         // no refund requested
+        uint256 expiry = block.timestamp;
+        bytes32 signHash = getSignHash(
+            guid,
+            maxFeePercentage,
+            gasFee,
+            expiry
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = hevm.sign(sk, signHash);
+
+        assertEq(dai.balanceOf(receiver), 0);
+
+        // relay() should succeed even without the sender being whitelisted given that gasFee == 0
+        relay.relay(
+            guid,
+            "",
+            maxFeePercentage,
+            gasFee,
+            expiry,
+            v,
+            r,
+            s
+        );
+
+        // Should get 100 DAI - 1% teleport fee
+        assertEq(dai.balanceOf(receiver), 99 ether);
+    }
+
     function test_relay_expired() public {
         _whitelistThis();
         uint256 sk = uint256(keccak256(abi.encode(8)));

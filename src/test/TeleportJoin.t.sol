@@ -852,4 +852,92 @@ contract TeleportJoinTest is DSTest {
         assertEq(_art(), 100_000 ether);
         assertEq(join.cure(), 100_000 * RAD);
     }
+
+    function testSettleSurplusThenWithdraw() public {
+        join.file("line", "l2network_2", 1_000_000 ether);
+        join.file("fees", "l2network_2", address(new TeleportConstantFee(0, TTL)));
+        assertEq(dai.balanceOf(address(123)), 0);
+
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(123)), 100_000 ether);
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), 0 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
+
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network_2", 100_000 ether); // settle DAI as negative debt
+
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), -100_000 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
+
+        guid = TeleportGUID({
+            sourceDomain: "l2network_2",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(dai.balanceOf(address(123)), 200_000 ether);
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(join.debt("l2network_2"), 0 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(join.cure(), 100_000 * RAD);
+    }
+
+    function testSettleAfterPermissionlessRepay() public {
+        TeleportGUID memory guid = TeleportGUID({
+            sourceDomain: "l2network",
+            targetDomain: "ethereum",
+            receiver: addressToBytes32(address(123)),
+            operator: addressToBytes32(address(654)),
+            amount: 100_000 ether,
+            nonce: 5,
+            timestamp: uint48(block.timestamp)
+        });
+        join.requestMint(guid, 0, 0);
+
+        assertEq(join.debt("l2network"), 100_000 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 100_000 ether);
+        assertEq(vat.dai(vow), 0);
+        assertEq(vat.sin(vow), 0);
+
+        // repay part of the ilk debt
+        vat.suck(address(0), address(this), 20_000 * RAD);
+        vat.frob(ilk, address(join), address(this), address(this), 0, -20_000 ether);
+        assertEq(_ink(), 100_000 ether);
+        assertEq(_art(), 80_000 ether);
+
+        // settle the previous mint
+        vat.suck(address(0), address(this), 100_000 * RAD);
+        daiJoin.exit(address(join), 100_000 ether);
+        join.settle("l2network", 100_000 ether);
+
+        assertEq(join.debt("l2network"), 0);
+        assertEq(_ink(), 0);
+        assertEq(_art(), 0);
+        assertEq(vat.dai(vow), 20_000 * RAD);
+        assertEq(vat.sin(vow), 0);
+    }
 }

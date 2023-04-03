@@ -14,6 +14,7 @@ contract VatMock {
     mapping (bytes32 => mapping (address => Urn ))    public urns;
     mapping (bytes32 => mapping (address => uint256)) public gem;
     mapping (address => uint256)                      public dai;
+    mapping (address => uint256)                      public sin;
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         unchecked {
@@ -79,6 +80,18 @@ contract VatMock {
         urns[i][u] = urn;
     }
 
+    function grab(bytes32 i, address u, address v, address w, int256 dink, int256 dart) external {
+        Urn storage urn = urns[i][u];
+
+        urn.ink = add(urn.ink, dink);
+        urn.art = add(urn.art, dart);
+
+        int256 dtab = mul(RAY, dart);
+
+        gem[i][v] = sub(gem[i][v], dink);
+        sin[w]    = sub(sin[w],    dtab);
+    }
+
     function move(address src, address dst, uint256 rad) external {
         require(wish(src, msg.sender), "Vat/not-allowed");
         dai[src] = sub(dai[src], rad);
@@ -89,7 +102,8 @@ contract VatMock {
         gem[ilk][usr] = add(gem[ilk][usr], wad);
     }
 
-    function suck(address, address v, uint256 rad) external {
+    function suck(address u, address v, uint256 rad) external {
+        sin[u] = add(sin[u], rad);
         dai[v] = add(dai[v], rad);
     }
 }

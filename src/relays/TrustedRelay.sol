@@ -184,17 +184,20 @@ contract TrustedRelay {
         // Withdraw the L1 DAI to the receiver
         requestMint(teleportGUID, signatures, maxFeePercentage, gasFee, expiry, v, r, s);
 
-        // Send the gas fee to the fee collector
-        address feeCollector;
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
+        if(gasFee > 0) {
+            // Send the gas fee to the fee collector
+            address feeCollector;
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                feeCollector := shr(96, calldataload(sub(calldatasize(), 20))) // Gelato passes the feeCollector in the same way as in EIP-2771
+            }
+            dai.transfer(feeCollector, gasFee);
+        
+            // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
+            (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
+            require(!ok || gasFee * WAD_BPS <= uint256(ethPrice) * gasMargin * gasprice() * (startGas - gasleft()), "TrustedRelay/excessive-gas-fee");
         }
-        dai.transfer(feeCollector, gasFee);
 
-        // If the eth price oracle is enabled, use its value to check that gasFee is within an allowable margin
-        (bytes32 ethPrice, bool ok) = ethPriceOracle.peek();
-        require(!ok || gasFee * WAD_BPS <= uint256(ethPrice) * gasMargin * gasprice() * (startGas - gasleft()), "TrustedRelay/excessive-gas-fee");
     }
 
     function requestMint(
@@ -207,7 +210,7 @@ contract TrustedRelay {
         bytes32 r,
         bytes32 s
     ) internal {
-        require(relayers[msg.sender] == 1, "TrustedRelay/not-whitelisted");
+        require(relayers[msg.sender] == 1 || gasFee == 0, "TrustedRelay/not-whitelisted");
         require(block.timestamp <= expiry, "TrustedRelay/expired");
         bytes32 signHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n32", 

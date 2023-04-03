@@ -23,10 +23,12 @@ interface VatLike {
     function live() external view returns (uint256);
     function urns(bytes32, address) external view returns (uint256, uint256);
     function frob(bytes32, address, address, address, int256, int256) external;
+    function grab(bytes32, address, address, address, int256, int256) external;
     function hope(address) external;
     function move(address, address, uint256) external;
     function nope(address) external;
     function slip(bytes32, address, int256) external;
+    function suck(address, address, uint256) external;
 }
 
 interface DaiJoinLike {
@@ -60,8 +62,9 @@ contract TeleportJoin {
     bytes32     immutable public ilk;
     bytes32     immutable public domain;
 
-    uint256 constant public WAD = 10 ** 18;
-    uint256 constant public RAY = 10 ** 27;
+    string  constant internal ARITHMETIC_ERROR = string(abi.encodeWithSignature("Panic(uint256)", 0x11));
+    uint256 constant internal WAD = 10 ** 18;
+    uint256 constant internal RAY = 10 ** 27;
 
     event Rely(address indexed usr);
     event Deny(address indexed usr);
@@ -88,6 +91,10 @@ contract TeleportJoin {
         daiJoin.dai().approve(daiJoin_, type(uint256).max);
         ilk = ilk_;
         domain = domain_;
+    }
+
+    function _int256(uint256 x) internal pure returns (int256 y) {
+        require((y = int256(x)) >= 0, ARITHMETIC_ERROR);
     }
 
     function _min(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -259,12 +266,27 @@ contract TeleportJoin {
         require(batchedDaiToFlush <= uint256(type(int256).max), "TeleportJoin/overflow");
         daiJoin.join(address(this), batchedDaiToFlush);
         if (vat.live() == 1) {
-            (, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
-            uint256 amtToPayBack = _min(batchedDaiToFlush, art_);
-            vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
-            vat.slip(ilk, address(this), -int256(amtToPayBack));
-            unchecked {
-                art = art_ - amtToPayBack; // Always safe operation
+            (uint256 ink_, uint256 art_) = vat.urns(ilk, address(this)); // rate == RAY => normalized debt == actual debt
+            
+            // Fix any permissionless repays that may have occurred
+            if (art_ < ink_) {
+                address vow_ = vow;
+                uint256 diff;
+                unchecked {
+                    diff = ink_ - art_;
+                }
+                vat.suck(vow_, vow_, diff * RAY); // This needs to be done to make sure we can deduct sin[vow] and vice in the next call
+                vat.grab(ilk, address(this), address(this), vow_, 0, _int256(diff)); // After this call the urn's art will be equal to its ink
+            }
+
+            int256 debt_ = debt[sourceDomain];
+            uint256 amtToPayBack = _min(batchedDaiToFlush, debt_ > 0 ? uint256(debt_) : 0);
+            if(amtToPayBack > 0) {
+                vat.frob(ilk, address(this), address(this), address(this), -int256(amtToPayBack), -int256(amtToPayBack));
+                vat.slip(ilk, address(this), -int256(amtToPayBack));
+                unchecked {
+                    art = ink_ - amtToPayBack; // Always safe operation
+                }
             }
         }
         debt[sourceDomain] -= int256(batchedDaiToFlush);
